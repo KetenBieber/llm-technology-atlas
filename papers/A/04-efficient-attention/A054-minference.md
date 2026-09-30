@@ -81,6 +81,10 @@ MInference
 ---
 
 
+![教学解释图：MInference 核心机制](../../../figures/explainers/A054/00-core-mechanism.svg)
+
+*教学解释图｜离线识别 attention head pattern，在线只计算 vertical/slash/block-sparse 区域，直接压缩长 prompt 的 prefill 成本。*
+
 # 一、先区分 Prefill 与 Decode：这是理解 MInference 的起点
 
 ## 1. 一次 LLM 请求其实有两个完全不同的阶段

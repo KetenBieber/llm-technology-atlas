@@ -30,6 +30,10 @@ RoPE 想同时满足两个条件：单个 token 在位置 `m` 的 Q/K 含有**�
 主技术树：`Transformer → Attention → Position Information → Relative Position Mechanism → Rotary Position Embedding (RoPE)`。RoPE 不是 Tokenizer，也不是对原始输入 `X` 应用 2D 图像几何旋转；它发生在 Attention 头内部**Q/K 的特征维**。后续 Llama、其他模型具体是否使用全部或部分维度旋转、不同 base 和 scaling 要逐个报告核验。
 
 
+![教学解释图：RoPE 核心机制](../../../figures/explainers/A014/00-core-mechanism.svg)
+
+*教学解释图｜绝对位置相位通过二维旋转注入 Q/K，而内积中的位置项只保留相对位移。*
+
 # 输入、输出与任务
 
 ## 三种空间必须分开：token、Attention head、二维旋转对子空间

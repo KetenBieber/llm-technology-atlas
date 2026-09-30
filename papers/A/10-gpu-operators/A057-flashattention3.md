@@ -66,6 +66,10 @@ $$
 ---
 
 
+![教学解释图：FlashAttention-3 核心机制](../../../figures/explainers/A057/00-core-mechanism.svg)
+
+*教学解释图｜Hopper 的 TMA/WGMMA 与 producer-consumer 异步流水让数据搬运、GEMM 与 softmax 尽可能重叠。*
+
 # 一、先把三代 FlashAttention 的瓶颈迁移串起来
 
 理解 FA3 最容易犯的错误，是把它看成：

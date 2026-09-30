@@ -41,6 +41,10 @@
 ---
 
 
+![教学解释图：4D Parallelism 核心机制](../../../figures/explainers/C001/00-core-mechanism.svg)
+
+*教学解释图｜TP、PP、CP 与 FSDP 沿四个正交方向切分同一训练任务，并映射到不同 process group 与通信模式。*
+
 # 一、先从单卡训练开始：显存到底花在哪里？
 
 设模型有：
@@ -208,9 +212,6 @@ $$
 
 # 三、4D Parallelism 是四个正交坐标
 
-![教学解释图：4D Parallelism](../../../figures/explainers/C001/01-four-dimensional-parallelism.svg)
-
-*教学解释图｜4D Parallelism。*
 
 
 设：

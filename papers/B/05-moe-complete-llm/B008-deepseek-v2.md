@@ -63,6 +63,10 @@ RoPE 插入位置相关矩阵后，吸收失效
 ~~~
 
 
+![教学解释图：DeepSeek-V2 核心机制](../../../figures/explainers/B008/00-core-mechanism.svg)
+
+*教学解释图｜MLA cache 压缩、DeepSeekMoE 与训练/推理系统被组织成一条完整 token 与状态流。*
+
 ## 1. Figure 1 先告诉我们：V2 想把“训练贵”和“推理贵”拆开解决
 
 ![DeepSeek-V2 原论文 Figure 1：效率比较](../../../figures/B002/fig1-efficiency.svg)

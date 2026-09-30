@@ -35,9 +35,6 @@
 
 > **怎么用这些链接？** 第一次读 V3 时不要一看到 MLA / MoE / GRPO 就立刻跳走。先在 V3 里理解“它为什么被需要、它接在系统哪里、它改变什么系统量”；只有公式或机制阻塞理解时，再进入对应原始方法文章。
 
-![自制解释图：DeepSeek-V3 的瓶颈—机制—系统量关系](../../../figures/explainers/B009-v3-system-map.svg)
-
-*自制解释图，不是原论文 Figure。先从左到右看：V3 的关键技术不是彼此并列的“创新点”，而是分别对应 KV Cache、稀疏容量、负载均衡和大规模训练吞吐这些不同瓶颈。*
 
 如果只记住“DeepSeek-V3 是 671B MoE、每 token 激活 37B”，其实几乎没读懂这篇论文。
 
@@ -56,6 +53,10 @@ DeepSeek-V3 真正有代表性的地方，恰恰是它把**模型参数化、训
 
 ---
 
+
+![教学解释图：DeepSeek-V3 核心机制](../../../figures/explainers/B009/00-core-mechanism.svg)
+
+*教学解释图｜MLA、MoE routing、MTP、FP8 与 DualPipe 被联结成模型—训练—系统共同设计。*
 
 ## 1. 先把 DeepSeek-V3 放回 DeepSeek 谱系：哪些是 V3 新东西，哪些不是？
 

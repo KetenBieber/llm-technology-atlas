@@ -48,6 +48,10 @@ Transformer
 ~~~
 
 
+![教学解释图：MQA 核心机制](../../../figures/explainers/A019/00-core-mechanism.svg)
+
+*教学解释图｜保留多组 Query heads，同时共享 K/V 状态，以牺牲较少表达自由度换取 decode cache 与带宽下降。*
+
 # 输入、输出与任务
 
 输入：

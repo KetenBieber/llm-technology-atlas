@@ -96,6 +96,10 @@ $$
 ---
 
 
+![教学解释图：FlashAttention 核心机制](../../../figures/explainers/A055/00-core-mechanism.svg)
+
+*教学解释图｜Q/K/V block 在 HBM 与 SRAM 间分块流动，online softmax 在不物化完整注意力矩阵的前提下保持 exact attention。*
+
 # 一、先把一个常见误区拆掉：GPU 快，不代表“算术”是最贵的
 
 ## 1. 现代 GPU 至少有两类我们必须区分的资源

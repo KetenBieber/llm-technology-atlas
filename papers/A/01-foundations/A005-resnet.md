@@ -145,6 +145,10 @@ Bottleneck → ResNet-50/101/152
 BatchNorm、ReLU、SGD 都是本文 **ADOPTS** 的技术，不是本文提出。
 
 
+![教学解释图：ResNet 核心机制](../../../figures/explainers/A005/00-core-mechanism.svg)
+
+*教学解释图｜identity shortcut 同时改写前向映射与反向梯度路径，使深层网络拥有稳定的残差通道。*
+
 # 输入、输出与任务
 
 ## 1. ImageNet 输入输出

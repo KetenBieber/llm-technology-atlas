@@ -95,6 +95,10 @@ YaRN 的价值就在于：
 ---
 
 
+![教学解释图：YaRN 核心机制](../../../figures/explainers/A018/00-core-mechanism.svg)
+
+*教学解释图｜RoPE 不同频带采用不同缩放策略，并配合 attention magnitude correction 完成长上下文外推。*
+
 ## 1. 先回到 RoPE：每个 head dimension 其实是一组不同频率的二维时钟
 
 设 attention head dimension：

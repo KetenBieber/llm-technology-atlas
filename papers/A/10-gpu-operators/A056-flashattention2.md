@@ -83,6 +83,10 @@ $$
 ---
 
 
+![教学解释图：FlashAttention-2 核心机制](../../../figures/explainers/A056/00-core-mechanism.svg)
+
+*教学解释图｜sequence parallelism 与 Split-Q 重新分配 block/warp 工作，使 IO 已优化后的 Attention 更接近 GPU 吞吐上限。*
+
 # 一、从 FA1 的“成功”开始：为什么 30–50% Peak 仍然不够？
 
 ## 1. FA1 已经完成了最关键的算法重构

@@ -45,6 +45,10 @@ Transformer
 所以 MHA、GQA、MQA 应看成一个连续家族，而不是三个互不相关机制。
 
 
+![教学解释图：GQA 核心机制](../../../figures/explainers/A020/00-core-mechanism.svg)
+
+*教学解释图｜在 MHA 与 MQA 之间按 query group 共享 K/V，形成质量、缓存与带宽之间的折中。*
+
 # 输入、输出与任务
 
 设：

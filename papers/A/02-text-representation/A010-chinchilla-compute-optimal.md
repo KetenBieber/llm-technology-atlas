@@ -113,6 +113,10 @@ $$
 ---
 
 
+![教学解释图：Chinchilla 核心机制](../../../figures/explainers/A010/00-core-mechanism.svg)
+
+*教学解释图｜固定训练 FLOPs 下同时搜索参数量与 token 数，得到 compute-optimal 的模型—数据配比。*
+
 ## 1. 先把问题写对：Chinchilla 研究的不是“模型多大最好”
 
 如果没有约束，当然可以说：

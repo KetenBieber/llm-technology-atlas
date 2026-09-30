@@ -87,6 +87,10 @@ Kaplan 2020
 ---
 
 
+![教学解释图：Kaplan Scaling Laws 核心机制](../../../figures/explainers/A009/00-core-mechanism.svg)
+
+*教学解释图｜模型规模、数据量与计算预算共同约束 loss frontier，scaling law 的作用是把经验趋势转成可外推关系。*
+
 ## 1. 这篇论文真正面对的工程问题是什么？
 
 假设你现在有一笔训练预算。

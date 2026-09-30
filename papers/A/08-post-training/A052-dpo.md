@@ -53,6 +53,10 @@ DPO 的答案是：可以，而且在一组明确假设下，这不是经验技�
 ---
 
 
+![教学解释图：DPO 核心机制](../../../figures/explainers/A052/00-core-mechanism.svg)
+
+*教学解释图｜偏好对通过隐式 reward 差直接转成 policy loss，消去显式 Reward Model + PPO 的优化链。*
+
 ## 1. 从问题场景开始：Preference Learning 缺的究竟是什么？
 
 给定 prompt：

@@ -82,6 +82,10 @@ $$
 ---
 
 
+![教学解释图：Dual Chunk Attention 核心机制](../../../figures/explainers/A053/00-core-mechanism.svg)
+
+*教学解释图｜chunk 划分、三类相对位置关系与全局 softmax 归并共同构成 DCA 的位置重组织机制。*
+
 # 一、先把问题从 RoPE frequency 换成 Relative-Position Matrix
 
 ## 1. 标准 RoPE 最终到底把什么交给 Attention？

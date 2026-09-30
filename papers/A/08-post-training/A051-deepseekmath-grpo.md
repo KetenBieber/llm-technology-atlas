@@ -38,6 +38,10 @@
 ---
 
 
+![教学解释图：GRPO 核心机制](../../../figures/explainers/A051/00-core-mechanism.svg)
+
+*教学解释图｜同一 prompt 的多响应采样、组内相对奖励与 PPO-style clipped update 构成 GRPO 主环。*
+
 ## 1. 先别急着看 GRPO：PPO 为什么要有 Critic？
 
 理解 GRPO 最容易犯的错误，是从一句：

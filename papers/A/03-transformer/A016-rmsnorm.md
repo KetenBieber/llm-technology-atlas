@@ -42,6 +42,10 @@ Transformer
 论文判断是：在其测试模型上，LayerNorm 的 re-centering invariance 并非总是必要，而 re-scaling invariance 更关键；RMSNorm 用更简单计算获得接近性能。论文报告不同模型上运行时间可降低约 7%–64%，但这个比例是**特定模型和实现环境中的端到端结果**，不能直接套到现代 fused Transformer kernel。citeturn100152academia0
 
 
+![教学解释图：RMSNorm 核心机制](../../../figures/explainers/A016/00-core-mechanism.svg)
+
+*教学解释图｜去掉均值中心化以后，RMSNorm 保留尺度归一化，同时缩短 forward/backward 的归约依赖。*
+
 # 输入、输出与任务
 
 对单个 token hidden state：

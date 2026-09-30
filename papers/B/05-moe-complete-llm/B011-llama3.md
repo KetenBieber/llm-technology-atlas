@@ -69,13 +69,14 @@ data + scale + stability + post-training + inference
 ---
 
 
+![教学解释图：Llama 3 核心机制](../../../figures/explainers/B011/00-core-mechanism.svg)
+
+*教学解释图｜核心杠杆从新 block 转向 data、scale、distributed training、post-training 与 inference 的完整研发链。*
+
 ## 1. 先定性：Llama 3 不是一篇“新架构论文”
 
 论文在架构章节直接说明：Llama 3 使用标准的 dense Transformer architecture，并没有在模型结构上显著偏离 Llama / Llama 2；性能提升主要来自数据质量、多样性与更大的训练规模。
 
-![教学解释图：Overview](../../../figures/explainers/B011/01-overview.svg)
-
-*教学解释图｜Overview。*
 
 
 这个定位非常重要。

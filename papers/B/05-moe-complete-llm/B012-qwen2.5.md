@@ -50,6 +50,10 @@ Qwen2.5 最值得研究的问题因此不是：
 ---
 
 
+![教学解释图：Qwen2.5 核心机制](../../../figures/explainers/B012/00-core-mechanism.svg)
+
+*教学解释图｜dense/MoE 家族、长上下文、post-training 与部署能力被组织成统一的模型产品栈。*
+
 ## 1. 先看定位：Qwen2.5 不是一个模型，而是一个“产品曲线”
 
 Qwen2.5 open-weight dense 系列包含：

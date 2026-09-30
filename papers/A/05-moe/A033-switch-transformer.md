@@ -42,6 +42,10 @@ Conditional Computation
 Switch 的贡献不能只写成“把 k=2 改成 k=1”。真正问题是：**如果只选一个 expert，模型还能保持质量吗？如果可以，就能删掉大量跨 expert combine 与通信复杂性。**
 
 
+![教学解释图：Switch Transformer 核心机制](../../../figures/explainers/A033/00-core-mechanism.svg)
+
+*教学解释图｜Top-1 routing、capacity 与 overflow 共同决定 Switch Transformer 的稀疏执行行为。*
+
 # 输入、输出与任务
 
 输入 token：

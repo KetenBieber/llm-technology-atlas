@@ -84,6 +84,10 @@ rejection sampling 生成新 SFT 数据
 ---
 
 
+![教学解释图：DeepSeek-R1 核心机制](../../../figures/explainers/B010/00-core-mechanism.svg)
+
+*教学解释图｜reasoning RL 的探索、cold-start/SFT、多阶段 RL 与 distillation 组成能力形成与迁移路径。*
+
 ## 1. 先把 R1 和 V3 的关系摆正：R1 不是重新训练一个新 Base Model
 
 理解 R1 的第一步，是不要把它当成一个从零预训练的新模型。
@@ -708,9 +712,6 @@ R1 真正成熟的地方就在于：
 
 > **它不再坚持“纯 RL 是唯一正确路线”，而是把 SFT 与 RL 按不同职责重新组合。**
 
-![自制解释图：R1 的探索—固化—再对齐训练闭环](../../../figures/explainers/B010-r1-training-loop.svg)
-
-*自制解释图，不是原论文 Figure。原论文 pipeline 告诉你“有哪些阶段”；这张图进一步强调每个阶段的职责：RL 负责探索，rejection sampling / verifier 负责选择，SFT 负责把高质量轨迹固化并重整通用分布，最后的 all-scenario RL 再处理帮助性与安全性。*
 
 ---
 

@@ -54,6 +54,10 @@ MoE 的第一性原理目标不是“让每个 token 计算更多”，而是：
 Dense 模型参数和激活 FLOPs高度绑定；Sparse MoE 则允许大部分参数在当前 token 上不参与计算。
 
 
+![教学解释图：Sparsely-Gated MoE 核心机制](../../../figures/explainers/A032/00-core-mechanism.svg)
+
+*教学解释图｜token 经 gating、Top-k routing、expert dispatch 与 combine 形成稀疏计算主路径。*
+
 # 输入、输出与任务
 
 设输入 token hidden：
