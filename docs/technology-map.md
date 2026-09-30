@@ -29,6 +29,7 @@ flowchart TD
   DSM --> V3
   V3 --> R1["DeepSeek-R1"]
 
+  L3 --> SYS4D
   GRPO["DeepSeekMath / GRPO"] --> V3
   GRPO --> R1
 
@@ -78,6 +79,7 @@ flowchart LR
 
 | 想解决的问题 | 推荐文章 |
 |---|---|
+| TP / PP / CP / FSDP 为什么要同时存在，4D process groups 怎样映射到网络拓扑 | {doc}`4D Parallelism <generated/papers/C/01-distributed-training/C001-4d-parallelism>` |
 | Attention 为什么能替代循环网络 | {doc}`Transformer <generated/papers/A/03-transformer/A013-transformer-attention-is-all-you-need>` |
 | 旋转位置编码到底改变了什么 | {doc}`RoPE <generated/papers/A/03-transformer/A014-roformer-rope>` |
 | 为什么现代 Decoder 常用 RMSNorm | {doc}`RMSNorm <generated/papers/A/03-transformer/A016-rmsnorm>` |

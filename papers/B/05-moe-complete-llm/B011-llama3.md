@@ -969,6 +969,8 @@ $$
 
 其中 DP 采用 FSDP。
 
+这一节先保留模型级视角；如果要把 TP / PP / CP / FSDP 的 tensor 切分、pipeline bubble、global batch、FSDP all-gather / reduce-scatter 与网络拓扑完整推导一遍，可直接跳到 [4D Parallelism：TP、PP、CP、FSDP 到底在切什么？](../../C/01-distributed-training/C001-4d-parallelism.md)。
+
 原论文 Figure 5：
 
 ![Llama 3 原论文 Figure 5：4D parallelism](../../../figures/B011/fig5-4d-parallelism.svg)

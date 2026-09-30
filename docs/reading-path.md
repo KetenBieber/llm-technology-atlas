@@ -85,5 +85,11 @@
 
 FA1 把 HBM traffic 压下去以后，新的瓶颈变成 GPU utilization。本阶段重点理解 thread block / warp / SM、sequence-level parallelism、split-K 与 split-Q 的通信差异，以及为什么 Big-O 与 IO complexity 都不变，仍然可以再获得约 2× 的 kernel speedup。完成后转向 Llama 3 已经明确暴露的 TP / PP / CP / FSDP 多 GPU 并行主线。
 
+## 第十四阶段：分布式训练系统
+
+29. {doc}`4D Parallelism：TP / PP / CP / FSDP <generated/papers/C/01-distributed-training/C001-4d-parallelism>`
+
+这一阶段把 Llama 3 中已经出现的 4D parallelism 真正展开：从训练显存账本出发，分别理解 TP 切 layer 内 tensor、PP 切 layer depth、CP 切 sequence、DP/FSDP 切 data replica 与 model states；再推导 pipeline bubble、global batch、process group、all-gather / reduce-scatter 与 topology-aware placement。读完后，就可以继续进入 Hopper 上的 FlashAttention-3，或继续下钻通信 overlap 与大规模训练 runtime。
+
 
 读到 V3 / R1 时不需要把所有方法重新推一遍；直接使用文章中的站内链接回到 MLA、MoE 或 GRPO 专题，再返回模型主线即可。
