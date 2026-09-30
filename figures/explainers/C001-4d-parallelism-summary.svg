@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+<rect width="1600" height="1200" fill="#ffffff"/>
+<style>
+  .t{font-family:"Noto Sans SC","Microsoft YaHei",Arial,sans-serif;fill:#0f172a}
+  .h{font-size:38px;font-weight:700}
+  .sub{font-size:21px;fill:#475569}
+  .st{font-size:24px;font-weight:700}
+  .b{font-size:20px}
+  .s{font-size:17px;fill:#475569}
+  .box{fill:#f8fafc;stroke:#94a3b8;stroke-width:2}
+  .blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.2}
+  .cyan{fill:#ecfeff;stroke:#06b6d4;stroke-width:2.2}
+  .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.2}
+  .dash{fill:#f8fafc;stroke:#64748b;stroke-width:2;stroke-dasharray:8 7}
+  .arrow{fill:none;stroke:#475569;stroke-width:3;marker-end:url(#arr)}
+  .thin{fill:none;stroke:#94a3b8;stroke-width:2}
+</style>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+</defs>
+<text class="t h" x="800" y="62" text-anchor="middle">4D Parallelism：一个训练任务沿四个正交轴同时切分</text>
+<text class="t sub" x="800" y="102" text-anchor="middle">TP × CP × PP × DP(FSDP) 分别解决 layer 内、context、depth 与 model-state / data-replica 的不同约束</text>
+<rect class="box" x="90" y="150" width="1420" height="175" rx="24"/>
+<text class="t st" x="800" y="195" text-anchor="middle">Global Training Tensor / Graph</text>
+<text class="t b" x="800" y="245" text-anchor="middle">[batch / data replicas] × [sequence] × [layer depth] × [hidden / heads]</text>
+<text class="t s" x="800" y="285" text-anchor="middle">不同维度造成不同 OOM 与通信模式，因此需要不同 parallel group，而不是一种“万能多卡”</text>
+
+<path class="arrow" d="M800 325 V395"/>
+
+<rect class="blue" x="70" y="395" width="330" height="285" rx="22"/>
+<text class="t st" x="235" y="440" text-anchor="middle">TP</text>
+<text class="t b" x="235" y="485" text-anchor="middle">切 hidden / heads / tensor</text>
+<text class="t s" x="235" y="530" text-anchor="middle">同一 layer 多 GPU 协同</text>
+<text class="t s" x="235" y="562" text-anchor="middle">频繁 collective</text>
+<text class="t s" x="235" y="594" text-anchor="middle">适合 NVLink / NVSwitch 域</text>
+<text class="t b" x="235" y="642" text-anchor="middle">典型：all-reduce / all-gather</text>
+
+<rect class="cyan" x="450" y="395" width="330" height="285" rx="22"/>
+<text class="t st" x="615" y="440" text-anchor="middle">CP</text>
+<text class="t b" x="615" y="485" text-anchor="middle">切 sequence / context</text>
+<text class="t s" x="615" y="530" text-anchor="middle">每卡只留部分 token activation</text>
+<text class="t s" x="615" y="562" text-anchor="middle">local Q + global KV exchange</text>
+<text class="t s" x="615" y="594" text-anchor="middle">长上下文时尤其关键</text>
+<text class="t b" x="615" y="642" text-anchor="middle">典型：ring / all-gather KV</text>
+
+<rect class="deep" x="830" y="395" width="330" height="285" rx="22"/>
+<text class="t st" x="995" y="440" text-anchor="middle">PP</text>
+<text class="t b" x="995" y="485" text-anchor="middle">切 layer depth</text>
+<text class="t s" x="995" y="530" text-anchor="middle">不同 stage 持有不同连续层</text>
+<text class="t s" x="995" y="562" text-anchor="middle">microbatch 流水化</text>
+<text class="t s" x="995" y="594" text-anchor="middle">代价：bubble + activation transfer</text>
+<text class="t b" x="995" y="642" text-anchor="middle">典型：point-to-point</text>
+
+<rect class="blue" x="1210" y="395" width="320" height="285" rx="22"/>
+<text class="t st" x="1370" y="440" text-anchor="middle">DP / FSDP</text>
+<text class="t b" x="1370" y="485" text-anchor="middle">切 batch / model states</text>
+<text class="t s" x="1370" y="530" text-anchor="middle">不同 replica 处理不同样本</text>
+<text class="t s" x="1370" y="562" text-anchor="middle">FSDP 分片 param/grad/optimizer</text>
+<text class="t s" x="1370" y="594" text-anchor="middle">按 layer 生命周期 gather / shard</text>
+<text class="t b" x="1370" y="642" text-anchor="middle">all-gather / reduce-scatter</text>
+
+<rect class="box" x="140" y="780" width="1320" height="185" rx="24"/>
+<text class="t st" x="800" y="825" text-anchor="middle">一个 GPU Rank 同时属于四类 Process Group</text>
+<text class="t b" x="800" y="872" text-anchor="middle">N_GPU = t × c × p × d</text>
+<text class="t b" x="800" y="914" text-anchor="middle">global batch 只随 DP degree × microbatch × accumulation 增长；TP / CP / PP 不复制独立数据样本</text>
+
+<rect class="cyan" x="250" y="1020" width="1100" height="95" rx="20"/>
+<text class="t st" x="800" y="1062" text-anchor="middle">真正的系统设计 = 切分维度 + collective 生命周期 + 物理网络拓扑三者共同匹配</text>
+</svg>

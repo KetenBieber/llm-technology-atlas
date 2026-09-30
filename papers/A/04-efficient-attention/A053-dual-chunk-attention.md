@@ -81,6 +81,13 @@ $$
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A053-dual-chunk-attention](../../../figures/explainers/A053-dual-chunk-attention-summary.svg)
+
+> **教学总结图**：用三类 chunk relation 的相对位置重映射、三路 Attention 与全局 softmax merge 概括 DCA 的整体机制。
+
 # 一、先把问题从 RoPE frequency 换成 Relative-Position Matrix
 
 ## 1. 标准 RoPE 最终到底把什么交给 Attention？

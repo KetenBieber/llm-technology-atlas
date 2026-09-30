@@ -65,6 +65,13 @@
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A057-flashattention3](../../../figures/explainers/A057-flashattention3-summary.svg)
+
+> **教学总结图**：把 Hopper 上的 TMA producer、WGMMA consumers、softmax overlap 与 FP8 accuracy path 合并成 FA3 的异步执行总图。
+
 # 一、先把三代 FlashAttention 的瓶颈迁移串起来
 
 理解 FA3 最容易犯的错误，是把它看成：

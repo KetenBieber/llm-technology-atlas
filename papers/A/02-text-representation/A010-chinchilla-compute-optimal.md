@@ -112,6 +112,13 @@ $$
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A010-chinchilla-compute-optimal](../../../figures/explainers/A010-chinchilla-compute-optimal-summary.svg)
+
+> **教学总结图**：固定 FLOPs 后同时权衡模型规模 N 与训练 Token D，并展示三种估计路径如何导向 compute-optimal 配置。
+
 ## 1. 先把问题写对：Chinchilla 研究的不是“模型多大最好”
 
 如果没有约束，当然可以说：

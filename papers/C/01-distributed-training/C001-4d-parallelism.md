@@ -40,6 +40,13 @@
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：C001-4d-parallelism](../../../figures/explainers/C001-4d-parallelism-summary.svg)
+
+> **教学总结图**：统一展示 TP、CP、PP、DP/FSDP 分别切分训练任务的哪个维度、引入什么通信，以及如何组合成 4D process groups。
+
 # 一、先从单卡训练开始：显存到底花在哪里？
 
 设模型有：

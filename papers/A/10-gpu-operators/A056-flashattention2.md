@@ -82,6 +82,13 @@ FlashAttention-2
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A056-flashattention2](../../../figures/explainers/A056-flashattention2-summary.svg)
+
+> **教学总结图**：从 non-matmul FLOPs、sequence-level block parallelism 与 split-Q 三个方向总结 FlashAttention-2 的 work partition 优化。
+
 # 一、从 FA1 的“成功”开始：为什么 30–50% Peak 仍然不够？
 
 ## 1. FA1 已经完成了最关键的算法重构

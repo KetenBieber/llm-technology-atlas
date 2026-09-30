@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+<rect width="1600" height="1200" fill="#ffffff"/>
+<style>
+  .t{font-family:"Noto Sans SC","Microsoft YaHei",Arial,sans-serif;fill:#0f172a}
+  .h{font-size:38px;font-weight:700}
+  .sub{font-size:21px;fill:#475569}
+  .st{font-size:24px;font-weight:700}
+  .b{font-size:20px}
+  .s{font-size:17px;fill:#475569}
+  .box{fill:#f8fafc;stroke:#94a3b8;stroke-width:2}
+  .blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.2}
+  .cyan{fill:#ecfeff;stroke:#06b6d4;stroke-width:2.2}
+  .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.2}
+  .dash{fill:#f8fafc;stroke:#64748b;stroke-width:2;stroke-dasharray:8 7}
+  .arrow{fill:none;stroke:#475569;stroke-width:3;marker-end:url(#arr)}
+  .thin{fill:none;stroke:#94a3b8;stroke-width:2}
+</style>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+</defs>
+<text class="t h" x="800" y="62" text-anchor="middle">Chinchilla：固定 FLOPs 下重新分配模型规模与训练 Token</text>
+<text class="t sub" x="800" y="102" text-anchor="middle">三套独立实验方法共同指向：N 与 D 应更接近同步扩展</text>
+<rect class="blue" x="70" y="170" width="350" height="210" rx="22"/>
+<text class="t st" x="245" y="215" text-anchor="middle">Fixed Training Budget</text>
+<text class="t b" x="245" y="264" text-anchor="middle">C ≈ 6 N D</text>
+<text class="t s" x="245" y="305" text-anchor="middle">N 变大 → 每 token 更贵</text>
+<text class="t s" x="245" y="334" text-anchor="middle">D 变大 → 模型看到更多数据</text>
+
+<path class="arrow" d="M420 275 H515"/>
+
+<rect class="box" x="515" y="145" width="520" height="260" rx="22"/>
+<text class="t st" x="775" y="190" text-anchor="middle">三种互相独立的估计路径</text>
+<rect class="blue" x="550" y="225" width="145" height="130" rx="16"/>
+<text class="t b" x="622" y="265" text-anchor="middle">Approach 1</text>
+<text class="t s" x="622" y="300" text-anchor="middle">training-curve</text>
+<text class="t s" x="622" y="326" text-anchor="middle">envelope</text>
+<rect class="cyan" x="710" y="225" width="145" height="130" rx="16"/>
+<text class="t b" x="782" y="265" text-anchor="middle">Approach 2</text>
+<text class="t s" x="782" y="300" text-anchor="middle">IsoFLOP</text>
+<text class="t s" x="782" y="326" text-anchor="middle">valley</text>
+<rect class="deep" x="870" y="225" width="130" height="130" rx="16"/>
+<text class="t b" x="935" y="265" text-anchor="middle">Approach 3</text>
+<text class="t s" x="935" y="300" text-anchor="middle">parametric</text>
+<text class="t s" x="935" y="326" text-anchor="middle">loss fit</text>
+
+<path class="arrow" d="M1035 275 H1130"/>
+
+<rect class="cyan" x="1130" y="150" width="400" height="250" rx="22"/>
+<text class="t st" x="1330" y="195" text-anchor="middle">Compute-Optimal Frontier</text>
+<text class="t b" x="1330" y="245" text-anchor="middle">N_opt ∝ C^(≈0.46–0.50)</text>
+<text class="t b" x="1330" y="286" text-anchor="middle">D_opt ∝ C^(≈0.50–0.54)</text>
+<line class="thin" x1="1180" y1="315" x2="1480" y2="315"/>
+<text class="t s" x="1330" y="349" text-anchor="middle">核心：模型与数据更接近同步增长</text>
+<text class="t s" x="1330" y="376" text-anchor="middle">不是“只把模型做大”</text>
+
+<rect class="deep" x="125" y="530" width="610" height="300" rx="24"/>
+<text class="t st" x="430" y="575" text-anchor="middle">约束优化的平衡条件</text>
+<text class="t b" x="430" y="630" text-anchor="middle">L(N,D)=E + A/N^α + B/D^β</text>
+<text class="t b" x="430" y="685" text-anchor="middle">subject to  C ≈ 6ND</text>
+<text class="t b" x="430" y="745" text-anchor="middle">最优点：αA N^−α = βB D^−β</text>
+<text class="t s" x="430" y="790" text-anchor="middle">容量误差与数据不足误差在边际收益上达到平衡</text>
+
+<rect class="blue" x="865" y="530" width="610" height="300" rx="24"/>
+<text class="t st" x="1170" y="575" text-anchor="middle">高成本验证：Chinchilla</text>
+<text class="t b" x="1170" y="630" text-anchor="middle">70B parameters / 1.4T tokens</text>
+<text class="t b" x="1170" y="682" text-anchor="middle">对比 Gopher：280B / ~300B tokens</text>
+<path class="arrow" d="M1170 710 V750"/>
+<text class="t s" x="1170" y="788" text-anchor="middle">更小但训练更充分 → 更好的 training-compute efficiency</text>
+
+<rect class="box" x="120" y="930" width="1360" height="150" rx="22"/>
+<text class="t st" x="800" y="970" text-anchor="middle">工程含义</text>
+<text class="t b" x="800" y="1012" text-anchor="middle">“20 tokens/parameter”是特定实验区间的近似，不是普适常数；现代模型还会因 inference 成本、数据上限与 reuse 策略选择 overtraining</text>
+<text class="t s" x="800" y="1050" text-anchor="middle">Chinchilla 修正的是固定 training compute 的 N/D allocation，而不是否定 scaling-law 方法本身</text>
+</svg>

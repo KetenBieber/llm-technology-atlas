@@ -95,6 +95,13 @@ FlashAttention
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A055-flashattention](../../../figures/explainers/A055-flashattention-summary.svg)
+
+> **教学总结图**：将 HBM/SRAM tiling、online softmax、输出累积与 backward recomputation 组织成 FlashAttention 的 IO-aware 总体架构。
+
 # 一、先把一个常见误区拆掉：GPU 快，不代表“算术”是最贵的
 
 ## 1. 现代 GPU 至少有两类我们必须区分的资源

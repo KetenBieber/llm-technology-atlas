@@ -94,6 +94,13 @@ YaRN 的价值就在于：
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A018-yarn](../../../figures/explainers/A018-yarn-summary.svg)
+
+> **教学总结图**：把 frequency-selective RoPE interpolation 与 attention magnitude scaling 合并到一张长上下文外推总览图中。
+
 ## 1. 先回到 RoPE：每个 head dimension 其实是一组不同频率的二维时钟
 
 设 attention head dimension：

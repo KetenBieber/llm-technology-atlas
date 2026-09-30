@@ -52,6 +52,13 @@ DPO 的答案是：可以，而且在一组明确假设下，这不是经验技�
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A052-dpo](../../../figures/explainers/A052-dpo-summary.svg)
+
+> **教学总结图**：从 preference pair、policy/reference log-ratio 到 implicit reward margin 与 DPO logistic loss，展示 RLHF 消元链。
+
 ## 1. 从问题场景开始：Preference Learning 缺的究竟是什么？
 
 给定 prompt：

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+<rect width="1600" height="1200" fill="#ffffff"/>
+<style>
+  .t{font-family:"Noto Sans SC","Microsoft YaHei",Arial,sans-serif;fill:#0f172a}
+  .h{font-size:38px;font-weight:700}
+  .sub{font-size:21px;fill:#475569}
+  .st{font-size:24px;font-weight:700}
+  .b{font-size:20px}
+  .s{font-size:17px;fill:#475569}
+  .box{fill:#f8fafc;stroke:#94a3b8;stroke-width:2}
+  .blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.2}
+  .cyan{fill:#ecfeff;stroke:#06b6d4;stroke-width:2.2}
+  .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.2}
+  .dash{fill:#f8fafc;stroke:#64748b;stroke-width:2;stroke-dasharray:8 7}
+  .arrow{fill:none;stroke:#475569;stroke-width:3;marker-end:url(#arr)}
+  .thin{fill:none;stroke:#94a3b8;stroke-width:2}
+</style>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+</defs>
+<text class="t h" x="800" y="62" text-anchor="middle">FlashAttention-2：在 IO 已优化后继续优化 GPU Work Partition</text>
+<text class="t sub" x="800" y="102" text-anchor="middle">瓶颈从 HBM traffic 迁移到 non-matmul overhead、thread-block occupancy 与 warp communication</text>
+<rect class="dash" x="70" y="160" width="360" height="270" rx="22"/>
+<text class="t st" x="250" y="205" text-anchor="middle">FA1 已解决</text>
+<text class="t b" x="250" y="255" text-anchor="middle">HBM ↔ SRAM IO</text>
+<text class="t b" x="250" y="297" text-anchor="middle">online softmax</text>
+<text class="t b" x="250" y="339" text-anchor="middle">backward recomputation</text>
+<text class="t s" x="250" y="390" text-anchor="middle">但 GPU 仍未充分利用</text>
+
+<path class="arrow" d="M430 295 H520"/>
+
+<rect class="box" x="520" y="135" width="1010" height="325" rx="24"/>
+<text class="t st" x="1025" y="182" text-anchor="middle">FA2 的三条优化轴</text>
+
+<rect class="blue" x="565" y="225" width="285" height="185" rx="18"/>
+<text class="t b" x="707" y="263" text-anchor="middle">① 少做昂贵 non-matmul</text>
+<text class="t s" x="707" y="307" text-anchor="middle">简化 softmax bookkeeping</text>
+<text class="t s" x="707" y="339" text-anchor="middle">保存 logsumexp 即可</text>
+<text class="t s" x="707" y="371" text-anchor="middle">让 Tensor Core 工作占比更高</text>
+
+<rect class="cyan" x="885" y="225" width="285" height="185" rx="18"/>
+<text class="t b" x="1027" y="263" text-anchor="middle">② Sequence Parallel Blocks</text>
+<text class="t s" x="1027" y="307" text-anchor="middle">并行维度从 batch×heads</text>
+<text class="t s" x="1027" y="339" text-anchor="middle">扩展到 Q sequence blocks</text>
+<text class="t s" x="1027" y="371" text-anchor="middle">小 batch / 长序列也能占满 SM</text>
+
+<rect class="deep" x="1205" y="225" width="280" height="185" rx="18"/>
+<text class="t b" x="1345" y="263" text-anchor="middle">③ split-K → split-Q</text>
+<text class="t s" x="1345" y="307" text-anchor="middle">每个 warp 拥有不同 Q rows</text>
+<text class="t s" x="1345" y="339" text-anchor="middle">避免 partial O reduction</text>
+<text class="t s" x="1345" y="371" text-anchor="middle">减少 SMEM 通信与同步</text>
+
+<path class="arrow" d="M1025 460 V555"/>
+
+<rect class="blue" x="250" y="555" width="1100" height="260" rx="24"/>
+<text class="t st" x="800" y="600" text-anchor="middle">新的执行组织：更清晰的 Work Ownership</text>
+<text class="t b" x="800" y="655" text-anchor="middle">CTA：按 Q row blocks（forward）/ K,V column blocks（backward）分工</text>
+<text class="t b" x="800" y="700" text-anchor="middle">Warp：按 Q slices 分工，尽量在 registers 中独立累积 output</text>
+<text class="t b" x="800" y="745" text-anchor="middle">SM：更多独立 blocks 可调度 → occupancy / utilization 提升</text>
+<text class="t s" x="800" y="785" text-anchor="middle">算法仍是 exact attention；主要 IO 思想与 asymptotic complexity 不变</text>
+
+<rect class="cyan" x="170" y="930" width="1260" height="150" rx="22"/>
+<text class="t st" x="800" y="972" text-anchor="middle">FA2 的关键不是“换了 attention 公式”，而是把同样的工作分给 GPU 的方式改对</text>
+<text class="t b" x="800" y="1018" text-anchor="middle">瓶颈迁移：IO → utilization / synchronization；这也解释了为什么下一代 FA3 会继续转向 Hopper 异步流水</text>
+</svg>

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+<rect width="1600" height="1200" fill="#ffffff"/>
+<style>
+  .t{font-family:"Noto Sans SC","Microsoft YaHei",Arial,sans-serif;fill:#0f172a}
+  .h{font-size:38px;font-weight:700}
+  .sub{font-size:21px;fill:#475569}
+  .st{font-size:24px;font-weight:700}
+  .b{font-size:20px}
+  .s{font-size:17px;fill:#475569}
+  .box{fill:#f8fafc;stroke:#94a3b8;stroke-width:2}
+  .blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.2}
+  .cyan{fill:#ecfeff;stroke:#06b6d4;stroke-width:2.2}
+  .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.2}
+  .dash{fill:#f8fafc;stroke:#64748b;stroke-width:2;stroke-dasharray:8 7}
+  .arrow{fill:none;stroke:#475569;stroke-width:3;marker-end:url(#arr)}
+  .thin{fill:none;stroke:#94a3b8;stroke-width:2}
+</style>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+</defs>
+<text class="t h" x="800" y="62" text-anchor="middle">Kaplan Scaling Laws：把 LLM 训练变成可外推的资源规划</text>
+<text class="t sub" x="800" y="102" text-anchor="middle">经验幂律连接模型规模 N、数据量 D、训练计算 C 与最终 loss</text>
+<rect class="blue" x="70" y="170" width="330" height="300" rx="22"/>
+<text class="t st" x="235" y="215" text-anchor="middle">Controlled Experiments</text>
+<text class="t b" x="235" y="260" text-anchor="middle">模型规模 N</text>
+<text class="t b" x="235" y="302" text-anchor="middle">训练数据 D</text>
+<text class="t b" x="235" y="344" text-anchor="middle">训练计算 C</text>
+<text class="t b" x="235" y="386" text-anchor="middle">batch / steps / context</text>
+<text class="t s" x="235" y="438" text-anchor="middle">在“其他资源不成为瓶颈”时</text>
+
+<path class="arrow" d="M400 320 H500"/>
+
+<rect class="cyan" x="500" y="165" width="430" height="310" rx="22"/>
+<text class="t st" x="715" y="210" text-anchor="middle">Fit Empirical Power Laws</text>
+<text class="t b" x="715" y="258" text-anchor="middle">L(N) ≈ L∞ + aN^−α</text>
+<text class="t b" x="715" y="302" text-anchor="middle">L(D) ≈ L∞ + bD^−β</text>
+<text class="t b" x="715" y="346" text-anchor="middle">L(C) ≈ L∞ + cC^−γ</text>
+<line class="thin" x1="550" y1="373" x2="880" y2="373"/>
+<text class="t s" x="715" y="408" text-anchor="middle">log-log 近似直线 → 小规模实验可外推</text>
+<text class="t s" x="715" y="438" text-anchor="middle">重点是稳定 empirical regularity，不是理论定理</text>
+
+<path class="arrow" d="M930 320 H1030"/>
+
+<rect class="deep" x="1030" y="165" width="500" height="310" rx="22"/>
+<text class="t st" x="1280" y="210" text-anchor="middle">Engineering Decisions</text>
+<text class="t b" x="1280" y="258" text-anchor="middle">预测更大训练 run 的 loss</text>
+<text class="t b" x="1280" y="300" text-anchor="middle">识别 model / data bottleneck</text>
+<text class="t b" x="1280" y="342" text-anchor="middle">估计 critical batch / sample efficiency</text>
+<text class="t b" x="1280" y="384" text-anchor="middle">固定 compute 下规划 N 与 D</text>
+<text class="t s" x="1280" y="432" text-anchor="middle">历史结论：新增 compute 更偏向放大 N，并提前停训</text>
+
+<rect class="box" x="90" y="570" width="670" height="340" rx="24"/>
+<text class="t st" x="425" y="620" text-anchor="middle">长期保留下来的贡献</text>
+<text class="t b" x="150" y="680">• loss 随 N / D / C 呈可拟合 scaling relation</text>
+<text class="t b" x="150" y="730">• 小实验可以帮助大 run 预算与架构规划</text>
+<text class="t b" x="150" y="780">• 数据瓶颈与模型容量瓶颈可分开研究</text>
+<text class="t b" x="150" y="830">• 大模型在相同 loss 区间可表现出更高 sample efficiency</text>
+<text class="t s" x="150" y="875">这套“先测 scaling，再决定旗舰训练”的范式延续至今</text>
+
+<rect class="dash" x="840" y="570" width="670" height="340" rx="24"/>
+<text class="t st" x="1175" y="620" text-anchor="middle">后来被 Chinchilla 修正的部分</text>
+<text class="t b" x="900" y="684">Kaplan compute-optimal estimate：</text>
+<text class="t b" x="940" y="730">N_opt ∝ C^0.73</text>
+<text class="t b" x="940" y="772">D_opt ∝ C^0.27</text>
+<path class="arrow" d="M1175 800 V842"/>
+<text class="t b" x="1175" y="882" text-anchor="middle">Chinchilla：N 与 D 应更接近同步扩展</text>
+
+<rect class="cyan" x="250" y="990" width="1100" height="95" rx="20"/>
+<text class="t st" x="800" y="1032" text-anchor="middle">核心价值：Scaling Law 让“训练多大、喂多少数据、花多少算力”从经验拍脑袋变成可测量的工程外推问题</text>
+</svg>

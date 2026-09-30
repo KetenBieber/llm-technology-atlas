@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+<rect width="1600" height="1200" fill="#ffffff"/>
+<style>
+  .t{font-family:"Noto Sans SC","Microsoft YaHei",Arial,sans-serif;fill:#0f172a}
+  .h{font-size:38px;font-weight:700}
+  .sub{font-size:21px;fill:#475569}
+  .st{font-size:24px;font-weight:700}
+  .b{font-size:20px}
+  .s{font-size:17px;fill:#475569}
+  .box{fill:#f8fafc;stroke:#94a3b8;stroke-width:2}
+  .blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.2}
+  .cyan{fill:#ecfeff;stroke:#06b6d4;stroke-width:2.2}
+  .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.2}
+  .dash{fill:#f8fafc;stroke:#64748b;stroke-width:2;stroke-dasharray:8 7}
+  .arrow{fill:none;stroke:#475569;stroke-width:3;marker-end:url(#arr)}
+  .thin{fill:none;stroke:#94a3b8;stroke-width:2}
+</style>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+</defs>
+<text class="t h" x="800" y="62" text-anchor="middle">DPO：从 Preference Pair 直接得到 Policy 更新</text>
+<text class="t sub" x="800" y="102" text-anchor="middle">KL-Regularized RLHF 的 closed-form policy 让 reward 可以被 policy/reference log-ratio 消元</text>
+<rect class="blue" x="70" y="175" width="300" height="180" rx="22"/>
+<text class="t st" x="220" y="218" text-anchor="middle">Preference Data</text>
+<text class="t b" x="220" y="260" text-anchor="middle">prompt x</text>
+<text class="t b" x="220" y="296" text-anchor="middle">preferred y_w</text>
+<text class="t b" x="220" y="332" text-anchor="middle">rejected y_l</text>
+
+<path class="arrow" d="M370 265 H470"/>
+
+<rect class="cyan" x="470" y="150" width="330" height="230" rx="22"/>
+<text class="t st" x="635" y="193" text-anchor="middle">两套概率视角</text>
+<text class="t b" x="635" y="240" text-anchor="middle">Policy  πθ(y|x)</text>
+<text class="t b" x="635" y="278" text-anchor="middle">Reference  πref(y|x)</text>
+<line class="thin" x1="510" y1="302" x2="760" y2="302"/>
+<text class="t s" x="635" y="334" text-anchor="middle">分别计算 winner / loser 的</text>
+<text class="t s" x="635" y="360" text-anchor="middle">log πθ − log πref</text>
+
+<path class="arrow" d="M800 265 H900"/>
+
+<rect class="deep" x="900" y="145" width="620" height="240" rx="22"/>
+<text class="t st" x="1210" y="190" text-anchor="middle">Implicit Reward Margin</text>
+<text class="t b" x="1210" y="238" text-anchor="middle">β[(log πθ(y_w) − log πref(y_w))</text>
+<text class="t b" x="1210" y="274" text-anchor="middle">− (log πθ(y_l) − log πref(y_l))]</text>
+<line class="thin" x1="975" y1="302" x2="1445" y2="302"/>
+<text class="t s" x="1210" y="334" text-anchor="middle">Bradley–Terry 只关心 reward difference</text>
+<text class="t s" x="1210" y="360" text-anchor="middle">因此未知 partition function Z(x) 自动相消</text>
+
+<path class="arrow" d="M1210 385 V475"/>
+
+<rect class="blue" x="880" y="475" width="660" height="180" rx="22"/>
+<text class="t st" x="1210" y="520" text-anchor="middle">Pairwise Logistic Objective</text>
+<text class="t b" x="1210" y="565" text-anchor="middle">L_DPO = − log σ(reward margin)</text>
+<text class="t s" x="1210" y="606" text-anchor="middle">提高 preferred 的相对优势，同时受 reference policy 约束</text>
+<text class="t s" x="1210" y="634" text-anchor="middle">token-level 参数通过 sequence log-probability 的求和获得梯度</text>
+
+<path class="arrow" d="M880 565 H760"/>
+
+<rect class="cyan" x="460" y="475" width="300" height="180" rx="22"/>
+<text class="t st" x="610" y="520" text-anchor="middle">直接更新 πθ</text>
+<text class="t b" x="610" y="563" text-anchor="middle">No separate RM</text>
+<text class="t b" x="610" y="598" text-anchor="middle">No PPO rollout</text>
+<text class="t s" x="610" y="632" text-anchor="middle">仍依赖 preference dataset</text>
+
+<rect class="dash" x="90" y="465" width="300" height="205" rx="20"/>
+<text class="t st" x="240" y="510" text-anchor="middle">理论来源</text>
+<text class="t b" x="240" y="551" text-anchor="middle">maxπ E[r] − β KL</text>
+<path class="arrow" d="M240 575 V615"/>
+<text class="t s" x="240" y="648" text-anchor="middle">最优 policy closed form</text>
+
+<rect class="box" x="110" y="790" width="1380" height="245" rx="24"/>
+<text class="t st" x="800" y="840" text-anchor="middle">DPO 的核心不是“更简单的 PPO”，而是把 reward model 隐式吸收到 policy/reference 比值中</text>
+<text class="t b" x="180" y="900">保留：</text><text class="t b" x="280" y="900">pairwise preference、KL regularization、relative reward ordering</text>
+<text class="t b" x="180" y="945">消去：</text><text class="t b" x="280" y="945">显式 Reward Model、在线 RL rollout、Critic / Advantage machinery</text>
+<text class="t b" x="180" y="990">边界：</text><text class="t b" x="280" y="990">“与 RLHF 等价”只在相应建模假设与目标推导下成立，不等于所有 RLHF 场景都可替换</text>
+</svg>

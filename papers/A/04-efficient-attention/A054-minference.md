@@ -80,6 +80,13 @@ MInference
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A054-minference](../../../figures/explainers/A054-minference-summary.svg)
+
+> **教学总结图**：从 dense prefill 瓶颈，经 per-head pattern search 与动态 sparse indices，到 GPU-friendly sparse kernel，展示 MInference 端到端路径。
+
 # 一、先区分 Prefill 与 Decode：这是理解 MInference 的起点
 
 ## 1. 一次 LLM 请求其实有两个完全不同的阶段

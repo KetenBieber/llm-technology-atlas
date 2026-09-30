@@ -86,6 +86,13 @@ Kaplan 2020
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A009-kaplan-scaling-laws](../../../figures/explainers/A009-kaplan-scaling-laws-summary.svg)
+
+> **教学总结图**：从受控实验拟合 N/D/C 幂律到工程外推，概括 Kaplan Scaling Laws 的资源规划逻辑及其边界。
+
 ## 1. 这篇论文真正面对的工程问题是什么？
 
 假设你现在有一笔训练预算。

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+<rect width="1600" height="1200" fill="#ffffff"/>
+<style>
+  .t{font-family:"Noto Sans SC","Microsoft YaHei",Arial,sans-serif;fill:#0f172a}
+  .h{font-size:38px;font-weight:700}
+  .sub{font-size:21px;fill:#475569}
+  .st{font-size:24px;font-weight:700}
+  .b{font-size:20px}
+  .s{font-size:17px;fill:#475569}
+  .box{fill:#f8fafc;stroke:#94a3b8;stroke-width:2}
+  .blue{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.2}
+  .cyan{fill:#ecfeff;stroke:#06b6d4;stroke-width:2.2}
+  .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.2}
+  .dash{fill:#f8fafc;stroke:#64748b;stroke-width:2;stroke-dasharray:8 7}
+  .arrow{fill:none;stroke:#475569;stroke-width:3;marker-end:url(#arr)}
+  .thin{fill:none;stroke:#94a3b8;stroke-width:2}
+</style>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#475569"/></marker>
+</defs>
+<text class="t h" x="800" y="62" text-anchor="middle">FlashAttention-3：让 Hopper 的搬运、GEMM 与 Softmax 真正异步重叠</text>
+<text class="t sub" x="800" y="102" text-anchor="middle">FA1 少搬数据 → FA2 改 work partition → FA3 用 TMA / WGMMA / warp specialization 构造 software pipeline</text>
+<rect class="blue" x="70" y="160" width="300" height="220" rx="22"/>
+<text class="t st" x="220" y="205" text-anchor="middle">HBM / GMEM</text>
+<text class="t b" x="220" y="255" text-anchor="middle">Q, K_j, V_j tiles</text>
+<text class="t s" x="220" y="310" text-anchor="middle">下一块数据不必等当前</text>
+<text class="t s" x="220" y="340" text-anchor="middle">GEMM/softmax 完成才开始搬</text>
+
+<path class="arrow" d="M370 270 H455"/>
+
+<rect class="cyan" x="455" y="145" width="310" height="250" rx="22"/>
+<text class="t st" x="610" y="190" text-anchor="middle">Producer Warpgroup</text>
+<text class="t b" x="610" y="242" text-anchor="middle">TMA async loads</text>
+<text class="t b" x="610" y="283" text-anchor="middle">circular SMEM stages</text>
+<text class="t s" x="610" y="335" text-anchor="middle">barrier 只保留真实依赖</text>
+<text class="t s" x="610" y="365" text-anchor="middle">producer 少占 registers</text>
+
+<path class="arrow" d="M765 270 H850"/>
+
+<rect class="deep" x="850" y="130" width="680" height="280" rx="22"/>
+<text class="t st" x="1190" y="175" text-anchor="middle">Consumer Pipeline</text>
+<rect class="blue" x="895" y="220" width="180" height="140" rx="16"/>
+<text class="t b" x="985" y="258" text-anchor="middle">WGMMA</text>
+<text class="t s" x="985" y="298" text-anchor="middle">QKᵀ GEMM</text>
+<text class="t s" x="985" y="330" text-anchor="middle">Tensor Cores</text>
+<rect class="cyan" x="1095" y="220" width="180" height="140" rx="16"/>
+<text class="t b" x="1185" y="258" text-anchor="middle">Softmax</text>
+<text class="t s" x="1185" y="298" text-anchor="middle">rowmax / exp</text>
+<text class="t s" x="1185" y="330" text-anchor="middle">CUDA / SFU</text>
+<rect class="blue" x="1295" y="220" width="190" height="140" rx="16"/>
+<text class="t b" x="1390" y="258" text-anchor="middle">WGMMA</text>
+<text class="t s" x="1390" y="298" text-anchor="middle">P V GEMM</text>
+<text class="t s" x="1390" y="330" text-anchor="middle">async issue</text>
+
+<rect class="box" x="130" y="520" width="770" height="300" rx="24"/>
+<text class="t st" x="515" y="565" text-anchor="middle">Ping-Pong / 2-Stage Overlap</text>
+<text class="t b" x="515" y="615" text-anchor="middle">TMA load K/V_(j+1)</text>
+<text class="t b" x="515" y="657" text-anchor="middle">∥ WGMMA on tile j</text>
+<text class="t b" x="515" y="699" text-anchor="middle">∥ softmax / rescale on tile j−1</text>
+<text class="t s" x="515" y="754" text-anchor="middle">目标不是每个阶段单独更快，而是减少硬件单元互等</text>
+
+<rect class="cyan" x="960" y="520" width="510" height="300" rx="24"/>
+<text class="t st" x="1215" y="565" text-anchor="middle">FP8 Accuracy Path</text>
+<text class="t b" x="1215" y="615" text-anchor="middle">block quantization</text>
+<text class="t b" x="1215" y="657" text-anchor="middle">k-major layout / in-kernel transpose</text>
+<text class="t b" x="1215" y="699" text-anchor="middle">incoherent processing (Hadamard-like)</text>
+<text class="t s" x="1215" y="754" text-anchor="middle">摊平 outlier，同时保持 QKᵀ 结构可恢复</text>
+
+<rect class="deep" x="170" y="930" width="1260" height="155" rx="24"/>
+<text class="t st" x="800" y="974" text-anchor="middle">FA3 的核心：把 Attention 的依赖图改写成 Hopper 可并发执行的 pipeline</text>
+<text class="t b" x="800" y="1022" text-anchor="middle">Asynchrony 提升硬件利用率；FP8 路径再解决低精度 layout 与数值稳定性</text>
+<text class="t s" x="800" y="1058" text-anchor="middle">优化轴已经从“IO”与“分工”进一步迁移到 heterogeneous execution units 的重叠调度</text>
+</svg>
