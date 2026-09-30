@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960">
+<rect width="1440" height="960" fill="#f8fafc"/>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#475569"/></marker>
+  <style>
+    .tt{font:700 34px Arial,'Microsoft YaHei',sans-serif;fill:#0f172a}
+    .sub{font:500 18px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+    .h{font:700 22px Arial,'Microsoft YaHei',sans-serif;fill:#0f172a}
+    .t{font:500 17px Arial,'Microsoft YaHei',sans-serif;fill:#1e293b}
+    .s{font:500 15px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+    .b{fill:#ffffff;stroke:#94a3b8;stroke-width:2;rx:18}
+    .bl{fill:#dbeafe;stroke:#3b82f6;stroke-width:2;rx:18}
+    .cy{fill:#cffafe;stroke:#06b6d4;stroke-width:2;rx:18}
+    .sl{fill:#f1f5f9;stroke:#94a3b8;stroke-width:2;rx:18}
+    .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.4;rx:18}
+    .a{stroke:#475569;stroke-width:2.7;fill:none;marker-end:url(#arr)}
+    .d{stroke:#64748b;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#arr)}
+  </style>
+</defs>
+<text x="64" y="62" class="tt">Sparsely-Gated MoE：条件计算如何把“模型容量”与“每 token FLOPs”解耦</text>
+<text x="64" y="96" class="sub">Router 只激活少量 experts；真正难点不是稀疏本身，而是路由探索、负载均衡、容量约束与分布式 dispatch。</text>
+<rect x="60" y="170" width="245" height="120" class="bl"/>
+<text x="95" y="215" class="h">Token hidden state</text>
+<text x="95" y="252" class="t">x ∈ R^d</text>
+
+<rect x="390" y="150" width="290" height="160" class="deep"/>
+<text x="425" y="195" class="h">Noisy Top-k Router</text>
+<text x="425" y="232" class="t">score → noise → Top-k</text>
+<text x="425" y="267" class="s">只让少数 expert 接收该 token</text>
+<path d="M305 230 H390" class="a"/>
+
+<rect x="780" y="125" width="250" height="115" class="cy"/>
+<rect x="780" y="275" width="250" height="115" class="cy"/>
+<rect x="1100" y="125" width="250" height="115" class="cy"/>
+<rect x="1100" y="275" width="250" height="115" class="cy"/>
+<text x="855" y="170" class="h">Expert 1</text><text x="820" y="205" class="s">FFN 子网络</text>
+<text x="855" y="320" class="h">Expert 2</text><text x="820" y="355" class="s">FFN 子网络</text>
+<text x="1175" y="170" class="h">Expert 3</text><text x="1140" y="205" class="s">FFN 子网络</text>
+<text x="1175" y="320" class="h">Expert N</text><text x="1140" y="355" class="s">FFN 子网络</text>
+<path d="M680 205 C725 180 740 180 780 180" class="a"/>
+<path d="M680 225 C730 270 740 320 780 330" class="a"/>
+<path d="M680 225 C850 80 1010 100 1100 180" class="d"/>
+<path d="M680 245 C900 430 1000 390 1100 330" class="d"/>
+
+<rect x="870" y="455" width="360" height="120" class="bl"/>
+<text x="910" y="500" class="h">Weighted Combine</text>
+<text x="910" y="537" class="t">Σ gate_i · Expert_i(x)</text>
+<path d="M905 240 V455" class="d"/><path d="M1225 390 C1225 430 1170 450 1160 455" class="d"/>
+
+<rect x="70" y="465" width="650" height="315" class="sl"/>
+<text x="110" y="510" class="h">训练 / 系统稳定性约束</text>
+<text x="120" y="555" class="t">Importance loss：避免 gate probability mass 长期偏向少数 experts</text>
+<text x="120" y="595" class="t">Load loss：约束“实际接收 token 数”而不仅是概率</text>
+<text x="120" y="635" class="t">Capacity：每个 expert 可接收 token 数有上限，溢出会 drop / bypass</text>
+<text x="120" y="675" class="t">Expert Parallel：token 按路由跨设备搬运 → All-to-All 成为系统成本</text>
+<text x="120" y="720" class="s">因此 MoE 的收益不是“白送的参数量”：容量扩大后，路由和通信成为新瓶颈。</text>
+
+<rect x="850" y="655" width="440" height="130" class="deep"/>
+<text x="890" y="700" class="h">最终效果</text>
+<text x="890" y="738" class="t">总参数容量 ↑↑，每 token 只激活 k 个 experts</text>
+<text x="890" y="770" class="s">Capacity 与 FLOPs 被解耦，但通信 / 负载约束进入主系统。</text>
+<text x="720" y="925" text-anchor="middle" class="s">自制总结架构图：提炼文章核心机制，不复刻原论文图。</text></svg>

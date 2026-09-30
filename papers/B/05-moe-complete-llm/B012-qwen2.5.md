@@ -49,6 +49,13 @@ Qwen2.5 最值得研究的问题因此不是：
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：B012-qwen2.5](../../../figures/explainers/B012-qwen2.5-summary.svg)
+
+> **教学总结图**：从 18T 数据与统一 tokenizer 到 Dense/MoE 家族、长上下文与 Offline DPO + Online GRPO，展示 Qwen2.5 的模型家族生产线。
+
 ## 1. 先看定位：Qwen2.5 不是一个模型，而是一个“产品曲线”
 
 Qwen2.5 open-weight dense 系列包含：

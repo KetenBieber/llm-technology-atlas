@@ -83,6 +83,13 @@ rejection sampling 生成新 SFT 数据
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：B010-deepseek-r1](../../../figures/explainers/B010-deepseek-r1-summary.svg)
+
+> **教学总结图**：从 R1-Zero 的 outcome reward 到 cold start、GRPO、数据回收与全场景 RL，概括 R1 推理后训练主线。
+
 ## 1. 先把 R1 和 V3 的关系摆正：R1 不是重新训练一个新 Base Model
 
 理解 R1 的第一步，是不要把它当成一个从零预训练的新模型。

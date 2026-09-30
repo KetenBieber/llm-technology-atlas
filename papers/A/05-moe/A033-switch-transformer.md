@@ -41,6 +41,13 @@ Conditional Computation
 
 Switch 的贡献不能只写成“把 k=2 改成 k=1”。真正问题是：**如果只选一个 expert，模型还能保持质量吗？如果可以，就能删掉大量跨 expert combine 与通信复杂性。**
 
+
+## 总结架构图
+
+![教学总结图：A033-switch-transformer](../../../figures/explainers/A033-switch-transformer-summary.svg)
+
+> **教学总结图**：用 Top-1 routing、expert capacity、load balancing 与 router 数值稳定性概括 Switch Transformer 的极简 MoE 设计。
+
 # 输入、输出与任务
 
 输入 token：

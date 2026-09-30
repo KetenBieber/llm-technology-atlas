@@ -56,6 +56,13 @@ DeepSeek-V3 真正有代表性的地方，恰恰是它把**模型参数化、训
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：B009-deepseek-v3](../../../figures/explainers/B009-deepseek-v3-summary.svg)
+
+> **教学总结图**：将 MLA、DeepSeekMoE、FP8、MTP 与 DualPipe 放到模型—训练—系统三层视角中，形成 V3 的整体工程图。
+
 ## 1. 先把 DeepSeek-V3 放回 DeepSeek 谱系：哪些是 V3 新东西，哪些不是？
 
 论文 Introduction 非常刻意地先划清边界。

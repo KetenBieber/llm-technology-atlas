@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960">
+<rect width="1440" height="960" fill="#f8fafc"/>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#475569"/></marker>
+  <style>
+    .tt{font:700 34px Arial,'Microsoft YaHei',sans-serif;fill:#0f172a}
+    .sub{font:500 18px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+    .h{font:700 22px Arial,'Microsoft YaHei',sans-serif;fill:#0f172a}
+    .t{font:500 17px Arial,'Microsoft YaHei',sans-serif;fill:#1e293b}
+    .s{font:500 15px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+    .b{fill:#ffffff;stroke:#94a3b8;stroke-width:2;rx:18}
+    .bl{fill:#dbeafe;stroke:#3b82f6;stroke-width:2;rx:18}
+    .cy{fill:#cffafe;stroke:#06b6d4;stroke-width:2;rx:18}
+    .sl{fill:#f1f5f9;stroke:#94a3b8;stroke-width:2;rx:18}
+    .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.4;rx:18}
+    .a{stroke:#475569;stroke-width:2.7;fill:none;marker-end:url(#arr)}
+    .d{stroke:#64748b;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#arr)}
+  </style>
+</defs>
+<text x="64" y="62" class="tt">DeepSeek-R1：RL 不是直接“教思维链”，而是在可验证任务上重排推理轨迹的概率</text>
+<text x="64" y="96" class="sub">R1-Zero 先验证行为可以被 outcome reward 激发；R1 再用 cold start、数据回收与全场景 RL 把能力工程化。</text>
+<rect x="60" y="175" width="260" height="125" class="bl"/>
+<text x="95" y="220" class="h">同一 Prompt</text>
+<text x="95" y="258" class="t">从 Base policy 采样 G 条推理轨迹</text>
+
+<rect x="390" y="145" width="300" height="185" class="deep"/>
+<text x="430" y="190" class="h">多条 Reasoning Trajectories</text>
+<text x="430" y="228" class="t">短推理 / 长推理</text>
+<text x="430" y="263" class="t">直接回答 / 反思 / 验证 / 改写</text>
+<text x="430" y="298" class="s">不预先标注“哪种思维过程才正确”</text>
+<path d="M320 238 H390" class="a"/>
+
+<rect x="770" y="145" width="270" height="185" class="cy"/>
+<text x="810" y="190" class="h">Rule-based Reward</text>
+<text x="810" y="228" class="t">Accuracy reward</text>
+<text x="810" y="263" class="t">Format reward</text>
+<text x="810" y="298" class="s">主要评价结果是否正确 / 格式是否满足</text>
+<path d="M690 238 H770" class="a"/>
+
+<rect x="1120" y="160" width="260" height="155" class="bl"/>
+<text x="1160" y="205" class="h">GRPO Update</text>
+<text x="1160" y="243" class="t">组内相对 advantage</text>
+<text x="1160" y="278" class="s">提高高 reward 轨迹的概率</text>
+<path d="M1040 238 H1120" class="a"/>
+
+<rect x="220" y="425" width="1000" height="150" class="sl"/>
+<text x="260" y="470" class="h">行为如何“涌现”</text>
+<text x="270" y="510" class="t">如果某类 reflection / verification / longer reasoning 轨迹更常得到正确答案，它们就会被反复上调概率。</text>
+<text x="270" y="548" class="s">因此 RL 没有显式写入“你必须反思”，而是在结果可验证的环境里选择性放大能提高成功率的行为模式。</text>
+<path d="M1250 315 C1260 365 1120 410 1050 425" class="d"/>
+
+<text x="70" y="650" class="h">从科学实验 R1-Zero 到工程化 R1</text>
+<rect x="70" y="690" width="235" height="120" class="deep"/>
+<text x="105" y="735" class="h">Cold-start SFT</text><text x="105" y="773" class="s">先改善可读性 / 格式</text>
+<rect x="365" y="690" width="235" height="120" class="bl"/>
+<text x="400" y="735" class="h">Reasoning RL</text><text x="400" y="773" class="s">继承 Zero 的核心发现</text>
+<rect x="660" y="690" width="250" height="120" class="cy"/>
+<text x="695" y="735" class="h">Rejection Sampling + SFT</text><text x="695" y="773" class="s">把高质量 RL 轨迹回收成数据</text>
+<rect x="970" y="690" width="250" height="120" class="bl"/>
+<text x="1005" y="735" class="h">All-scenario RL</text><text x="1005" y="773" class="s">恢复通用对话 / 对齐能力</text>
+<rect x="1270" y="690" width="110" height="120" class="deep"/>
+<text x="1294" y="735" class="h">Distill</text><text x="1283" y="773" class="s">迁移到小模型</text>
+<path d="M305 750 H365" class="a"/><path d="M600 750 H660" class="a"/><path d="M910 750 H970" class="a"/><path d="M1220 750 H1270" class="a"/>
+<text x="720" y="925" text-anchor="middle" class="s">自制总结架构图：提炼文章核心机制，不复刻原论文图。</text></svg>

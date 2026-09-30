@@ -44,6 +44,13 @@ Transformer
 
 所以 MHA、GQA、MQA 应看成一个连续家族，而不是三个互不相关机制。
 
+
+## 总结架构图
+
+![教学总结图：A020-gqa](../../../figures/explainers/A020-gqa-summary.svg)
+
+> **教学总结图**：从 MHA → GQA → MQA 的连续谱看 K/V 共享粒度，以及它对 KV Cache、HBM 带宽与质量的折中。
+
 # 输入、输出与任务
 
 设：

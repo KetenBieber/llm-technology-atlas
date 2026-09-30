@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960">
+<rect width="1440" height="960" fill="#f8fafc"/>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#475569"/></marker>
+  <style>
+    .tt{font:700 34px Arial,'Microsoft YaHei',sans-serif;fill:#0f172a}
+    .sub{font:500 18px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+    .h{font:700 22px Arial,'Microsoft YaHei',sans-serif;fill:#0f172a}
+    .t{font:500 17px Arial,'Microsoft YaHei',sans-serif;fill:#1e293b}
+    .s{font:500 15px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+    .b{fill:#ffffff;stroke:#94a3b8;stroke-width:2;rx:18}
+    .bl{fill:#dbeafe;stroke:#3b82f6;stroke-width:2;rx:18}
+    .cy{fill:#cffafe;stroke:#06b6d4;stroke-width:2;rx:18}
+    .sl{fill:#f1f5f9;stroke:#94a3b8;stroke-width:2;rx:18}
+    .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.4;rx:18}
+    .a{stroke:#475569;stroke-width:2.7;fill:none;marker-end:url(#arr)}
+    .d{stroke:#64748b;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#arr)}
+  </style>
+</defs>
+<text x="64" y="62" class="tt">DeepSeek-V2 / MLA：真正的关键是“缓存 latent 直接参与 Decode”</text>
+<text x="64" y="96" class="sub">低秩压缩只是起点；weight absorption 让历史 K/V 不必逐 token 重建，decoupled RoPE 再修复位置编码对吸收的破坏。</text>
+<rect x="65" y="175" width="270" height="125" class="bl"/>
+<text x="105" y="220" class="h">当前 token h_t</text>
+<text x="105" y="258" class="t">进入 Query / KV 两条低秩路径</text>
+
+<rect x="420" y="145" width="310" height="185" class="deep"/>
+<text x="455" y="190" class="h">KV Low-rank Compression</text>
+<text x="455" y="230" class="t">h_t → c_t^KV</text>
+<text x="455" y="267" class="t">只缓存低维 latent</text>
+<text x="455" y="300" class="s">历史 token 不再缓存完整多头 K/V</text>
+<path d="M335 238 H420" class="a"/>
+
+<rect x="825" y="130" width="285" height="210" class="cy"/>
+<text x="860" y="175" class="h">Decoupled RoPE</text>
+<text x="860" y="215" class="t">Content 子空间：可做矩阵吸收</text>
+<text x="860" y="255" class="t">Position 子空间：单独保留 RoPE</text>
+<text x="860" y="295" class="s">避免位置相关旋转让固定权重 absorption 失效</text>
+<path d="M730 238 H825" class="a"/>
+
+<rect x="1180" y="175" width="205" height="125" class="bl"/>
+<text x="1210" y="220" class="h">Compact Cache</text>
+<text x="1210" y="257" class="t">c^KV + RoPE key</text>
+<path d="M1110 238 H1180" class="a"/>
+
+<rect x="115" y="430" width="560" height="275" class="sl"/>
+<text x="155" y="475" class="h">普通“压缩→解压”为什么还不够？</text>
+<text x="165" y="520" class="t">若每个 decode step 都把所有历史 latent 展开成完整 K/V：</text>
+<text x="165" y="558" class="t">缓存虽然小了，但重建计算与带宽又回来了。</text>
+<text x="165" y="610" class="h">MLA 的 weight absorption</text>
+<text x="165" y="650" class="t">Key up-projection 吸收到 Query 路径</text>
+<text x="165" y="685" class="t">Value up-projection 吸收到 Output 路径</text>
+
+<rect x="765" y="430" width="560" height="275" class="deep"/>
+<text x="805" y="475" class="h">Decode 时真正发生的变化</text>
+<text x="815" y="520" class="t">Query 直接与历史 c^KV 交互</text>
+<text x="815" y="558" class="t">Attention 输出再通过吸收后的投影映射回模型空间</text>
+<text x="815" y="610" class="t">历史完整 K/V 不需要显式 materialize</text>
+<text x="815" y="650" class="s">→ KV Cache 容量下降</text>
+<text x="815" y="682" class="s">→ Decode HBM traffic 下降</text>
+
+<rect x="340" y="785" width="760" height="85" class="cy"/>
+<text x="380" y="835" class="h">与 GQA/MQA 的差别：它们减少 KV heads；MLA 压缩的是“缓存状态维度”本身。</text>
+<text x="720" y="925" text-anchor="middle" class="s">自制总结架构图：提炼文章核心机制，不复刻原论文图。</text></svg>

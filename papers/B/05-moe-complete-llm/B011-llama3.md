@@ -68,6 +68,13 @@ data + scale + stability + post-training + inference
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：B011-llama3](../../../figures/explainers/B011-llama3-summary.svg)
+
+> **教学总结图**：把 tokenizer、数据飞轮、scaling law、4D 并行、长上下文与后训练串成 Llama 3 的完整研发系统。
+
 ## 1. 先定性：Llama 3 不是一篇“新架构论文”
 
 论文在架构章节直接说明：Llama 3 使用标准的 dense Transformer architecture，并没有在模型结构上显著偏离 Llama / Llama 2；性能提升主要来自数据质量、多样性与更大的训练规模。

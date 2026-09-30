@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960">
+<rect width="1440" height="960" fill="#f8fafc"/>
+<defs>
+  <marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#475569"/></marker>
+  <style>
+    .tt{font:700 34px Arial,'Microsoft YaHei',sans-serif;fill:#0f172a}
+    .sub{font:500 18px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+    .h{font:700 22px Arial,'Microsoft YaHei',sans-serif;fill:#0f172a}
+    .t{font:500 17px Arial,'Microsoft YaHei',sans-serif;fill:#1e293b}
+    .s{font:500 15px Arial,'Microsoft YaHei',sans-serif;fill:#475569}
+    .b{fill:#ffffff;stroke:#94a3b8;stroke-width:2;rx:18}
+    .bl{fill:#dbeafe;stroke:#3b82f6;stroke-width:2;rx:18}
+    .cy{fill:#cffafe;stroke:#06b6d4;stroke-width:2;rx:18}
+    .sl{fill:#f1f5f9;stroke:#94a3b8;stroke-width:2;rx:18}
+    .deep{fill:#e0f2fe;stroke:#0284c7;stroke-width:2.4;rx:18}
+    .a{stroke:#475569;stroke-width:2.7;fill:none;marker-end:url(#arr)}
+    .d{stroke:#64748b;stroke-width:2.2;stroke-dasharray:8 7;fill:none;marker-end:url(#arr)}
+  </style>
+</defs>
+<text x="64" y="62" class="tt">DeepSeek-V3：671B 系统的关键是模型结构、训练精度、路由与通信协同</text>
+<text x="64" y="96" class="sub">不要把 MLA / MoE / FP8 / MTP / DualPipe 当成平行名词；它们分别作用在 token 路径、训练目标和系统执行层。</text>
+<text x="70" y="150" class="h">A. 单个 token 的模型数据流</text>
+<rect x="70" y="185" width="180" height="95" class="bl"/>
+<text x="105" y="225" class="h">Embedding</text><text x="105" y="255" class="s">token → hidden</text>
+<rect x="330" y="165" width="260" height="135" class="deep"/>
+<text x="370" y="208" class="h">MLA Attention</text>
+<text x="370" y="245" class="t">latent KV cache</text><text x="370" y="275" class="s">降低 decode cache / bandwidth</text>
+<rect x="680" y="165" width="280" height="135" class="cy"/>
+<text x="720" y="208" class="h">DeepSeekMoE FFN</text>
+<text x="720" y="245" class="t">shared + Top-K routed experts</text><text x="720" y="275" class="s">大总容量，小 active compute</text>
+<rect x="1050" y="185" width="300" height="95" class="bl"/>
+<text x="1090" y="225" class="h">Next-token logits</text><text x="1090" y="255" class="s">重复堆叠 Transformer blocks</text>
+<path d="M250 232 H330" class="a"/><path d="M590 232 H680" class="a"/><path d="M960 232 H1050" class="a"/>
+
+<text x="70" y="375" class="h">B. MoE 路由的“模型质量”和“系统负载”分开处理</text>
+<rect x="80" y="410" width="390" height="150" class="sl"/>
+<text x="120" y="455" class="h">Router affinity</text>
+<text x="120" y="493" class="t">决定 expert 输出的建模权重</text>
+<text x="120" y="528" class="s">希望保持 specialization，不被强 balancing loss 扭曲</text>
+<rect x="525" y="410" width="390" height="150" class="deep"/>
+<text x="565" y="455" class="h">Aux-loss-free bias</text>
+<text x="565" y="493" class="t">只改变“选谁”的 routing bias</text>
+<text x="565" y="528" class="s">按历史负载动态调节 expert 被选概率</text>
+<rect x="970" y="410" width="390" height="150" class="cy"/>
+<text x="1010" y="455" class="h">Expert Parallel Traffic</text>
+<text x="1010" y="493" class="t">dispatch / combine / all-to-all</text>
+<text x="1010" y="528" class="s">模型层平衡最终要落到跨设备通信上</text>
+<path d="M470 485 H525" class="a"/><path d="M915 485 H970" class="a"/>
+
+<text x="70" y="645" class="h">C. 训练系统层：让 671B 真正跑得动</text>
+<rect x="85" y="680" width="350" height="145" class="bl"/>
+<text x="125" y="725" class="h">FP8 Training</text>
+<text x="125" y="763" class="t">低精度 GEMM + 精度补偿</text><text x="125" y="798" class="s">降低算力 / 显存 / 带宽压力</text>
+<rect x="545" y="680" width="350" height="145" class="deep"/>
+<text x="585" y="725" class="h">DualPipe / overlap</text>
+<text x="585" y="763" class="t">通信与计算双向重叠</text><text x="585" y="798" class="s">减少 pipeline bubble 与 EP 通信暴露</text>
+<rect x="1005" y="680" width="350" height="145" class="cy"/>
+<text x="1045" y="725" class="h">MTP auxiliary objective</text>
+<text x="1045" y="763" class="t">训练时预测多个未来 token</text><text x="1045" y="798" class="s">改善表示，并服务后续推理优化</text>
+<path d="M435 752 H545" class="a"/><path d="M895 752 H1005" class="a"/>
+<text x="720" y="925" text-anchor="middle" class="s">自制总结架构图：提炼文章核心机制，不复刻原论文图。</text></svg>

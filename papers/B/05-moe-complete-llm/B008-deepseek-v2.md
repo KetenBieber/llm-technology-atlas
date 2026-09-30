@@ -62,6 +62,13 @@ RoPE 插入位置相关矩阵后，吸收失效
 最终只缓存 latent + shared positional key
 ~~~
 
+
+## 总结架构图
+
+![教学总结图：B008-deepseek-v2](../../../figures/explainers/B008-deepseek-v2-summary.svg)
+
+> **教学总结图**：以 MLA 为主线展示低秩 latent、weight absorption 与 decoupled RoPE 如何共同降低 Decode KV Cache 成本。
+
 ## 1. Figure 1 先告诉我们：V2 想把“训练贵”和“推理贵”拆开解决
 
 ![DeepSeek-V2 原论文 Figure 1：效率比较](../../../figures/B002/fig1-efficiency.svg)

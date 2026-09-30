@@ -99,6 +99,13 @@ routed experts 更专注差异化知识
 
 *自制解释图，不是原论文 Figure。先把作者的两个问题一一对应起来：fine-grained segmentation 主要对付 Knowledge Hybridity；shared expert isolation 主要对付 Knowledge Redundancy。后面的实验再分别检查这两种结构变化是否真的带来收益。*
 
+
+## 总结架构图
+
+![教学总结图：A034-deepseekmoe](../../../figures/explainers/A034-deepseekmoe-summary.svg)
+
+> **教学总结图**：把 Fine-Grained Expert Segmentation 与 Shared Expert Isolation 放到同一张图中，解释 DeepSeekMoE 如何提升专家专门化。
+
 ## 1. 先把传统 MoE 写清楚：Router 能选 expert，但不能选 expert 内部的知识子块
 
 普通 Transformer 的 FFN：

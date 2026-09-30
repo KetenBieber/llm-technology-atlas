@@ -37,6 +37,13 @@
 
 ---
 
+
+## 总结架构图
+
+![教学总结图：A051-deepseekmath-grpo](../../../figures/explainers/A051-deepseekmath-grpo-summary.svg)
+
+> **教学总结图**：把组内相对 advantage、PPO-style ratio/clip 与 reference KL 放在同一目标中，突出 GRPO 真正删除的是 Critic。
+
 ## 1. 先别急着看 GRPO：PPO 为什么要有 Critic？
 
 理解 GRPO 最容易犯的错误，是从一句：
