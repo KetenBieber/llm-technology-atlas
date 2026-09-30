@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="900" viewBox="0 0 1700 900">
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+<style>
+.tt{font:700 34px Inter,'Microsoft YaHei',sans-serif;fill:#0f172a}.st{font:500 19px Inter,'Microsoft YaHei',sans-serif;fill:#475569}
+.h{font:700 23px Inter,'Microsoft YaHei',sans-serif;fill:#0f172a}.t{font:500 18px Inter,'Microsoft YaHei',sans-serif;fill:#1e293b}.s{font:500 16px Inter,'Microsoft YaHei',sans-serif;fill:#475569}
+.b{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;rx:20}.p{fill:#eef2ff;stroke:#818cf8;stroke-width:2;rx:20}.g{fill:#f0fdf4;stroke:#4ade80;stroke-width:2;rx:20}.o{fill:#fff7ed;stroke:#fb923c;stroke-width:2;rx:20}
+.l{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#a)}.d{stroke:#64748b;stroke-width:2.5;stroke-dasharray:9 8;fill:none;marker-end:url(#a)}
+</style></defs>
+<text x="70" y="65" class="tt">从 PPO 到 GRPO：真正被删除的是 learned value baseline，不是 PPO-style policy update</text>
+<text x="70" y="103" class="st">先问 Critic 在 PPO 里承担什么，再看同一 prompt 的一组回答如何临时构造相对基线。</text>
+<rect x="80" y="180" width="650" height="535" class="p"/>
+<text x="115" y="230" class="h">PPO / Actor-Critic 路径</text>
+<rect x="130" y="285" width="210" height="85" class="b"/><text x="165" y="325" class="t">Policy πθ</text><text x="150" y="350" class="s">生成 response</text>
+<rect x="465" y="245" width="210" height="85" class="b"/><text x="500" y="285" class="t">Reward Model</text><text x="505" y="310" class="s">给轨迹 reward</text>
+<rect x="465" y="390" width="210" height="85" class="o"/><text x="505" y="430" class="t">Value Model Vψ</text><text x="485" y="455" class="s">预测 prefix 的 baseline</text>
+<rect x="245" y="545" width="320" height="105" class="b"/><text x="330" y="585" class="t">GAE / Advantage</text><text x="280" y="615" class="s">reward − learned state baseline</text>
+<path d="M340 325 L465 287" class="l"/><path d="M340 345 L465 432" class="l"/><path d="M570 330 L470 545" class="l"/><path d="M570 475 L465 545" class="l"/>
+<text x="115" y="690" class="s">成本：除 policy 外还要训练/保存与 policy 同量级的 value function。</text>
+
+<rect x="900" y="180" width="720" height="535" class="g"/>
+<text x="935" y="230" class="h">GRPO 路径</text>
+<rect x="950" y="285" width="210" height="85" class="b"/><text x="985" y="325" class="t">Policy πold</text><text x="975" y="350" class="s">同一 q 采 G 条</text>
+<rect x="1265" y="245" width="250" height="85" class="b"/><text x="1310" y="285" class="t">Reward Model</text><text x="1300" y="310" class="s">r₁,…,rG</text>
+<rect x="1240" y="420" width="300" height="110" class="b"/><text x="1280" y="460" class="t">Group Computation</text><text x="1265" y="490" class="s">(rᵢ − mean(r)) / std(r)</text><text x="1295" y="515" class="s">→ Âᵢ,t</text>
+<rect x="1030" y="580" width="400" height="95" class="b"/><text x="1110" y="618" class="t">PPO-style ratio + clip</text><text x="1080" y="647" class="s">仍然做受限 policy update</text>
+<path d="M1160 325 L1265 287" class="l"/><path d="M1390 330 L1390 420" class="l"/><path d="M1320 530 L1245 580" class="l"/>
+<path d="M1510 325 C1580 380 1580 560 1430 615" class="d"/>
+<text x="1450" y="555" class="s">πref → KL</text>
+<text x="935" y="690" class="s">省掉：learned critic/value model。没有省掉：group rollout、reward、reference/KL、PPO clipping。</text>
+
+<text x="70" y="815" class="st">关键边界：group mean 是 prompt-conditioned empirical baseline，不是逐 token prefix 的 V(sₜ)；“不用 Critic”不等于“没有 baseline”。</text>
+</svg>

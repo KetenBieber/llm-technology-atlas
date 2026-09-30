@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="760" viewBox="0 0 1500 760">
+<style>
+text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#202124}.t{font-size:34px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:20px}.s{font-size:17px;fill:#5f6368}.box{fill:#fff;stroke:#5f6368;stroke-width:2;rx:18}.mem{fill:#f8f9fa;stroke:#9aa0a6;stroke-width:2;rx:12}.chip{fill:#fff;stroke:#202124;stroke-width:2;rx:12}.arrow{stroke:#5f6368;stroke-width:3;fill:none;marker-end:url(#a)}.bad{stroke-dasharray:8 6}</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5f6368"/></marker></defs>
+<text x="55" y="60" class="t">Standard Attention vs FlashAttention：真正被消掉的是 N×N HBM 中间流量</text>
+<text x="170" y="112" class="h">Standard Attention</text>
+<rect x="70" y="145" width="575" height="500" class="box"/>
+<rect x="105" y="185" width="170" height="80" class="mem"/><text x="153" y="220" class="h">HBM</text><text x="125" y="247" class="s">Q, K, V</text>
+<rect x="365" y="185" width="200" height="80" class="chip"/><text x="410" y="230" class="h">QKᵀ</text>
+<path d="M275 225H360" class="arrow"/>
+<rect x="105" y="320" width="170" height="85" class="mem"/><text x="145" y="355" class="h">HBM</text><text x="135" y="384" class="b">S: N×N</text>
+<path d="M465 265V320H280" class="arrow bad"/>
+<rect x="365" y="320" width="200" height="85" class="chip"/><text x="405" y="370" class="h">Softmax</text>
+<path d="M275 362H360" class="arrow"/>
+<rect x="105" y="465" width="170" height="85" class="mem"/><text x="145" y="500" class="h">HBM</text><text x="135" y="530" class="b">P: N×N</text>
+<path d="M465 405V465H280" class="arrow bad"/>
+<rect x="365" y="465" width="200" height="85" class="chip"/><text x="420" y="515" class="h">PV</text>
+<path d="M275 507H360" class="arrow"/>
+<text x="105" y="603" class="b">问题：S、P 都要写回 / 再读 HBM</text>
+<text x="105" y="630" class="s">FLOPs 不一定是主瓶颈，N² memory traffic 才可能主导 wall time。</text>
+
+<text x="930" y="112" class="h">FlashAttention</text>
+<rect x="795" y="145" width="635" height="500" class="box"/>
+<rect x="830" y="185" width="180" height="90" class="mem"/><text x="882" y="222" class="h">HBM</text><text x="850" y="252" class="s">Q/K/V tiles</text>
+<rect x="1115" y="185" width="245" height="265" class="chip"/><text x="1170" y="225" class="h">SRAM tile</text><text x="1145" y="275" class="b">Qᵢ Kⱼᵀ</text><text x="1145" y="315" class="b">local max / exp</text><text x="1145" y="355" class="b">running m, ℓ</text><text x="1145" y="395" class="b">partial PV</text>
+<path d="M1010 230H1110" class="arrow"/>
+<rect x="830" y="490" width="180" height="90" class="mem"/><text x="882" y="527" class="h">HBM</text><text x="855" y="557" class="s">O, m, ℓ</text>
+<path d="M1235 450V535H1015" class="arrow"/>
+<text x="835" y="603" class="b">S、P tile 只在 SRAM 中短暂存在，不写成完整 N×N 矩阵。</text>
+<text x="835" y="630" class="s">数学仍是 exact dense attention；改变的是执行顺序与数据搬运。</text>
+</svg>

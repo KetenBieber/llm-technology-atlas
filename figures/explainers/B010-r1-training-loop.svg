@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="920" viewBox="0 0 1700 920">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title{font:700 34px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#0f172a}
+      .sub{font:500 20px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#475569}
+      .h{font:700 23px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#0f172a}
+      .t{font:500 18px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#1e293b}
+      .small{font:500 16px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#475569}
+      .s1{fill:#eef2ff;stroke:#818cf8;stroke-width:2;rx:22}
+      .s2{fill:#ecfeff;stroke:#22d3ee;stroke-width:2;rx:22}
+      .s3{fill:#f0fdf4;stroke:#4ade80;stroke-width:2;rx:22}
+      .s4{fill:#fff7ed;stroke:#fb923c;stroke-width:2;rx:22}
+      .base{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;rx:22}
+      .line{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#arrow)}
+      .feedback{stroke:#64748b;stroke-width:2.5;stroke-dasharray:10 8;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <text x="70" y="70" class="title">DeepSeek-R1：SFT 与 RL 不是二选一，而是一个“探索 → 固化 → 再对齐”的闭环</text>
+  <text x="70" y="110" class="sub">R1-Zero 回答科学问题；最终 R1 则把不同训练阶段分配给不同职责。</text>
+
+  <rect x="70" y="190" width="270" height="150" class="base"/>
+  <text x="105" y="235" class="h">DeepSeek-V3-Base</text>
+  <text x="105" y="278" class="t">已有语言 / 数学 / 代码能力</text>
+  <text x="105" y="310" class="small">后训练改变策略分布，而非从零造能力。</text>
+
+  <rect x="420" y="165" width="300" height="200" class="s1"/>
+  <text x="455" y="212" class="h">Stage 1 · Cold Start SFT</text>
+  <text x="455" y="255" class="t">少量高质量 reasoning data</text>
+  <text x="455" y="292" class="t">目标：可读、稳定、格式一致</text>
+  <text x="455" y="330" class="small">主要是初始化策略分布，不是替代 RL。</text>
+
+  <rect x="800" y="165" width="300" height="200" class="s2"/>
+  <text x="835" y="212" class="h">Stage 2 · Reasoning RL</text>
+  <text x="835" y="255" class="t">GRPO + verifiable reward</text>
+  <text x="835" y="292" class="t">目标：探索更强 reasoning trajectory</text>
+  <text x="835" y="330" class="small">继承 R1-Zero 的核心实验结论。</text>
+
+  <rect x="1180" y="145" width="420" height="240" class="s3"/>
+  <text x="1215" y="192" class="h">Stage 3 · Sampling → Filtering → SFT</text>
+  <text x="1215" y="235" class="t">RL checkpoint 生成大量 response</text>
+  <text x="1215" y="272" class="t">verifier / reward 过滤高质量轨迹</text>
+  <text x="1215" y="309" class="t">混入 non-reasoning data 再做 SFT</text>
+  <text x="1215" y="346" class="small">把昂贵探索发现“固化”为稳定监督信号。</text>
+
+  <path d="M340 265 L420 265" class="line"/>
+  <path d="M720 265 L800 265" class="line"/>
+  <path d="M1100 265 L1180 265" class="line"/>
+
+  <rect x="610" y="555" width="480" height="230" class="s4"/>
+  <text x="650" y="605" class="h">Stage 4 · All-scenario RL</text>
+  <text x="650" y="650" class="t">reasoning：继续使用可验证 reward</text>
+  <text x="650" y="690" class="t">general：helpfulness reward model</text>
+  <text x="650" y="730" class="t">safety：harmlessness reward</text>
+  <text x="650" y="765" class="small">目标从“会推理”扩展到“可用 assistant”。</text>
+
+  <path d="M1390 385 C1390 500 1090 525 980 555" class="line"/>
+
+  <rect x="70" y="555" width="360" height="230" class="base"/>
+  <text x="105" y="605" class="h">旁路实验：R1-Zero</text>
+  <text x="105" y="650" class="t">V3-Base → 直接 RL</text>
+  <text x="105" y="690" class="t">验证：无 reasoning SFT 也能</text>
+  <text x="105" y="725" class="t">显著改变 reasoning 行为分布</text>
+  <text x="105" y="760" class="small">它是 scientific probe，不是最终 recipe。</text>
+  <path d="M205 340 C205 430 230 475 250 555" class="feedback"/>
+
+  <rect x="1260" y="555" width="340" height="230" class="base"/>
+  <text x="1295" y="605" class="h">最终产物与再利用</text>
+  <text x="1295" y="650" class="t">DeepSeek-R1</text>
+  <text x="1295" y="690" class="t">↓ 生成 reasoning data</text>
+  <text x="1295" y="725" class="t">Qwen / Llama 小模型蒸馏</text>
+  <text x="1295" y="760" class="small">迁移的是轨迹数据，不是直接压缩 671B 权重。</text>
+  <path d="M1090 670 L1260 670" class="line"/>
+
+  <path d="M1320 555 C1190 470 1040 445 950 365" class="feedback"/>
+  <text x="880" y="475" class="small">数据飞轮：强策略发现轨迹 → 过滤 → SFT 写回模型</text>
+
+  <text x="70" y="870" class="sub">心智模型：RL 负责探索，rejection sampling 负责选择，SFT 负责固化与重整分布，最终 RL 再处理通用偏好与安全。</text>
+</svg>

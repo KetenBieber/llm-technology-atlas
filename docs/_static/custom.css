@@ -1,0 +1,57 @@
+.wy-nav-content {
+    max-width: 78rem;
+}
+
+.wy-table-responsive {
+    overflow-x: auto;
+}
+
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: normal;
+    vertical-align: top;
+}
+
+div.math {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: .25rem;
+}
+
+pre {
+    overflow-x: auto;
+}
+
+.rst-content code.literal,
+.rst-content tt.literal {
+    white-space: normal;
+}
+
+.rst-content h1,
+.rst-content h2,
+.rst-content h3 {
+    line-height: 1.35;
+}
+
+.rst-content h1 {
+    margin-bottom: 1.1rem;
+}
+
+.rst-content blockquote {
+    border-left: 4px solid #d7dee8;
+    padding-left: 1rem;
+    color: #4b5563;
+}
+
+.rst-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.atlas-card {
+    border: 1px solid #e4e7eb;
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    margin: .8rem 0;
+    background: #fbfcfd;
+}

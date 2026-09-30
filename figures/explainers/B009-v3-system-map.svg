@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760">
+<rect width="1400" height="760" fill="#fbfbfd"/>
+<style>.t{font-family:Arial,'Microsoft YaHei',sans-serif;fill:#18212f}.h{font-size:28px;font-weight:700}.s{font-size:20px;font-weight:600}.b{font-size:17px}.m{font-size:15px;fill:#536070}.box{fill:white;stroke:#cfd7e3;stroke-width:2;rx:18}.p{fill:#f3f7ff;stroke:#8fb0e8}.q{fill:#f5fbf7;stroke:#8bc59e}.r{fill:#fff8ef;stroke:#e4b675}.a{stroke:#6e7b8c;stroke-width:2.2;fill:none;marker-end:url(#arr)}</style>
+<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#6e7b8c"/></marker></defs>
+<text x="700" y="45" text-anchor="middle" class="t h">DeepSeek-V3：不是“技术堆叠”，而是瓶颈 → 局部机制 → 系统补偿</text>
+<text x="95" y="100" class="t s">瓶颈</text><text x="590" y="100" class="t s">模型 / 训练机制</text><text x="1075" y="100" class="t s">真正改变的系统量</text>
+<rect x="70" y="130" width="330" height="105" class="box p"/><text x="95" y="168" class="t s">Decode KV Cache 太大</text><text x="95" y="200" class="t b">历史 K/V 容量 + HBM 读带宽</text>
+<rect x="535" y="130" width="330" height="105" class="box q"/><text x="560" y="168" class="t s">MLA</text><text x="560" y="200" class="t b">压缩 latent + decoupled RoPE</text>
+<rect x="1000" y="130" width="330" height="105" class="box r"/><text x="1025" y="168" class="t s">缓存状态变小</text><text x="1025" y="200" class="t b">decode 更接近带宽友好</text>
+<path d="M400 182 L535 182" class="a"/><path d="M865 182 L1000 182" class="a"/>
+<rect x="70" y="270" width="330" height="105" class="box p"/><text x="95" y="308" class="t s">总容量想做大，但不能全算</text><text x="95" y="340" class="t b">Dense FFN 参数 / FLOPs 同步增长</text>
+<rect x="535" y="270" width="330" height="105" class="box q"/><text x="560" y="308" class="t s">DeepSeekMoE</text><text x="560" y="340" class="t b">Shared + Top-K routed experts</text>
+<rect x="1000" y="270" width="330" height="105" class="box r"/><text x="1025" y="308" class="t s">总参数大，active compute 小</text><text x="1025" y="340" class="t b">但引入路由与 all-to-all</text>
+<path d="M400 322 L535 322" class="a"/><path d="M865 322 L1000 322" class="a"/>
+<rect x="70" y="410" width="330" height="105" class="box p"/><text x="95" y="448" class="t s">MoE 容易负载不均</text><text x="95" y="480" class="t b">辅助损失又可能损害建模</text>
+<rect x="535" y="410" width="330" height="105" class="box q"/><text x="560" y="448" class="t s">Aux-loss-free balancing</text><text x="560" y="480" class="t b">用 routing bias 调选择，不改主概率</text>
+<rect x="1000" y="410" width="330" height="105" class="box r"/><text x="1025" y="448" class="t s">质量 / 负载分离得更干净</text><text x="1025" y="480" class="t b">系统仍需处理 expert traffic</text>
+<path d="M400 462 L535 462" class="a"/><path d="M865 462 L1000 462" class="a"/>
+<rect x="70" y="550" width="330" height="105" class="box p"/><text x="95" y="588" class="t s">GEMM / 通信成本仍高</text><text x="95" y="620" class="t b">671B 规模下训练吞吐是硬约束</text>
+<rect x="535" y="550" width="330" height="105" class="box q"/><text x="560" y="588" class="t s">FP8 + DualPipe</text><text x="560" y="620" class="t b">降精度计算 + 通信计算重叠</text>
+<rect x="1000" y="550" width="330" height="105" class="box r"/><text x="1025" y="588" class="t s">吞吐不是单点算法结果</text><text x="1025" y="620" class="t b">架构、精度、并行共同决定</text>
+<path d="M400 602 L535 602" class="a"/><path d="M865 602 L1000 602" class="a"/>
+<text x="700" y="715" text-anchor="middle" class="t m">自制解释图：用于建立系统级因果关系，不是原论文图。</text>
+</svg>

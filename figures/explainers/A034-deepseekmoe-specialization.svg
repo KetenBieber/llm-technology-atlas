@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720">
+<rect width="1400" height="720" fill="#fbfbfd"/><style>.t{font-family:Arial,'Microsoft YaHei',sans-serif;fill:#18212f}.h{font-size:28px;font-weight:700}.s{font-size:20px;font-weight:700}.b{font-size:16px}.m{font-size:15px;fill:#586575}.box{fill:white;stroke:#ced6e2;stroke-width:2;rx:16}.old{fill:#fff5f2;stroke:#d9a397}.new{fill:#f2f8ff;stroke:#8eb5df}.shared{fill:#f5fbf5;stroke:#93c39d}.a{stroke:#6f7c8a;stroke-width:2;fill:none;marker-end:url(#a)}</style><defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0 0 L10 3 L0 6 Z" fill="#6f7c8a"/></marker></defs>
+<text x="700" y="45" text-anchor="middle" class="t h">DeepSeekMoE：从“选大专家”变成“组合细粒度专长 + 独立共享知识”</text>
+<text x="335" y="95" text-anchor="middle" class="t s">传统 Sparse MoE</text><text x="1060" y="95" text-anchor="middle" class="t s">DeepSeekMoE</text>
+<rect x="80" y="130" width="510" height="120" class="box old"/><text x="105" y="168" class="t s">少量、宽专家</text><text x="105" y="200" class="t b">一个 expert 内同时容纳多种知识 → Knowledge Hybridity</text><text x="105" y="228" class="t b">多个 experts 又重复学习共通知识 → Redundancy</text>
+<rect x="790" y="130" width="540" height="120" class="box new"/><text x="815" y="168" class="t s">把大 expert 细分成更多小 experts</text><text x="815" y="200" class="t b">同等 active compute 下，router 可组合更多“知识组件”</text><text x="815" y="228" class="t b">粒度更细 → specialization 空间更丰富</text>
+<rect x="80" y="330" width="510" height="130" class="box old"/><text x="105" y="368" class="t s">Router 只能选“整块 FFN”</text><text x="105" y="400" class="t b">Token 需要数学 + 代码时，可能只能选几个混合大专家</text>
+<rect x="790" y="315" width="540" height="145" class="box shared"/><text x="815" y="352" class="t s">Shared Expert Isolation</text><text x="815" y="384" class="t b">共通知识由 shared experts 始终承担</text><text x="815" y="416" class="t b">routed experts 更有动力学习差异化知识</text>
+<path d="M590 190 L790 190" class="a"/><path d="M590 395 L790 390" class="a"/>
+<rect x="790" y="530" width="540" height="95" class="box new"/><text x="815" y="566" class="t s">目标不是“更稀疏”</text><text x="815" y="598" class="t b">而是在固定 total params / active compute 下提高专家职责分工</text>
+<path d="M1060 460 L1060 530" class="a"/>
+<text x="335" y="575" text-anchor="middle" class="t m">粗路由：选择少数“大杂货铺”专家</text>
+<text x="700" y="680" text-anchor="middle" class="t m">自制解释图：用于建立 DeepSeekMoE 的动机，不替代原论文的结构图和消融实验。</text>
+</svg>

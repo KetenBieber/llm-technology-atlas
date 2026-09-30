@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title{font:700 34px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#0f172a}
+      .sub{font:500 20px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#475569}
+      .h{font:700 24px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#0f172a}
+      .t{font:500 19px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#1e293b}
+      .small{font:500 17px Inter,'Noto Sans CJK SC','Microsoft YaHei',sans-serif;fill:#475569}
+      .box{fill:#f8fafc;stroke:#94a3b8;stroke-width:2;rx:20}
+      .key{fill:#eef2ff;stroke:#818cf8;stroke-width:2;rx:20}
+      .sys{fill:#f0fdf4;stroke:#4ade80;stroke-width:2;rx:20}
+      .warn{fill:#fff7ed;stroke:#fb923c;stroke-width:2;rx:20}
+      .line{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#arrow)}
+      .dash{stroke:#64748b;stroke-width:2.5;stroke-dasharray:10 8;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <text x="80" y="70" class="title">DeepSeek-V3：MoE 路由、负载均衡与分布式系统其实是一条链</text>
+  <text x="80" y="110" class="sub">先分清“模型想选谁”与“系统能不能承受这些选择”，再看 auxiliary-loss-free balancing 的作用位置。</text>
+
+  <rect x="80" y="190" width="360" height="180" class="box"/>
+  <text x="110" y="235" class="h">1. Router 计算 affinity</text>
+  <text x="110" y="278" class="t">sᵢ,t = sigmoid(uₜᵀeᵢ)</text>
+  <text x="110" y="315" class="small">语义目标：哪个 expert 更适合 token？</text>
+  <text x="110" y="345" class="small">这里表达的是模型偏好，不是机器负载。</text>
+
+  <rect x="610" y="170" width="380" height="220" class="key"/>
+  <text x="640" y="218" class="h">2. Top-K 选择加入 routing bias</text>
+  <text x="640" y="260" class="t">selection score = sᵢ,t + bᵢ</text>
+  <text x="640" y="300" class="small">热点 expert → bᵢ 下调</text>
+  <text x="640" y="332" class="small">冷门 expert → bᵢ 上调</text>
+  <text x="640" y="364" class="small">bᵢ 改“选谁”，不直接改 expert 输出权重。</text>
+
+  <rect x="1160" y="190" width="350" height="180" class="box"/>
+  <text x="1190" y="235" class="h">3. Expert 真实计算</text>
+  <text x="1190" y="278" class="t">1 shared + Top-8 routed</text>
+  <text x="1190" y="315" class="small">gating 仍来自原始 affinity sᵢ,t</text>
+  <text x="1190" y="345" class="small">避免把系统平衡信号混进输出幅值。</text>
+
+  <path d="M440 280 L610 280" class="line"/>
+  <path d="M990 280 L1160 280" class="line"/>
+
+  <rect x="180" y="520" width="470" height="230" class="warn"/>
+  <text x="215" y="570" class="h">如果不平衡：系统侧发生什么？</text>
+  <text x="215" y="615" class="t">热点 expert 所在 GPU 收到更多 token</text>
+  <text x="215" y="655" class="t">→ all-to-all 流量不均</text>
+  <text x="215" y="695" class="t">→ straggler / capacity pressure</text>
+  <text x="215" y="730" class="small">最终 throughput 由最慢设备决定。</text>
+
+  <rect x="920" y="500" width="500" height="270" class="sys"/>
+  <text x="955" y="550" class="h">V3 的系统层补偿</text>
+  <text x="955" y="595" class="t">EP64：专家分布到更多设备</text>
+  <text x="955" y="635" class="t">DualPipe：把通信与计算交叠</text>
+  <text x="955" y="675" class="t">Node-limited routing：限制跨节点代价</text>
+  <text x="955" y="715" class="t">在线服务：热点 expert 可冗余部署</text>
+  <text x="955" y="748" class="small">这些措施隐藏 / 分摊通信，但不会让通信消失。</text>
+
+  <path d="M760 390 C720 470 610 470 520 520" class="dash"/>
+  <path d="M650 635 L920 635" class="line"/>
+  <path d="M1330 370 C1370 430 1370 455 1320 500" class="dash"/>
+
+  <text x="80" y="845" class="sub">心智模型：MoE 的“路由质量”与“负载可执行性”是两个目标；V3 用 bias 调 selection，再用系统并行承接真实 token traffic。</text>
+</svg>

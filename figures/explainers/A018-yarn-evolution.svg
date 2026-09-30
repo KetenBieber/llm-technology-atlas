@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700">
+<rect width="1400" height="700" fill="#ffffff"/>
+<text x="55" y="60" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">从 RoPE 到 YaRN：每一步分别修什么问题？</text>
+<g font-family="Arial, sans-serif">
+<rect x="55" y="130" width="200" height="110" rx="18" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+<text x="155" y="175" text-anchor="middle" font-size="24" font-weight="700" fill="#312e81">RoPE</text>
+<text x="155" y="207" text-anchor="middle" font-size="17" fill="#3730a3">训练窗口 L</text>
+<path d="M255 185 H315" stroke="#111827" stroke-width="3" marker-end="url(#a)"/>
+<rect x="315" y="130" width="220" height="110" rx="18" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+<text x="425" y="170" text-anchor="middle" font-size="22" font-weight="700" fill="#1e3a8a">Position Interpolation</text>
+<text x="425" y="202" text-anchor="middle" font-size="17" fill="#1e40af">m → m/s</text>
+<text x="425" y="226" text-anchor="middle" font-size="16" fill="#1e40af">避免直接 OOD 外推</text>
+<path d="M535 185 H595" stroke="#111827" stroke-width="3" marker-end="url(#a)"/>
+<rect x="595" y="115" width="235" height="140" rx="18" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+<text x="712" y="155" text-anchor="middle" font-size="22" font-weight="700" fill="#92400e">NTK-aware</text>
+<text x="712" y="187" text-anchor="middle" font-size="17" fill="#92400e">改 RoPE base</text>
+<text x="712" y="214" text-anchor="middle" font-size="16" fill="#78350f">高频少缩、低频多缩</text>
+<text x="712" y="238" text-anchor="middle" font-size="16" fill="#78350f">但存在 out-of-bound</text>
+<path d="M830 185 H890" stroke="#111827" stroke-width="3" marker-end="url(#a)"/>
+<rect x="890" y="115" width="235" height="140" rx="18" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+<text x="1007" y="155" text-anchor="middle" font-size="22" font-weight="700" fill="#166534">NTK-by-parts</text>
+<text x="1007" y="187" text-anchor="middle" font-size="17" fill="#166534">按 wavelength 分段</text>
+<text x="1007" y="214" text-anchor="middle" font-size="16" fill="#14532d">低频插值</text>
+<text x="1007" y="238" text-anchor="middle" font-size="16" fill="#14532d">高频保持 + 中频混合</text>
+<path d="M1125 185 H1185" stroke="#111827" stroke-width="3" marker-end="url(#a)"/>
+<rect x="1185" y="115" width="170" height="140" rx="18" fill="#fce7f3" stroke="#ec4899" stroke-width="2"/>
+<text x="1270" y="155" text-anchor="middle" font-size="24" font-weight="700" fill="#9d174d">YaRN</text>
+<text x="1270" y="190" text-anchor="middle" font-size="17" fill="#9d174d">by-parts</text>
+<text x="1270" y="217" text-anchor="middle" font-size="17" fill="#9d174d">+</text>
+<text x="1270" y="242" text-anchor="middle" font-size="17" fill="#9d174d">attention scaling</text>
+<rect x="315" y="340" width="220" height="105" rx="16" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+<text x="425" y="380" text-anchor="middle" font-size="20" font-weight="700" fill="#374151">PI 的代价</text>
+<text x="425" y="411" text-anchor="middle" font-size="16" fill="#4b5563">所有频率都除以 s</text>
+<text x="425" y="434" text-anchor="middle" font-size="16" fill="#4b5563">局部位置“分辨率”下降</text>
+<path d="M425 240 V340" stroke="#6b7280" stroke-width="2" stroke-dasharray="8 7" marker-end="url(#a2)"/>
+<rect x="890" y="340" width="235" height="105" rx="16" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+<text x="1007" y="380" text-anchor="middle" font-size="20" font-weight="700" fill="#374151">解决频段冲突</text>
+<text x="1007" y="411" text-anchor="middle" font-size="16" fill="#4b5563">不是每个 RoPE 维度</text>
+<text x="1007" y="434" text-anchor="middle" font-size="16" fill="#4b5563">都承担同一种位置功能</text>
+<path d="M1007 255 V340" stroke="#6b7280" stroke-width="2" stroke-dasharray="8 7" marker-end="url(#a2)"/>
+<rect x="1185" y="340" width="170" height="105" rx="16" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+<text x="1270" y="380" text-anchor="middle" font-size="20" font-weight="700" fill="#374151">再修 softmax</text>
+<text x="1270" y="411" text-anchor="middle" font-size="16" fill="#4b5563">补偿 context 扩展后</text>
+<text x="1270" y="434" text-anchor="middle" font-size="16" fill="#4b5563">attention 熵/幅值变化</text>
+<path d="M1270 255 V340" stroke="#6b7280" stroke-width="2" stroke-dasharray="8 7" marker-end="url(#a2)"/>
+<rect x="470" y="535" width="465" height="100" rx="20" fill="#ecfeff" stroke="#06b6d4" stroke-width="2"/>
+<text x="702" y="574" text-anchor="middle" font-size="23" font-weight="700" fill="#155e75">Dynamic Scaling（推理时）</text>
+<text x="702" y="606" text-anchor="middle" font-size="18" fill="#164e63">s = max(1, 当前序列长度 / 原训练长度)</text>
+<text x="702" y="629" text-anchor="middle" font-size="16" fill="#164e63">长度逐步增长时动态更新；与 YaRN 组合即 Dynamic-YaRN</text>
+<path d="M1270 255 C1270 505 900 500 820 535" fill="none" stroke="#06b6d4" stroke-width="3" marker-end="url(#a)"/>
+</g>
+<defs>
+<marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#111827"/></marker>
+<marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/></marker>
+</defs>
+</svg>

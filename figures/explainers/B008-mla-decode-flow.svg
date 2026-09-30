@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720">
+<rect width="1400" height="720" fill="#fbfbfd"/><style>.t{font-family:Arial,'Microsoft YaHei',sans-serif;fill:#18212f}.h{font-size:28px;font-weight:700}.s{font-size:20px;font-weight:700}.b{font-size:16px}.m{font-size:15px;fill:#586575}.box{fill:white;stroke:#ced6e2;stroke-width:2;rx:16}.cache{fill:#f2f8ff;stroke:#8eb4dc}.now{fill:#f4faf5;stroke:#91c19e}.a{stroke:#6f7b89;stroke-width:2.2;fill:none;marker-end:url(#a)}</style><defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0 0 L10 3 L0 6 Z" fill="#6f7b89"/></marker></defs>
+<text x="700" y="45" text-anchor="middle" class="t h">MLA 的 Decode 心智模型：缓存“可重用状态”，而不是完整 K/V</text>
+<rect x="80" y="120" width="410" height="100" class="box now"/><text x="105" y="157" class="t s">当前 token hidden state h_t</text><text x="105" y="190" class="t b">生成当前 query 与当前 token 的 latent</text>
+<rect x="80" y="300" width="410" height="120" class="box cache"/><text x="105" y="337" class="t s">历史缓存</text><text x="105" y="370" class="t b">compressed KV latent c₁…cₜ₋₁</text><text x="105" y="400" class="t b">+ 小型 decoupled RoPE positional keys</text>
+<rect x="560" y="205" width="330" height="130" class="box"/><text x="585" y="242" class="t s">Weight absorption</text><text x="585" y="275" class="t b">把固定 up-projection 吸进</text><text x="585" y="304" class="t b">query / output projection</text>
+<path d="M490 170 L560 240" class="a"/><path d="M490 360 L560 295" class="a"/>
+<rect x="970" y="180" width="350" height="180" class="box"/><text x="995" y="220" class="t s">Attention 计算</text><text x="995" y="255" class="t b">无需为所有历史 token</text><text x="995" y="285" class="t b">显式重建完整 multi-head K/V</text><text x="995" y="325" class="t b">位置子空间单独处理 RoPE</text>
+<path d="M890 270 L970 270" class="a"/>
+<rect x="970" y="445" width="350" height="105" class="box cache"/><text x="995" y="482" class="t s">把当前 token 状态追加到 cache</text><text x="995" y="515" class="t b">下一 decode step 继续复用</text>
+<path d="M1145 360 L1145 445" class="a"/>
+<text x="700" y="650" text-anchor="middle" class="t m">自制解释图：真正难点是“压缩后还能直接参与 decode”；RoPE 会破坏简单矩阵吸收，因此需要内容/位置解耦。</text>
+</svg>
