@@ -82,12 +82,6 @@ $$
 ---
 
 
-## 总结架构图
-
-![教学总结图：A053-dual-chunk-attention](../../../figures/explainers/A053-dual-chunk-attention-summary.svg)
-
-> **教学总结图**：用三类 chunk relation 的相对位置重映射、三路 Attention 与全局 softmax merge 概括 DCA 的整体机制。
-
 # 一、先把问题从 RoPE frequency 换成 Relative-Position Matrix
 
 ## 1. 标准 RoPE 最终到底把什么交给 Attention？
@@ -395,6 +389,11 @@ DCA 的设计目标更激进：
 ## 7. 基本变量
 
 定义：
+
+![教学解释图：Chunk Partition](../../../figures/explainers/A053/01-chunk-partition.svg)
+
+*教学解释图｜Chunk Partition。*
+
 
 - $l$：当前输入长度；
 - $c$：pretraining context length；
@@ -1263,9 +1262,6 @@ $$
 
 ## 27. 三类 Query Position 的统一图
 
-![DCA 三类 query position](../../../figures/explainers/A053-three-way-query-positions.svg)
-
-*教学解释图。关键点是：历史 K/V content 没有被合并，key 的 RoPE position 循环复用；同一个 current query 会针对 current chunk、previous chunk、更早 chunks 生成三种不同 RoPE query 版本。*
 
 这也是为什么 DCA 不能简单写成：
 
@@ -1286,6 +1282,11 @@ $$
 ## 28. 先定义 Chunk Index
 
 对 absolute token index：
+
+![教学解释图：Three Attention Relations](../../../figures/explainers/A053/02-three-attention-relations.svg)
+
+*教学解释图｜Three Attention Relations。*
+
 
 $$
 i,
@@ -1878,6 +1879,11 @@ $$
 
 对当前 query $q_i$，key 被分成三个 disjoint groups：
 
+![教学解释图：Global Softmax Merge](../../../figures/explainers/A053/03-global-softmax-merge.svg)
+
+*教学解释图｜Global Softmax Merge。*
+
+
 $$
 \mathcal K_1
 =
@@ -2020,9 +2026,6 @@ $$
 
 这就是三个 attention group 恢复成一个 global attention distribution 的方式。
 
-![DCA 三组 attention 的全局 softmax 合并](../../../figures/explainers/A053-global-softmax-merge.svg)
-
-*教学解释图。三个 group 各自做局部 softmax 后，必须带回各自 partition mass $Z_g$ 重新合并；直接相加会改变原全局概率分布。*
 
 ---
 
@@ -2071,6 +2074,11 @@ output numerator 同理重标定。
 ## 44. 为什么这和 FlashAttention 的 online softmax 天然兼容？
 
 FlashAttention 本来就在做：
+
+![教学解释图：Flashattention Runtime](../../../figures/explainers/A053/04-flashattention-runtime.svg)
+
+*教学解释图｜Flashattention Runtime。*
+
 
 ~~~text
 一大块 K/V

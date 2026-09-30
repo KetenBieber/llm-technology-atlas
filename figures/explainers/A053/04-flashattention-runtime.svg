@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}
+.node{font-size:24px;font-weight:700}.body{font-size:21px}.small{font-size:19px;fill:#60758a}.math{font-size:22px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#9db7c8;stroke-width:2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#e9f9fa;stroke:#178d98;stroke-width:2.4}
+.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:4.5;marker-end:url(#a)}.goodflow{fill:none;stroke:#2f8a57;stroke-width:4.5;marker-end:url(#ag)}.cost{fill:none;stroke:#d47a20;stroke-width:4;marker-end:url(#ao)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">DCA Runtime：三次 FlashAttention 为什么不是 3× full attention？</text>
+<text x="70" y="112" class="subtitle">A053 · 三路 query phase 对应三个几乎互斥的 K/V segment；最后用 LSE sufficient statistics 恢复一次 global softmax</text>
+
+<text x="70" y="170" class="section">对当前 query qᵢ：历史 K/V 只被分区，不被复制成三份全历史</text>
+<rect x="70" y="205" width="1460" height="230" rx="22" class="box"/>
+<rect x="105" y="265" width="220" height="100" rx="18" class="blue"/><text x="140" y="307" class="node">qᵢ content</text><text x="140" y="340" class="small">同一个 hidden projection</text>
+
+<path d="M325 315 C390 250 420 250 480 250" class="flow"/><path d="M325 315 H480" class="goodflow"/><path d="M325 315 C390 380 420 380 480 380" class="flow"/>
+<rect x="490" y="220" width="255" height="70" rx="14" class="blue"/><text x="515" y="263" class="body">q^intra · local phase</text>
+<rect x="490" y="300" width="255" height="70" rx="14" class="green"/><text x="515" y="343" class="body">q^succ · boundary phase</text>
+<rect x="490" y="380" width="255" height="70" rx="14" class="cyan"/><text x="515" y="423" class="body">q^inter · far-safe phase</text>
+
+<rect x="840" y="215" width="210" height="75" rx="14" class="blue"/><text x="870" y="260" class="body">current chunk K/V</text>
+<rect x="840" y="300" width="210" height="75" rx="14" class="green"/><text x="870" y="345" class="body">previous chunk K/V</text>
+<rect x="840" y="385" width="210" height="75" rx="14" class="cyan"/><text x="870" y="430" class="body">older chunks K/V</text>
+<path d="M745 255 H830" class="flow"/><path d="M745 335 H830" class="goodflow"/><path d="M745 415 H830" class="flow"/>
+
+<rect x="1130" y="220" width="330" height="70" rx="14" class="orange"/><text x="1160" y="263" class="body">FlashAttention #1 → stats S₁</text>
+<rect x="1130" y="305" width="330" height="70" rx="14" class="orange"/><text x="1160" y="348" class="body">FlashAttention #2 → stats S₂</text>
+<rect x="1130" y="390" width="330" height="70" rx="14" class="orange"/><text x="1160" y="433" class="body">FlashAttention #3 → stats S₃</text>
+<path d="M1050 252 H1120" class="cost"/><path d="M1050 337 H1120" class="cost"/><path d="M1050 422 H1120" class="cost"/>
+
+<text x="70" y="515" class="section">Coverage accounting：三路 key 数相加 ≈ 当前 query 原本要看的全部历史</text>
+<rect x="70" y="555" width="940" height="210" rx="22" class="gray"/>
+<text x="105" y="600" class="math">n_intra + n_successive + n_inter ≈ i + 1</text>
+<rect x="110" y="635" width="140" height="55" rx="8" fill="#2b6f9f"/><rect x="250" y="635" width="190" height="55" rx="8" fill="#2f8a57"/><rect x="440" y="635" width="480" height="55" rx="8" fill="#178d98"/>
+<text x="135" y="671" font-size="19" fill="#fff">current</text><text x="285" y="671" font-size="19" fill="#fff">previous</text><text x="620" y="671" font-size="19" fill="#fff">older history</text>
+<text x="105" y="728" class="body">不是：3 × (全部历史 K/V)。所以三次 kernel call ≠ 3× score count。</text>
+
+<rect x="1050" y="555" width="480" height="210" rx="22" class="orange"/>
+<text x="1085" y="600" class="node">三路之后仍是一份 attention</text>
+<text x="1085" y="642" class="body">S_g = (m_g, ℓ_g, U_g)</text>
+<path d="M1090 675 H1260" class="cost"/>
+<text x="1280" y="682" class="body">stable LSE merge</text>
+<text x="1085" y="725" class="small">输出 O 与“把三组 key 一次 global softmax”一致</text>
+
+<text x="70" y="835" class="section">复杂度边界：DCA 解决 position extrapolation，不解决 quadratic history scan</text>
+<rect x="70" y="875" width="460" height="130" rx="20" class="red"/>
+<text x="100" y="918" class="node">Score complexity</text><text x="100" y="960" class="math">per query O(i)  ⇒  sequence O(L²)</text>
+<rect x="570" y="875" width="460" height="130" rx="20" class="blue"/>
+<text x="600" y="918" class="node">KV Cache</text><text x="600" y="960" class="math">O(L · d_kv)  · 历史 content 仍完整保留</text>
+<rect x="1070" y="875" width="460" height="130" rx="20" class="green"/>
+<text x="1100" y="918" class="node">Working attention memory</text><text x="1100" y="950" class="body">保持 FlashAttention 的 blockwise / online level</text>
+<text x="1100" y="977" class="small">额外：query rotations + segment bookkeeping</text>
+<text x="1100" y="1000" class="small">以及多次 kernel launch overhead</text>
+</svg>

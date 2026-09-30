@@ -95,16 +95,8 @@ routed experts 更专注差异化知识
 获得更高 expert specialization
 ~~~
 
-![自制解释图：DeepSeekMoE 从粗粒度路由走向专家职责分离](../../../figures/explainers/A034-deepseekmoe-specialization.svg)
-
 *自制解释图，不是原论文 Figure。先把作者的两个问题一一对应起来：fine-grained segmentation 主要对付 Knowledge Hybridity；shared expert isolation 主要对付 Knowledge Redundancy。后面的实验再分别检查这两种结构变化是否真的带来收益。*
 
-
-## 总结架构图
-
-![教学总结图：A034-deepseekmoe](../../../figures/explainers/A034-deepseekmoe-summary.svg)
-
-> **教学总结图**：把 Fine-Grained Expert Segmentation 与 Shared Expert Isolation 放到同一张图中，解释 DeepSeekMoE 如何提升专家专门化。
 
 ## 1. 先把传统 MoE 写清楚：Router 能选 expert，但不能选 expert 内部的知识子块
 
@@ -231,6 +223,11 @@ DeepSeekMoE 的第一步就是：
 ## 3. Fine-Grained Expert Segmentation：专家切小以后，为什么总参数和 active compute 都能不变？
 
 假设传统 MoE 有：
+
+![教学解释图：Fine Grained Budget Invariants](../../../figures/explainers/A034/01-fine-grained-budget-invariants.svg)
+
+*教学解释图｜Fine Grained Budget Invariants。*
+
 
 $$
 N
@@ -386,6 +383,11 @@ Top-3 routed
 
 论文给了一个很直观的例子。
 
+![教学解释图：Combinatorial Routing Space](../../../figures/explainers/A034/02-combinatorial-routing-space.svg)
+
+*教学解释图｜Combinatorial Routing Space。*
+
+
 传统：
 
 $$
@@ -526,6 +528,11 @@ A1 + B1 + 必要的 common component
 
 Fine-Grained Segmentation 主要解决：
 
+![教学解释图：Shared Expert Isolation](../../../figures/explainers/A034/03-shared-expert-isolation.svg)
+
+*教学解释图｜Shared Expert Isolation。*
+
+
 > 一个 routed expert 内部混了太多种彼此不一定同时需要的知识。
 
 但它还没有解决另一个问题。
@@ -622,6 +629,11 @@ $$
 ## 8. Specialization 和 Load Balancing 是两个不同问题，不要混在一起
 
 到了这里很容易把两件事混掉：
+
+![教学解释图：Specialization Evidence](../../../figures/explainers/A034/04-specialization-evidence.svg)
+
+*教学解释图｜Specialization Evidence。*
+
 
 ### 问题 A：expert 学得够不够“专”
 

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">FP8 Incoherent Processing：怎样摊平 Outlier，又保持 QKᵀ 数学不变？</text>
+<text x="70" y="112" class="subtitle">A057 · 先利用正交变换的不变量改变坐标分布，再做 tile-aligned block quantization</text>
+
+<text x="70" y="176" class="section">Baseline：少数 outlier 决定整块 scale，普通值被迫挤进更粗的 FP8 网格</text>
+<rect x="70" y="210" width="600" height="315" rx="22" class="red"/>
+<text x="105" y="255" class="node">一个 Q/K block 的 feature coordinates</text>
+<line x1="120" y1="445" x2="615" y2="445" stroke="#8795a1" stroke-width="2"/>
+<g stroke="#c64a4a" stroke-width="14">
+<line x1="165" y1="445" x2="165" y2="420"/><line x1="225" y1="445" x2="225" y2="405"/><line x1="285" y1="445" x2="285" y2="425"/><line x1="345" y1="445" x2="345" y2="285"/><line x1="405" y1="445" x2="405" y2="415"/><line x1="465" y1="445" x2="465" y2="400"/><line x1="525" y1="445" x2="525" y2="422"/>
+</g>
+<text x="323" y="278" class="small">outlier</text>
+<text x="105" y="490" class="math">single scale s ← max |x|</text>
+<text x="105" y="518" class="small">大值决定 scale → 小值 quantization resolution 下降</text>
+
+<path d="M690 365 H780" class="good"/>
+<text x="705" y="337" class="small">orthogonal mixing</text>
+
+<rect x="800" y="210" width="730" height="315" rx="22" class="green"/>
+<text x="835" y="255" class="node">Q′ = QM，K′ = KM；M Mᵀ = I</text>
+<line x1="850" y1="445" x2="1465" y2="445" stroke="#8795a1" stroke-width="2"/>
+<g stroke="#2f8a57" stroke-width="14">
+<line x1="900" y1="445" x2="900" y2="350"/><line x1="975" y1="445" x2="975" y2="365"/><line x1="1050" y1="445" x2="1050" y2="338"/><line x1="1125" y1="445" x2="1125" y2="372"/><line x1="1200" y1="445" x2="1200" y2="345"/><line x1="1275" y1="445" x2="1275" y2="360"/><line x1="1350" y1="445" x2="1350" y2="352"/>
+</g>
+<text x="835" y="490" class="small">Hadamard-like / randomized orthogonal transform：能量从单一坐标摊到多个坐标</text>
+
+<text x="70" y="590" class="section">数学不变量保证“换坐标不换 Attention score”</text>
+<rect x="70" y="625" width="760" height="200" rx="20" class="blue"/>
+<text x="110" y="678" class="math">(QM)(KM)ᵀ = Q M Mᵀ Kᵀ = QKᵀ</text>
+<text x="110" y="728" class="body">正交变换本身 exact；误差来自之后的低精度 quantization</text>
+<text x="110" y="775" class="small">这给系统实现一个自由度：在数学等价类中选择更适合 FP8 的表示</text>
+
+<rect x="885" y="625" width="645" height="200" rx="20" class="cyan"/>
+<text x="925" y="674" class="node">Tile-aligned Block Quantization</text>
+<text x="925" y="718" class="math">Qᵢ → Quant(Qᵢ; sQi)　Kⱼ → Quant(Kⱼ; sKj)</text>
+<text x="925" y="760" class="body">每个执行 tile 独立 scale，局部动态范围不互相拖累</text>
+<text x="925" y="798" class="small">algorithmic tile = quantization tile</text>
+
+<path d="M450 845 V910 H1175 V845" class="flow"/>
+<rect x="360" y="910" width="890" height="95" rx="18" class="green"/>
+<text x="405" y="951" class="node">FP8 WGMMA：完整 dense attention pair 仍被计算</text>
+<text x="405" y="986" class="small">低精度只改变数值表示，不把 dense attention 变成 sparse approximation</text>
+
+<rect x="70" y="1030" width="1460" height="50" rx="12" class="box"/>
+<text x="100" y="1063" class="small">论文 RMSE：baseline FP8 per-tensor 2.4×10⁻² → FA3 FP8 9.1×10⁻³；去掉 incoherent processing 后回到 2.4×10⁻²。</text>
+</svg>

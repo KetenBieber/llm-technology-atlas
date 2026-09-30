@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.thin{fill:none;stroke:#6d8797;stroke-width:2}.grid{stroke:#c9d6de;stroke-width:1.4}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Distributed Muon：ZeRO-1 分片为什么必须临时恢复完整矩阵？</text><text x="70" y="112" class="subtitle">A006 · optimizer state 可以分片，但 Polar(M) 具有跨分片耦合</text>
+<text x="70" y="176" class="section">错误直觉：每个 rank 各自正交化自己的行分片</text>
+<rect x="70" y="215" width="500" height="300" rx="22" class="red"/>
+<rect x="105" y="270" width="175" height="150" fill="#f0dada" stroke="#c64a4a" stroke-width="2"/>
+<rect x="280" y="270" width="175" height="150" fill="#e6edf1" stroke="#8795a1" stroke-width="2"/>
+<text x="120" y="455" class="body">Rank0: M₁</text><text x="320" y="455" class="body">Rank1: M₂</text>
+<path d="M170 470 V495" class="bad"/><path d="M370 470 V495" class="bad"/>
+<text x="105" y="500" class="small">Polar(M₁) ⊕ Polar(M₂) ≠ Polar([M₁;M₂])</text>
+<text x="610" y="248" class="math">MMᵀ = [ M₁M₁ᵀ   M₁M₂ᵀ ]</text>
+<text x="610" y="292" class="math">      [ M₂M₁ᵀ   M₂M₂ᵀ ]</text>
+<text x="610" y="350" class="body">红色缺失项 = 跨 rank 的交叉块</text>
+<rect x="820" y="315" width="150" height="58" class="red" rx="10"/><text x="841" y="352" class="math">M₁M₂ᵀ</text>
+<rect x="620" y="390" width="910" height="95" class="box" rx="16"/>
+<text x="650" y="425" class="body">AdamW：逐元素更新，只依赖本地 shard。</text>
+<text x="650" y="462" class="body">Muon：Polar(M) 需要跨 shard 的矩阵结构，不能各自独立正交化。</text>
+
+<text x="70" y="575" class="section">正确执行流：长期状态分片 + 当前矩阵临时 Gather</text>
+<rect x="70" y="620" width="230" height="130" rx="18" class="gray"/>
+<text x="98" y="663" class="node">DP 梯度</text><text x="98" y="704" class="small">Reduce-Scatter</text>
+<path d="M300 685 H380" class="comm"/>
+<rect x="380" y="620" width="230" height="130" rx="18" class="blue"/>
+<text x="408" y="663" class="node">本地 M shard</text><text x="408" y="704" class="small">仅 1/D 常驻</text>
+<path d="M610 685 H690" class="comm"/>
+<rect x="690" y="595" width="260" height="180" rx="20" class="orange"/>
+<text x="718" y="640" class="node">Gather 当前 M</text>
+<text x="718" y="683" class="body">临时恢复 [A,B]</text>
+<text x="718" y="724" class="small">通信路径（橙）</text>
+<path d="M950 685 H1030" class="flow"/>
+<rect x="1030" y="620" width="235" height="130" rx="18" class="cyan"/>
+<text x="1058" y="663" class="node">全矩阵 NS</text><text x="1058" y="704" class="small">O ≈ Polar(M)</text>
+<path d="M1265 685 H1340" class="good"/>
+<rect x="1340" y="620" width="190" height="130" rx="18" class="green"/>
+<text x="1368" y="663" class="node">保留本地 ΔW</text><text x="1368" y="704" class="small">其余丢弃</text>
+
+<path d="M1435 750 V840 H250 V790" class="comm"/>
+<rect x="435" y="820" width="730" height="135" rx="20" class="orange"/>
+<text x="465" y="866" class="node">参数更新后 All-Gather → 下一次 forward 使用一致 W</text>
+<text x="465" y="910" class="body">长期驻留：sharded optimizer state；临时峰值：当前负责矩阵的完整 M</text>
+
+<rect x="70" y="980" width="1460" height="70" rx="15" class="box"/>
+<text x="100" y="1025" class="small">语义边界：不是把整个模型的全部 Muon state 永久复制到每张 GPU；Gather 只为当前矩阵的非局部正交化依赖服务。</text>
+</svg>

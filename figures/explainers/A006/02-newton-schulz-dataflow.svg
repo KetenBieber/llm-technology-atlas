@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.thin{fill:none;stroke:#6d8797;stroke-width:2}.grid{stroke:#c9d6de;stroke-width:1.4}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Scalable Muon：Newton–Schulz 如何近似 Polar(M)？</text><text x="70" y="112" class="subtitle">A006 · 不显式做 SVD，用矩阵乘法把每个奇异值推向接近 1</text>
+<text x="70" y="176" class="section">矩阵数据流</text>
+<rect x="70" y="215" width="250" height="120" rx="20" class="gray"/>
+<text x="98" y="260" class="node">梯度 Gₜ</text><text x="98" y="300" class="small">[A,B]</text>
+<path d="M320 275 H405" class="flow"/>
+<rect x="405" y="215" width="265" height="120" rx="20" class="blue"/>
+<text x="433" y="258" class="node">Momentum Mₜ</text><text x="433" y="298" class="math">βMₜ₋₁ + Gₜ</text>
+<path d="M670 275 H755" class="flow"/>
+<rect x="755" y="215" width="285" height="120" rx="20" class="cyan"/>
+<text x="785" y="258" class="node">归一化 X₀</text><text x="785" y="298" class="math">M / ‖M‖F</text>
+<path d="M1040 275 H1125" class="flow"/>
+<rect x="1125" y="190" width="405" height="170" rx="22" class="green"/>
+<text x="1155" y="235" class="node">5× Newton–Schulz polynomial</text>
+<text x="1155" y="278" class="math">Aₖ = XₖXₖᵀ</text>
+<text x="1155" y="318" class="math">Xₖ₊₁ = aXₖ + bAₖXₖ + cAₖ²Xₖ</text>
+
+<path d="M1325 360 V430" class="good"/>
+<rect x="1125" y="430" width="405" height="105" rx="18" class="blue"/>
+<text x="1155" y="474" class="node">O ≈ Polar(M)</text><text x="1155" y="512" class="small">Shape 保持 [A,B]</text>
+
+<text x="70" y="415" class="section">为什么这等价于“逐奇异值”做同一个标量映射？</text>
+<rect x="70" y="455" width="970" height="410" rx="24" class="box"/>
+<text x="105" y="505" class="math">若 Xₖ = U diag(sᵢ) Vᵀ</text>
+<path d="M315 540 V620" class="aux"/>
+<rect x="105" y="620" width="250" height="100" rx="16" class="cyan"/>
+<text x="130" y="662" class="node">AₖXₖ</text><text x="130" y="700" class="math">U diag(sᵢ³) Vᵀ</text>
+<rect x="395" y="620" width="270" height="100" rx="16" class="cyan"/>
+<text x="420" y="662" class="node">Aₖ²Xₖ</text><text x="420" y="700" class="math">U diag(sᵢ⁵) Vᵀ</text>
+<path d="M355 670 H395" class="aux"/>
+<path d="M665 670 H735" class="flow"/>
+<rect x="735" y="590" width="265" height="155" rx="18" class="green"/>
+<text x="760" y="634" class="node">标量多项式</text>
+<text x="760" y="677" class="math">f(s)=as+bs³+cs⁵</text>
+<text x="760" y="716" class="small">所有 sᵢ 并行更新</text>
+<line x1="145" y1="800" x2="930" y2="800" class="thin"/>
+<circle cx="210" cy="800" r="10" fill="#c64a4a"/><circle cx="405" cy="800" r="10" fill="#d47a20"/><circle cx="700" cy="800" r="10" fill="#2f8a57"/>
+<path d="M220 800 C320 760 350 760 395 800" class="good"/><path d="M415 800 C540 840 610 840 690 800" class="good"/>
+<text x="150" y="842" class="small">小/大奇异值经过同一 polynomial，被推向近似正交区间</text>
+
+<rect x="1085" y="590" width="445" height="275" rx="22" class="orange"/>
+<text x="1115" y="635" class="node">计算语义</text>
+<text x="1115" y="682" class="body">• 主体是 GEMM：X Xᵀ、A X、A² X</text>
+<text x="1115" y="724" class="body">• 不显式构造 U、Σ、V</text>
+<text x="1115" y="766" class="body">• 5 步是实践折中，不是“精确 SVD”</text>
+<text x="1115" y="808" class="body">• A&gt;B 时转置以让 Gram 更小</text>
+
+<rect x="70" y="905" width="1460" height="120" rx="20" class="red"/>
+<text x="100" y="950" class="node">Baseline bottleneck：逐步完整 SVD</text>
+<text x="520" y="950" class="body">训练中反复分解巨大矩阵成本高；Newton–Schulz 用可并行矩阵乘替代分解。</text>
+</svg>

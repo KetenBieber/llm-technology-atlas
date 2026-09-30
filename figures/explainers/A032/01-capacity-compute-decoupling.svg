@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .dense{fill:#fff1f0;stroke:#c43d3d;stroke-width:2}.expert{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}.active{fill:#edf9f0;stroke:#2e8b57;stroke-width:3}
+  .flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#a)}.formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Sparse MoE：用 E 扩总容量，用 k 控制单 Token 计算</text>
+<text x="800" y="101" text-anchor="middle" class="sub">Dense FFN 扩宽会同时增加参数与 FLOPs；MoE 让总 expert 数 E 与每 token 激活数 k 分别控制两件事</text>
+
+<rect x="55" y="145" width="690" height="760" rx="22" class="panel"/>
+<text x="400" y="190" text-anchor="middle" class="h">Dense FFN：capacity ↑ ⇒ 每 token compute 同步 ↑</text>
+<rect x="105" y="255" width="165" height="82" rx="14" fill="#e9f2ff" stroke="#1557b0" stroke-width="2"/>
+<text x="187" y="304" text-anchor="middle" class="b">x ∈ Rᵈ</text>
+<path d="M270 296 H335" class="flow"/>
+<rect x="350" y="225" width="300" height="145" rx="16" class="dense"/>
+<text x="500" y="270" text-anchor="middle" class="h">one FFN</text>
+<text x="500" y="309" text-anchor="middle" class="b">W₁: d → d_ff</text>
+<text x="500" y="342" text-anchor="middle" class="b">W₂: d_ff → d</text>
+<rect x="115" y="465" width="545" height="190" rx="16" class="formula"/>
+<text x="387" y="511" text-anchor="middle" class="b">P_dense ≈ 2 d d_ff</text>
+<text x="387" y="556" text-anchor="middle" class="b">FLOPs/token ≈ 2 d d_ff</text>
+<text x="387" y="610" text-anchor="middle" class="h">d_ff × 10  ⇒  参数 × 10 且 FLOPs × 10</text>
+<text x="387" y="727" text-anchor="middle" class="s">容量和单 token 计算被同一个 width 绑定。</text>
+<text x="387" y="762" text-anchor="middle" class="s">想让模型“装更多知识”，就必须每个 token 都付更多乘加。</text>
+
+<rect x="785" y="145" width="760" height="760" rx="22" class="panel"/>
+<text x="1165" y="190" text-anchor="middle" class="h">Sparse MoE：E 控制总容量，k 控制 active compute</text>
+<rect x="825" y="255" width="145" height="82" rx="14" fill="#e9f2ff" stroke="#1557b0" stroke-width="2"/>
+<text x="897" y="304" text-anchor="middle" class="b">token x</text>
+<path d="M970 296 H1040" class="flow"/>
+<rect x="1055" y="240" width="175" height="110" rx="15" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+<text x="1142" y="283" text-anchor="middle" class="h">Router</text><text x="1142" y="319" text-anchor="middle" class="b">Top-k</text>
+<path d="M1230 295 H1295" class="flow"/>
+
+<g>
+<rect x="1320" y="220" width="150" height="65" rx="12" class="active"/><text x="1395" y="260" text-anchor="middle" class="b">Expert 7 ✓</text>
+<rect x="1320" y="305" width="150" height="65" rx="12" class="expert"/><text x="1395" y="345" text-anchor="middle" class="b">Expert 8</text>
+<rect x="1320" y="390" width="150" height="65" rx="12" class="active"/><text x="1395" y="430" text-anchor="middle" class="b">Expert 31 ✓</text>
+<rect x="1320" y="475" width="150" height="65" rx="12" class="expert"/><text x="1395" y="515" text-anchor="middle" class="b">… Expert E</text>
+</g>
+<text x="1145" y="414" text-anchor="middle" class="b">只有 k 个 expert</text>
+<text x="1145" y="448" text-anchor="middle" class="b">真正执行 FFN</text>
+
+<rect x="835" y="590" width="650" height="205" rx="16" class="formula"/>
+<text x="1160" y="635" text-anchor="middle" class="b">P_total ≈ E · 2 d d_ff</text>
+<text x="1160" y="680" text-anchor="middle" class="b">F_active/token ≈ k · 2 d d_ff</text>
+<text x="1160" y="735" text-anchor="middle" class="h">P ∝ E，active FLOPs ∝ k</text>
+<text x="1160" y="842" text-anchor="middle" class="s">E ≫ k 时，绝大多数 expert 参数在当前 token 上不参与计算。</text>
+
+<rect x="145" y="950" width="1310" height="100" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="987" text-anchor="middle" class="b">文中数字例子：E=64、k=2、每个 expert=100M 参数 → 总 expert 容量 6.4B，但当前 token 只激活 200M（约 3.125%）。</text>
+<text x="800" y="1025" text-anchor="middle" class="s">注意：这只描述 expert 分支；Attention、router、embedding 等 dense 部分仍然要计算。</text>
+</svg>

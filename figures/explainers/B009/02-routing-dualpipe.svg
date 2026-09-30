@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<desc>DeepSeek-V3 routing bias, expert-parallel all-to-all and DualPipe overlap timeline.</desc>
+<defs>
+  <marker id="arrowB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#0B4F9C"/></marker>
+  <marker id="arrowO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#F59E0B"/></marker>
+  <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#16A34A"/></marker>
+  <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#DC2626"/></marker>
+  <style>
+    .t{font:700 44px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#10243e}
+    .sub{font:400 23px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#52647a}
+    .h{font:700 30px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#15385f}
+    .n{font:700 24px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#15385f}
+    .b{font:400 21px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#26384d}
+    .m{font:600 20px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#42556d}
+    .mono{font:600 21px 'JetBrains Mono','Consolas',monospace;fill:#18334f}
+    .blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}
+    .gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}
+    .green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}
+    .flow{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#arrowB)}.comm{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#arrowO)}
+    .opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#arrowG)}.bad{fill:none;stroke:#DC2626;stroke-width:4;stroke-dasharray:9 8;marker-end:url(#arrowR)}
+    .thin{fill:none;stroke:#64748B;stroke-width:2.2;marker-end:url(#arrowB)}.divider{stroke:#D9E2EC;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#FFFFFF"/>
+<text x="70" y="72" class="t">DeepSeek‑V3 · Router 选专家以后，为什么立刻变成通信系统问题？</text>
+<text x="70" y="110" class="sub">对应 §5 / §7｜回答：auxiliary-loss-free balance、EP all-to-all 与 DualPipe overlap 如何连成一条执行链</text>
+
+<text x="70" y="165" class="h">① 模型路由：affinity 表达“想去谁”，routing bias 只改变 Top‑K selection</text>
+<rect x="70" y="205" width="280" height="150" rx="18" class="blue"/><text x="88" y="239" class="n">Token uₜ</text><text x="88" y="275" class="b">router input</text><text x="88" y="304" class="b">hidden state</text>
+<path d="M350 280 H430" class="flow"/>
+<rect x="430" y="185" width="330" height="190" rx="18" class="gray"/><text x="448" y="219" class="n">Raw affinity</text><text x="448" y="255" class="b">sᵢ,ₜ = sigmoid(uₜᵀeᵢ)</text><text x="448" y="284" class="b">模型偏好 ≠ 设备负载</text>
+<path d="M760 280 H850" class="flow"/>
+<rect x="850" y="175" width="350" height="210" rx="18" class="orange"/><text x="868" y="209" class="n">Balance-aware selection</text><text x="868" y="245" class="b">selection: sᵢ,ₜ + bᵢ；bᵢ 跟踪负载</text><text x="868" y="274" class="b">bias 只选 Top‑K；gate 仍使用 sᵢ,ₜ</text>
+<path d="M1200 280 H1285" class="opt"/>
+<rect x="1285" y="195" width="245" height="170" rx="18" class="green"/><text x="1303" y="229" class="n">Top‑8 Experts</text><text x="1303" y="265" class="b">保留 specialization、抑制热点</text><text x="1303" y="294" class="b">避免强 auxiliary loss</text>
+<text x="70" y="440" class="h">② 系统路由：Top‑K 一确定，activation 就必须去 expert 所在 rank</text>
+<g>
+<rect x="70" y="480" width="230" height="160" rx="18" class="gray"/><text x="88" y="514" class="n">Rank 0</text><text x="88" y="550" class="b">tokens: A B C</text><text x="88" y="579" class="b">router outputs</text>
+<rect x="360" y="480" width="230" height="160" rx="18" class="cyan"/><text x="378" y="514" class="n">Rank 1 / E₁…</text><text x="378" y="550" class="b">接收远端 token</text><text x="378" y="579" class="b">Expert MLP</text>
+<rect x="650" y="480" width="230" height="160" rx="18" class="cyan"/><text x="668" y="514" class="n">Rank 2 / E…</text><text x="668" y="550" class="b">接收远端 token</text><text x="668" y="579" class="b">Expert MLP</text>
+<rect x="940" y="480" width="230" height="160" rx="18" class="cyan"/><text x="958" y="514" class="n">Rank 3 / E…</text><text x="958" y="550" class="b">接收远端 token</text><text x="958" y="579" class="b">Expert MLP</text>
+<rect x="1230" y="480" width="300" height="160" rx="18" class="gray"/><text x="1248" y="514" class="n">Combine owner</text><text x="1248" y="550" class="b">按原 token 顺序</text><text x="1248" y="579" class="b">加权合并输出</text>
+</g>
+<path d="M300 535 C330 500 335 500 360 520" class="comm"/><path d="M300 565 C460 420 590 420 650 520" class="comm"/><path d="M300 600 C610 390 850 390 940 520" class="comm"/>
+<path d="M590 590 C840 710 1110 690 1230 575" class="comm"/><path d="M880 590 C1030 650 1150 640 1230 590" class="comm"/><path d="M1170 590 H1230" class="comm"/>
+<text x="70" y="690" class="m">橙色虚线 = dispatch / combine all‑to‑all；热点 expert 会把“模型偏好”放大成网络与 straggler 问题。</text>
+<line x1="70" y1="735" x2="1530" y2="735" class="divider"/>
+<text x="70" y="785" class="h">③ DualPipe：通信没有消失，只是从 critical path 上被尽量隐藏</text>
+<text x="90" y="845" class="n">串行 baseline</text>
+<rect x="270" y="815" width="300" height="55" rx="12" fill="#DDEBFA"/><text x="355" y="850" class="b">Attention / MLP compute</text>
+<rect x="570" y="815" width="260" height="55" rx="12" fill="#FFE3AE"/><text x="625" y="850" class="b">dispatch / combine</text>
+<rect x="830" y="815" width="230" height="55" rx="12" fill="#DDEBFA"/><text x="875" y="850" class="b">next compute</text>
+<text x="1085" y="850" class="mono">T = Tcompute + Tcomm</text>
+<text x="90" y="935" class="n">DualPipe overlap</text>
+<rect x="270" y="905" width="420" height="55" rx="12" fill="#DDEBFA"/><text x="380" y="940" class="b">compute chunk A / B</text>
+<rect x="490" y="960" width="420" height="55" rx="12" fill="#FFE3AE"/><text x="575" y="995" class="b">all‑to‑all / PP communication</text>
+<rect x="690" y="905" width="360" height="55" rx="12" fill="#DDF6E5"/><text x="765" y="940" class="b">Dgrad / Wgrad reordering</text>
+<text x="1090" y="950" class="mono">T ≈ max(Tcompute, Tcomm)</text>
+<text x="1090" y="990" class="m">论文报告 cross-node EP 的 compute:comm 约 1:1</text>
+
+</svg>

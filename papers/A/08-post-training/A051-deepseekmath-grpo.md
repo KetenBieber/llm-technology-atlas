@@ -38,12 +38,6 @@
 ---
 
 
-## 总结架构图
-
-![教学总结图：A051-deepseekmath-grpo](../../../figures/explainers/A051-deepseekmath-grpo-summary.svg)
-
-> **教学总结图**：把组内相对 advantage、PPO-style ratio/clip 与 reference KL 放在同一目标中，突出 GRPO 真正删除的是 Critic。
-
 ## 1. 先别急着看 GRPO：PPO 为什么要有 Critic？
 
 理解 GRPO 最容易犯的错误，是从一句：
@@ -261,6 +255,11 @@ DeepSeekMath 特别指出，Value Model 通常与 Policy Model 规模相当，�
 ## 2. 原论文 Figure 4：GRPO 删除的是 Value Model 这条支路
 
 ![DeepSeekMath 原论文 Figure 4：PPO 与 GRPO](../../../figures/A051/fig4-ppo-vs-grpo.svg)
+
+![教学解释图：Critic → Group Baseline](../../../figures/explainers/A051/01-critic-to-group-baseline.svg)
+
+*教学解释图｜Critic → Group Baseline。*
+
 
 这张图应该先看模型数量，而不是先看公式。
 
@@ -712,6 +711,11 @@ $$
 
 对 response $i$ 的第 $t$ 个 token，定义：
 
+![教学解释图：Ratio Clip Kl](../../../figures/explainers/A051/03-ratio-clip-kl.svg)
+
+*教学解释图｜Ratio Clip Kl。*
+
+
 $$
 \rho_{i,t}(\theta)
 =
@@ -1064,6 +1068,11 @@ $$
 ## 9. Outcome supervision 的真正代价：整条 response 的 token 共用一个信用信号
 
 Outcome supervision 中：
+
+![教学解释图：Outcome Process Iterative](../../../figures/explainers/A051/04-outcome-process-iterative.svg)
+
+*教学解释图｜Outcome Process Iterative。*
+
 
 $$
 \hat A_{i,t}
@@ -1624,6 +1633,11 @@ $$
 ## 18. “Group std”其实是一个非常强的归一化操作
 
 DeepSeekMath 不只减 mean，还除以：
+
+![教学解释图：Group Normalization Credit](../../../figures/explainers/A051/02-group-normalization-credit.svg)
+
+*教学解释图｜Group Normalization Credit。*
+
 
 $$
 \sigma_r.

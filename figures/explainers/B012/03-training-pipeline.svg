@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200">
+<defs>
+  <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1d4ed8"/></marker>
+  <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16a34a"/></marker>
+  <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#ea580c"/></marker>
+  <style>
+    text{font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;fill:#0f172a}
+    .title{font-size:48px;font-weight:700}.sub{font-size:22px;fill:#475569}.sec{font-size:28px;font-weight:700}
+    .lab{font-size:23px;font-weight:700}.body{font-size:20px;fill:#334155}.num{font-size:26px;font-weight:700}.mono{font-size:20px;font-family:Consolas,monospace}
+    .box{rx:18;ry:18;stroke-width:2.2}.flow{stroke:#1d4ed8;stroke-width:4;fill:none;marker-end:url(#b)}
+    .good{stroke:#16a34a;stroke-width:4;fill:none;marker-end:url(#g)}.cost{stroke:#ea580c;stroke-width:3.5;fill:none;marker-end:url(#o)}
+    .dash{stroke:#ea580c;stroke-width:3;stroke-dasharray:10 8;fill:none;marker-end:url(#o)}
+  </style>
+</defs>
+<rect width="1800" height="1200" fill="#fff"/>
+<text x="80" y="78" class="title">Qwen2.5 后训练：为什么是 SFT → Offline DPO → Online GRPO？</text>
+<text x="80" y="116" class="sub">核心问题：不同 reward source 的可验证性不同，所以监督、离线 preference 与在线 reward sampling 应该分阶段使用。</text>
+
+<!-- SFT capability sources -->
+<text x="80" y="175" class="sec" fill="#1d4ed8">① SFT：有高质量 target 时，先直接模仿</text>
+<g>
+<rect x="80" y="215" width="190" height="75" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="175" y="260" text-anchor="middle" class="body">Math / CoT</text>
+<rect x="295" y="215" width="190" height="75" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="390" y="260" text-anchor="middle" class="body">Coding / tests</text>
+<rect x="510" y="215" width="190" height="75" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="605" y="260" text-anchor="middle" class="body">Instruction / verifier</text>
+<rect x="725" y="215" width="190" height="75" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="820" y="260" text-anchor="middle" class="body">Structured data</text>
+<rect x="940" y="215" width="190" height="75" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="1035" y="260" text-anchor="middle" class="body">Logical reasoning</text>
+<rect x="1155" y="215" width="190" height="75" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="1250" y="260" text-anchor="middle" class="body">Multilingual</text>
+</g>
+<rect x="1390" y="195" width="330" height="115" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="1555" y="232" text-anchor="middle" class="lab">Critic + multi-agent scoring</text>
+<text x="1555" y="266" text-anchor="middle" class="body">只保留全部 judge 都判 flawless</text>
+<text x="1555" y="296" text-anchor="middle" class="body">precision-first filtering</text>
+<path d="M175 290V330H1365V252H1380" class="good"/>
+<path d="M390 290V330M605 290V330M820 290V330M1035 290V330M1250 290V330" stroke="#16a34a" stroke-width="3" fill="none"/>
+<rect x="1240" y="355" width="300" height="110" class="box" fill="#dbeafe" stroke="#1d4ed8"/>
+<text x="1390" y="394" text-anchor="middle" class="lab">SFT model</text><text x="1390" y="428" text-anchor="middle" class="body">&gt;1M samples · 2 epochs</text><text x="1390" y="458" text-anchor="middle" class="body">seq len = 32,768</text>
+<path d="M1555 310V340H1390V345" class="flow"/>
+
+<!-- offline DPO -->
+<text x="80" y="530" class="sec" fill="#16a34a">② Offline DPO：可程序化 / 可客观验证的任务，先构造低噪声 preference pairs</text>
+<rect x="80" y="575" width="250" height="120" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="205" y="615" text-anchor="middle" class="lab">SFT model resample</text><text x="205" y="649" text-anchor="middle" class="body">math / code / instruction</text><text x="205" y="679" text-anchor="middle" class="body">logical reasoning</text>
+<rect x="400" y="555" width="300" height="160" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="550" y="595" text-anchor="middle" class="lab">Objective verifiers</text>
+<text x="550" y="630" text-anchor="middle" class="body">exact answer · unit test</text><text x="550" y="662" text-anchor="middle" class="body">execution feedback · rules</text><text x="550" y="694" text-anchor="middle" class="body">human review when needed</text>
+<rect x="770" y="575" width="260" height="120" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="900" y="615" text-anchor="middle" class="lab">Positive / Negative</text><text x="900" y="649" text-anchor="middle" class="body">pass → chosen</text><text x="900" y="679" text-anchor="middle" class="body">fail → rejected</text>
+<rect x="1100" y="575" width="240" height="120" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="1220" y="615" text-anchor="middle" class="lab">≈150K pairs</text><text x="1220" y="649" text-anchor="middle" class="body">(x, y⁺, y⁻)</text><text x="1220" y="679" text-anchor="middle" class="body">preference fixed before update</text>
+<rect x="1410" y="575" width="300" height="120" class="box" fill="#dbeafe" stroke="#1d4ed8"/>
+<text x="1560" y="615" text-anchor="middle" class="lab">DPO</text><text x="1560" y="649" text-anchor="middle" class="body">先把行为分布拉进可靠区域</text>
+<path d="M1390 465V515H205V565" class="flow"/><path d="M330 635H390" class="good"/><path d="M700 635H760" class="good"/><path d="M1030 635H1090" class="cost"/><path d="M1340 635H1400" class="flow"/>
+
+<!-- online GRPO -->
+<text x="80" y="795" class="sec" fill="#ea580c">③ Online GRPO：主观偏好难写 deterministic checker，就让当前 policy 在线采样</text>
+<rect x="80" y="840" width="220" height="120" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="190" y="880" text-anchor="middle" class="lab">Current policy θ</text><text x="190" y="914" text-anchor="middle" class="body">DPO 后模型</text>
+<rect x="365" y="840" width="230" height="120" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="480" y="880" text-anchor="middle" class="lab">1 query → G=8</text><text x="480" y="914" text-anchor="middle" class="body">在线生成 8 responses</text>
+<rect x="660" y="820" width="265" height="160" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="792" y="858" text-anchor="middle" class="lab">Learned Reward Model</text>
+<text x="792" y="894" text-anchor="middle" class="body">truthful · helpful · concise</text><text x="792" y="926" text-anchor="middle" class="body">relevant · harmless · debias</text><text x="792" y="958" text-anchor="middle" class="mono">r₁ … r₈</text>
+<rect x="990" y="840" width="260" height="120" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="1120" y="880" text-anchor="middle" class="lab">Reward variance</text><text x="1120" y="914" text-anchor="middle" class="mono">Var(r₁,…,r₈)</text><text x="1120" y="944" text-anchor="middle" class="body">高 variance query 优先</text>
+<rect x="1320" y="840" width="200" height="120" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="1420" y="880" text-anchor="middle" class="lab">GRPO</text><text x="1420" y="914" text-anchor="middle" class="body">group-relative update</text>
+<rect x="1590" y="840" width="130" height="120" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="1655" y="880" text-anchor="middle" class="lab">Next θ</text><text x="1655" y="914" text-anchor="middle" class="body">new samples</text>
+<path d="M1560 695V780H190V830" class="flow"/><path d="M300 900H355" class="flow"/><path d="M595 900H650" class="cost"/><path d="M925 900H980" class="cost"/><path d="M1250 900H1310" class="flow"/><path d="M1520 900H1580" class="good"/>
+<path d="M1655 960V1035H190V970" class="good"/>
+
+<!-- evidence -->
+<rect x="80" y="1060" width="1640" height="100" class="box" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="115" y="1100" class="lab">训练结构证据</text>
+<text x="115" y="1138" class="body">&gt;1M SFT samples · ≈150K offline preference pairs · Online GRPO 每 query 采样 8 responses · global batch 2048。后训练很快变成 inference-throughput problem。</text>
+</svg>

@@ -41,12 +41,6 @@
 ---
 
 
-## 总结架构图
-
-![教学总结图：C001-4d-parallelism](../../../figures/explainers/C001-4d-parallelism-summary.svg)
-
-> **教学总结图**：统一展示 TP、CP、PP、DP/FSDP 分别切分训练任务的哪个维度、引入什么通信，以及如何组合成 4D process groups。
-
 # 一、先从单卡训练开始：显存到底花在哪里？
 
 设模型有：
@@ -214,7 +208,10 @@ $$
 
 # 三、4D Parallelism 是四个正交坐标
 
-![教学解释图：4D Parallelism 四个切分方向](../../../figures/explainers/C001-four-axes.svg)
+![教学解释图：4D Parallelism](../../../figures/explainers/C001/01-four-dimensional-parallelism.svg)
+
+*教学解释图｜4D Parallelism。*
+
 
 设：
 
@@ -281,6 +278,11 @@ FSDP 仍保持 data-parallel 计算语义，只是改变了 model-state ownershi
 # 五、Tensor Parallelism：切开一个 layer
 
 先看：
+
+![教学解释图：Tensor Parallel Linear Collective](../../../figures/explainers/C001/02-tensor-parallel-linear-collective.svg)
+
+*教学解释图｜Tensor Parallel Linear Collective。*
+
 
 $$
 Y=XW,
@@ -447,6 +449,11 @@ $$
 
 假设有 80 层 Transformer，PP degree：
 
+![教学解释图：Pipeline Parallel Timeline](../../../figures/explainers/C001/03-pipeline-parallel-timeline.svg)
+
+*教学解释图｜Pipeline Parallel Timeline。*
+
+
 $$
 p=4.
 $$
@@ -492,6 +499,11 @@ Stage 0 处理完 microbatch 0 后就把 activation 发给 Stage 1，自己继�
 # 九、GPipe：pipeline bubble 怎么来的？
 
 ![Megatron-LM 原论文中的 GPipe schedule](../../../figures/C001/fig3-pipeline-gpipe.svg)
+
+![教学解释图：Pipeline Microbatch Bubble](../../../figures/explainers/C001/03-pipeline-microbatch-bubble.svg)
+
+*教学解释图｜Pipeline Microbatch Bubble。*
+
 
 设：
 
@@ -628,6 +640,11 @@ $$
 
 Megatron 体系里这两个词容易混。
 
+![教学解释图：Tensor vs. Context Parallelism](../../../figures/explainers/C001/02-tensor-context-parallel.svg)
+
+*教学解释图｜Tensor vs. Context Parallelism。*
+
+
 Sequence Parallelism 通常是 TP 的配套优化，主要把：
 
 - LayerNorm；
@@ -705,6 +722,11 @@ $$
 # 十四、Ring Attention：不一次性 gather 全部 KV，而让 KV block 流动
 
 假设 $c=4$：
+
+![教学解释图：Context Parallel KV Ring](../../../figures/explainers/C001/04-context-parallel-kv-ring.svg)
+
+*教学解释图｜Context Parallel KV Ring。*
+
 
 ~~~text
 GPU0: Q0 K0 V0
@@ -811,7 +833,10 @@ $$
 
 # 十八、FSDP 的第一性原理：平时存 shard，算到该模块时临时重建
 
-![教学解释图：FSDP 生命周期](../../../figures/explainers/C001-fsdp-timeline.svg)
+![教学解释图：FSDP Parameter Lifecycle](../../../figures/explainers/C001/05-fsdp-parameter-lifecycle.svg)
+
+*教学解释图｜FSDP Parameter Lifecycle。*
+
 
 设参数：
 
@@ -1106,6 +1131,11 @@ FSDP ranks：
 
 每个 rank 可以用坐标：
 
+![教学解释图：4D Process Groups](../../../figures/explainers/C001/01-four-axis-process-groups.svg)
+
+*教学解释图｜4D Process Groups。*
+
+
 $$
 (r_d,r_p,r_c,r_t)
 $$
@@ -1129,6 +1159,11 @@ $$
 ## DP / FSDP group
 
 固定 $p,c,t$，只让 $d$ 变化。
+
+![教学解释图：FSDP Process Groups](../../../figures/explainers/C001/04-fsdp-process-groups.svg)
+
+*教学解释图｜FSDP Process Groups。*
+
 
 所以 distributed runtime 的一个核心工作就是创建这些互相正交的 communicators。
 
@@ -1178,6 +1213,11 @@ FSDP 是 module 粒度的 parameter all-gather / gradient reduce-scatter。
 # 二十九、典型 topology-aware 原则
 
 一台多 GPU server 内：
+
+![教学解释图：Topology Aware Communication](../../../figures/explainers/C001/06-topology-aware-communication.svg)
+
+*教学解释图｜Topology Aware Communication。*
+
 
 ~~~text
 NVLink / NVSwitch

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">RMSNorm Backward：为什么梯度仍跨 hidden 维耦合？</text><text x="70" y="112" class="subtitle">A016 · 分母 r 依赖全部 xᵢ，因此每个 ∂L/∂xₖ 都收到全维 dot-product xᵀg 的反馈</text>
+<text x="70" y="178" class="section">Forward dependency graph</text>
+<rect x="70" y="220" width="1460" height="300" rx="24" class="blue"/>
+<rect x="110" y="300" width="260" height="110" rx="18" class="gray"/><text x="140" y="344" class="node">x [d]</text><text x="140" y="382" class="small">一个 token 的 hidden</text>
+<path d="M370 355 H470" class="flow"/>
+<rect x="470" y="280" width="300" height="150" rx="18" class="cyan"/>
+<text x="500" y="324" class="node">全维 reduction</text><text x="500" y="366" class="math">r=√((1/d)Σxⱼ²+ε)</text><text x="500" y="404" class="small">scalar</text>
+<path d="M770 355 H875" class="flow"/>
+<rect x="875" y="280" width="300" height="150" rx="18" class="green"/>
+<text x="905" y="324" class="node">broadcast divide</text><text x="905" y="366" class="math">yᵢ=xᵢ/r</text><text x="905" y="404" class="small">[d] → [d]</text>
+<path d="M1175 355 H1275" class="flow"/>
+<rect x="1275" y="300" width="210" height="110" rx="18" class="blue"/><text x="1305" y="344" class="node">L</text><text x="1305" y="382" class="small">upstream g</text>
+
+<text x="70" y="585" class="section">Backward：两条路径回到 xₖ</text>
+<rect x="70" y="625" width="720" height="320" rx="24" class="green"/>
+<rect x="105" y="700" width="260" height="105" rx="18" class="blue"/><text x="135" y="742" class="node">直接路径</text><text x="135" y="782" class="math">gₖ / r</text>
+<rect x="460" y="680" width="285" height="145" rx="18" class="orange"/>
+<text x="490" y="723" class="node">分母反馈路径</text><text x="490" y="765" class="math">xᵀg = Σᵢ xᵢgᵢ</text><text x="490" y="803" class="small">再次是全维 reduction</text>
+<path d="M365 752 H430" class="good"/><path d="M430 752 H460" class="good"/>
+<text x="110" y="885" class="math">∂L/∂xₖ = gₖ/r − xₖ(xᵀg)/(d r³)</text>
+
+<rect x="850" y="625" width="680" height="320" rx="24" class="box"/>
+<text x="885" y="674" class="node">Jacobian 直觉</text>
+<text x="885" y="726" class="math">J = (1/r)I − (1/(d r³)) x xᵀ</text>
+<text x="885" y="782" class="body">第一项：每维独立缩放</text>
+<text x="885" y="830" class="body">第二项：rank-1 全维耦合</text>
+<text x="885" y="878" class="small">所以“没有 mean” ≠ “每个 feature 完全独立”</text>
+
+<rect x="70" y="980" width="1460" height="70" rx="15" class="red"/>
+<text x="100" y="1025" class="body">误区：把 RMSNorm backward 写成 g/r 会漏掉 r(x) 对 x 的依赖；这会错误删除最重要的跨 hidden 维反馈项。</text>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>FlashAttention-3 FP8：数学 Tensor 不变，物理 Layout 必须重排</title><desc>FP8 WGMMA 的 k-major contract 迫使 V 在 kernel 内转置；P accumulator 的 register layout 也需 byte permutation，并对 V 做匹配 permutation 保持 PV 不变。</desc><defs>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+<style>text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}.title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}.n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}.panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}.cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}.green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}.gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}.comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}.good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">FlashAttention-3 FP8：数学 Tensor 不变，物理 Layout 必须重排</text>
+<text x="70" y="112" class="sub">认知问题：为什么“把 FP16 换成 FP8”不是一个 dtype 开关，而是 layout/dataflow 重设计？</text>
+<rect x="65" y="155" width="1470" height="825" rx="24" class="panel"/>
+<text x="100" y="210" class="h">A · V 的 SMEM layout：避免额外 HBM transpose pass</text>
+<rect x="110" y="270" width="220" height="95" rx="16" class="gray"/><text x="220" y="310" text-anchor="middle" class="n">HBM V tile</text><text x="220" y="342" text-anchor="middle" class="small">head-dim contiguous</text>
+<path d="M330 318H430" class="comm"/>
+<rect x="445" y="255" width="260" height="125" rx="18" class="orange"/><text x="575" y="298" text-anchor="middle" class="n">TMA → SMEM</text><text x="575" y="336" text-anchor="middle" class="small">先按原始 tile 搬入</text>
+<path d="M705 318H810" class="flow"/>
+<rect x="825" y="245" width="320" height="145" rx="18" class="cyan"/><text x="985" y="286" text-anchor="middle" class="n">LDSM / STSM</text><text x="985" y="326" text-anchor="middle" class="small">in-kernel tile transpose / reorder</text><text x="985" y="360" text-anchor="middle" class="mono">→ FP8 k-major</text>
+<path d="M1145 318H1240" class="flow"/>
+<rect x="1255" y="255" width="220" height="125" rx="18" class="blue"/><text x="1365" y="300" text-anchor="middle" class="n">FP8 WGMMA</text><text x="1365" y="338" text-anchor="middle" class="small">second GEMM operand</text>
+
+<line x1="100" y1="455" x2="1490" y2="455" stroke="#B8CADB" stroke-width="2"/>
+<text x="100" y="515" class="h">B · P 的 register layout：paired permutation 保持乘积不变</text>
+<rect x="120" y="590" width="245" height="110" rx="18" class="blue"/><text x="242" y="632" text-anchor="middle" class="n">QKᵀ accumulator</text><text x="242" y="668" text-anchor="middle" class="small">FP32 register layout</text>
+<path d="M365 645H480" class="flow"/>
+<rect x="495" y="575" width="280" height="140" rx="18" class="cyan"/><text x="635" y="617" text-anchor="middle" class="n">softmax → P</text><text x="635" y="655" text-anchor="middle" class="small">仍希望留在 registers</text><text x="635" y="690" text-anchor="middle" class="small">但 layout 不匹配 FP8 WGMMA A</text>
+<path d="M775 645H890" class="flow"/>
+<rect x="905" y="565" width="300" height="160" rx="18" class="orange"/><text x="1055" y="607" text-anchor="middle" class="n">register byte permutation</text><text x="1055" y="648" text-anchor="middle" class="mono">P → PΠᵀ</text><text x="1055" y="688" text-anchor="middle" class="small">同步匹配 V rows</text>
+<path d="M1205 645H1300" class="good"/>
+<rect x="1315" y="575" width="190" height="140" rx="18" class="green"/><text x="1410" y="620" text-anchor="middle" class="n">PV exact</text><text x="1410" y="662" text-anchor="middle" class="mono">(PΠᵀ)(ΠV)</text><text x="1410" y="696" text-anchor="middle" class="mono">= PV</text>
+<rect x="315" y="790" width="970" height="115" rx="20" class="green"/><text x="800" y="832" text-anchor="middle" class="n">硬件 layout 可以改变 tensor 的“物理排列”，只要后续 operand 做匹配变换，数学结果保持不变</text><text x="800" y="870" text-anchor="middle" class="small">优化对象 = mathematical tensor + SMEM layout + register ownership + WGMMA operand contract</text>
+</svg>

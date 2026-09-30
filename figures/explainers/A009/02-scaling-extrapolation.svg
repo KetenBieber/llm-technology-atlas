@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.grid{stroke:#d9e2e8;stroke-width:1.2}.curve{fill:none;stroke:#246b9b;stroke-width:5}.curve2{fill:none;stroke:#178d98;stroke-width:5}.curve3{fill:none;stroke:#d47a20;stroke-width:5}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style><defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Kaplan Scaling Laws：为什么外推最终会自相矛盾？</text><text x="70" y="112" class="subtitle">A009 · compute-efficient token 增长与 data-bottleneck 要求具有不同 scaling exponent</text>
+<text x="70" y="175" class="section">同一套拟合，沿两条逻辑链推到更大规模</text>
+<rect x="70" y="215" width="650" height="300" rx="22" class="blue"/>
+<text x="105" y="260" class="node">链 A · Compute-efficient allocation</text>
+<text x="105" y="308" class="math">N_opt ∝ C⁰·⁷³</text>
+<path d="M230 340 V390" class="flow"/>
+<text x="105" y="430" class="math">C ≈ 6ND  ⇒  D_compute ∝ C¹⁻⁰·⁷³ = C⁰·²⁷</text>
+<text x="105" y="475" class="body">算力 10×：N ≈ 5.37×，processed tokens ≈ 1.86×</text>
+
+<rect x="810" y="215" width="720" height="300" rx="22" class="orange"/>
+<text x="845" y="260" class="node">链 B · 不让 data bottleneck 恶化</text>
+<text x="845" y="308" class="math">D_overfit ∝ N⁰·⁷⁴</text>
+<path d="M990 340 V390" class="comm"/>
+<text x="845" y="430" class="math">N ∝ C⁰·⁷³  ⇒  D_overfit ∝ C⁰·⁷³×⁰·⁷⁴ ≈ C⁰·⁵⁴</text>
+<text x="845" y="475" class="body">数据需求随 scale 增长得明显更快</text>
+
+<text x="70" y="585" class="section">两条数据需求在 log-log 空间持续分叉</text>
+<rect x="70" y="620" width="930" height="350" rx="22" class="box"/>
+<line x1="150" y1="900" x2="910" y2="900" class="axis"/><line x1="150" y1="900" x2="150" y2="690" class="axis"/>
+<text x="115" y="705" class="small">log D</text><text x="835" y="938" class="small">log C</text>
+<path d="M180 850 L860 745" class="curve"/>
+<path d="M180 850 L860 665" class="curve3"/>
+<text x="650" y="790" class="body" fill="#246b9b">D_compute ∝ C⁰·²⁷</text>
+<text x="650" y="690" class="body" fill="#d47a20">D_overfit ∝ C⁰·⁵⁴</text>
+<path d="M760 720 L900 720 L900 630 L760 630 Z" fill="#fff0f0" stroke="#c64a4a" stroke-width="2"/>
+<text x="785" y="665" class="small">分叉越来越大</text>
+<text x="785" y="696" class="small">旧 regime 不可无限延伸</text>
+
+<rect x="1050" y="620" width="480" height="350" rx="22" class="red"/>
+<text x="1080" y="668" class="node">真正的结论：需要 regime change</text>
+<text x="1080" y="715" class="body">不是“power law 不存在”，而是：</text>
+<text x="1080" y="756" class="body">• fitted exponent 有适用区间</text>
+<text x="1080" y="797" class="body">• 更大规模要重新做 controlled runs</text>
+<text x="1080" y="838" class="body">• dominant bottleneck 可能改变</text>
+<path d="M1285 865 V910" class="good"/>
+<rect x="1110" y="910" width="350" height="55" rx="12" class="green"/>
+<text x="1140" y="946" class="node">Chinchilla：重新校准 N / D 前沿</text>
+
+<text x="70" y="1025" class="small">Evidence：Kaplan 原论文 “Contradictions and a Conjecture” 已明确指出这类外推自洽性边界。</text>
+</svg>

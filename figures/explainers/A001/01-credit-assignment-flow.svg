@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+  <defs>
+    <style>
+      text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#14213d}
+      .title{font-size:48px;font-weight:700}.sub{font-size:24px;fill:#607086}
+      .h{font-size:28px;font-weight:700}.n{font-size:24px;font-weight:650}.b{font-size:21px}.s{font-size:20px;fill:#607086}
+      .formula{font-family:"STIX Two Math","Cambria Math",serif;font-size:23px}
+      .box{fill:#f8fbff;stroke:#8fb6d9;stroke-width:2}.state{fill:#eefbfb;stroke:#47aeb7;stroke-width:2}
+      .gray{fill:#f4f6f8;stroke:#aeb8c3;stroke-width:2}.warn{fill:#fff3f2;stroke:#d86561;stroke-width:2}
+      .good{fill:#effaf3;stroke:#50a66b;stroke-width:2}.cost{fill:#fff7eb;stroke:#e39a36;stroke-width:2}
+      .blue{stroke:#246aa5;stroke-width:5;fill:none}.cyan{stroke:#279aa7;stroke-width:4;fill:none}
+      .green{stroke:#3b9859;stroke-width:5;fill:none}.orange{stroke:#db8a20;stroke-width:4;fill:none}
+      .red{stroke:#c94e49;stroke-width:4;fill:none}.dash{stroke-dasharray:12 10}
+    </style>
+    <marker id="ab" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#246aa5"/></marker>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#279aa7"/></marker>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3b9859"/></marker>
+    <marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#db8a20"/></marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c94e49"/></marker>
+  </defs>
+  <rect width="1600" height="1200" fill="#ffffff"/>
+  <text x="70" y="75" class="title">A001 · Backpropagation：信用分配闭环</text>
+  <text x="72" y="115" class="sub">一个标量 loss 如何通过真实计算依赖，把监督信号送到没有标签的隐藏层？</text>
+  
+  <rect x="55" y="155" width="1490" height="700" rx="28" class="gray"/>
+  <text x="85" y="200" class="h">Forward · 激活 / 张量流</text>
+
+  <rect x="90" y="280" width="190" height="120" rx="18" class="box"/>
+  <text x="185" y="325" text-anchor="middle" class="n">X</text><text x="185" y="360" text-anchor="middle" class="b">[B,D]</text>
+  <rect x="350" y="265" width="225" height="150" rx="18" class="box"/>
+  <text x="463" y="312" text-anchor="middle" class="n">Affine 1</text><text x="463" y="348" text-anchor="middle" class="formula">Z₁=XW₁+b₁</text><text x="463" y="383" text-anchor="middle" class="b">[B,H]</text>
+  <rect x="650" y="280" width="200" height="120" rx="18" class="state"/>
+  <text x="750" y="325" text-anchor="middle" class="n">σ(·)</text><text x="750" y="360" text-anchor="middle" class="b">H₁ [B,H]</text>
+  <rect x="925" y="265" width="225" height="150" rx="18" class="box"/>
+  <text x="1038" y="312" text-anchor="middle" class="n">Affine 2</text><text x="1038" y="348" text-anchor="middle" class="formula">Z₂=H₁W₂+b₂</text><text x="1038" y="383" text-anchor="middle" class="b">[B,C]</text>
+  <rect x="1225" y="280" width="190" height="120" rx="18" class="state"/>
+  <text x="1320" y="325" text-anchor="middle" class="n">σ(·)</text><text x="1320" y="360" text-anchor="middle" class="b">Ŷ [B,C]</text>
+  <line x1="280" y1="340" x2="350" y2="340" class="blue" marker-end="url(#ab)"/>
+  <line x1="575" y1="340" x2="650" y2="340" class="blue" marker-end="url(#ab)"/>
+  <line x1="850" y1="340" x2="925" y2="340" class="blue" marker-end="url(#ab)"/>
+  <line x1="1150" y1="340" x2="1225" y2="340" class="blue" marker-end="url(#ab)"/>
+
+  <rect x="1230" y="490" width="230" height="130" rx="18" class="cost"/>
+  <text x="1345" y="532" text-anchor="middle" class="n">Loss</text><text x="1345" y="568" text-anchor="middle" class="formula">L=‖Ŷ−Y‖²/(2B)</text>
+  <rect x="1015" y="505" width="145" height="100" rx="16" class="gray"/><text x="1088" y="550" text-anchor="middle" class="n">Y</text><text x="1088" y="580" text-anchor="middle" class="b">[B,C]</text>
+  <path d="M1320 400 V490" class="orange" marker-end="url(#ao)"/><path d="M1160 555 H1230" class="orange" marker-end="url(#ao)"/>
+
+  <text x="85" y="690" class="h">Backward · 梯度 / sensitivity 流（沿同一依赖图逆序）</text>
+  <path d="M1330 635 C1280 770 1145 790 1040 690" class="green" marker-end="url(#ag)"/>
+  <text x="1210" y="760" class="formula" text-anchor="middle">δ₂=∂L/∂Z₂</text>
+  <path d="M1000 690 C900 805 790 805 745 700" class="green" marker-end="url(#ag)"/>
+  <text x="870" y="810" class="formula" text-anchor="middle">δ₁=(δ₂W₂ᵀ) ⊙ σ′(Z₁)</text>
+  <path d="M720 700 C600 800 480 790 455 690" class="green" marker-end="url(#ag)"/>
+  <text x="570" y="802" class="formula" text-anchor="middle">∇W₁=Xᵀδ₁</text>
+  <path d="M1035 690 V605" class="green" marker-end="url(#ag)"/>
+  <text x="920" y="650" class="formula">∇W₂=H₁ᵀδ₂</text>
+
+  <rect x="70" y="900" width="715" height="230" rx="24" class="warn"/>
+  <text x="100" y="945" class="h">Baseline failure · 隐藏层没有 h*</text>
+  <text x="105" y="992" class="b">监督数据只给 (X,Y)，无法直接写“隐藏层误差 H₁−H*”。</text>
+  <text x="105" y="1032" class="b">因此不能靠给每个隐藏节点虚构标签来训练 W₁。</text>
+  <text x="105" y="1085" class="s">红色问题不是“不会算输出误差”，而是“输出误差如何归因到上游参数”。</text>
+
+  <rect x="820" y="900" width="710" height="230" rx="24" class="good"/>
+  <text x="850" y="945" class="h">Backprop 的改变 · 用局部 Jacobian 递推</text>
+  <text x="855" y="995" class="formula">δ⁽ˡ⁾=((W⁽ˡ⁺¹⁾)ᵀδ⁽ˡ⁺¹⁾) ⊙ σ′(Z⁽ˡ⁾)</text>
+  <text x="855" y="1045" class="b">每层只需要“收到的上游梯度 × 本地导数”，不需要隐藏标签。</text>
+  <text x="855" y="1090" class="s">蓝：前向数据；绿：反向梯度；橙：监督目标进入 loss。</text>
+
+</svg>

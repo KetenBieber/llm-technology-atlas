@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>FlashAttention：HBM ↔ SRAM 的真实数据流</title><desc>标准 Attention 把 S/P 物化到 HBM；FlashAttention 只把 Q/K/V tiles 搬入 SRAM，并让 score/probability tiles 在片上短暂存在。</desc><defs>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+<style>text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}.title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}.n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}.panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}.cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}.green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}.gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}.comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}.good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">FlashAttention：HBM ↔ SRAM 的真实数据流</text>
+<text x="70" y="112" class="sub">认知问题：FlashAttention 没减少 dense QK pairs，为什么仍能显著更快？</text>
+<rect x="60" y="155" width="705" height="850" rx="24" class="red"/><text x="95" y="205" class="h">Baseline · Standard Attention</text>
+<rect x="110" y="260" width="600" height="110" rx="18" class="gray"/><text x="410" y="305" text-anchor="middle" class="h">HBM</text><text x="410" y="342" text-anchor="middle" class="small">Q · K · V · S(N×N) · P(N×N)</text>
+<rect x="125" y="440" width="170" height="90" rx="16" class="blue"/><text x="210" y="495" text-anchor="middle" class="n">QKᵀ GEMM</text>
+<rect x="330" y="440" width="170" height="90" rx="16" class="cyan"/><text x="415" y="495" text-anchor="middle" class="n">Softmax</text>
+<rect x="535" y="440" width="170" height="90" rx="16" class="blue"/><text x="620" y="495" text-anchor="middle" class="n">PV GEMM</text>
+<path d="M210 440V375" class="flow"/><path d="M210 530V600" class="bad"/><rect x="130" y="610" width="160" height="80" rx="14" class="red"/><text x="210" y="660" text-anchor="middle" class="n">write S</text>
+<path d="M290 650H340" class="bad"/><text x="365" y="652" class="small">read S</text><path d="M415 610V535" class="bad"/>
+<path d="M415 535V720" class="bad"/><rect x="335" y="730" width="160" height="80" rx="14" class="red"/><text x="415" y="780" text-anchor="middle" class="n">write P</text>
+<path d="M495 770H545" class="bad"/><text x="565" y="772" class="small">read P</text><path d="M620 730V535" class="bad"/>
+<rect x="125" y="860" width="580" height="90" rx="18" class="red"/><text x="415" y="900" text-anchor="middle" class="n">瓶颈：N×N 中间矩阵反复穿越 HBM</text><text x="415" y="934" text-anchor="middle" class="mono">traffic ∼ Θ(N²)</text>
+
+<rect x="835" y="155" width="705" height="850" rx="24" class="green"/><text x="870" y="205" class="h">FlashAttention · IO-aware Tiling</text>
+<rect x="900" y="260" width="575" height="105" rx="18" class="gray"/><text x="1188" y="302" text-anchor="middle" class="h">HBM</text><text x="1188" y="338" text-anchor="middle" class="small">Q · K · V · O · softmax statistics</text>
+<rect x="910" y="440" width="555" height="330" rx="22" class="cyan"/><text x="1188" y="480" text-anchor="middle" class="h">On-chip SRAM / Registers</text>
+<rect x="945" y="535" width="135" height="90" rx="14" class="blue"/><text x="1012" y="572" text-anchor="middle" class="n">Qᵢ</text><text x="1012" y="603" text-anchor="middle" class="small">row tile</text>
+<rect x="1120" y="535" width="135" height="90" rx="14" class="blue"/><text x="1188" y="572" text-anchor="middle" class="n">Kⱼ,Vⱼ</text><text x="1188" y="603" text-anchor="middle" class="small">column tile</text>
+<path d="M1012 535V370" class="comm"/><path d="M1188 535V370" class="comm"/>
+<rect x="1290" y="525" width="140" height="110" rx="14" class="green"/><text x="1360" y="565" text-anchor="middle" class="n">Sᵢⱼ / Pᵢⱼ</text><text x="1360" y="598" text-anchor="middle" class="small">ephemeral</text><text x="1360" y="626" text-anchor="middle" class="small">never HBM</text>
+<path d="M1080 580H1110" class="flow"/><path d="M1255 580H1280" class="flow"/>
+<rect x="1040" y="665" width="300" height="72" rx="14" class="green"/><text x="1190" y="710" text-anchor="middle" class="n">running (m, ℓ, O)</text>
+<path d="M1360 635L1260 665" class="good"/>
+<path d="M1190 737V840" class="good"/>
+<rect x="945" y="855" width="485" height="92" rx="18" class="green"/><text x="1188" y="895" text-anchor="middle" class="n">只写最终 O 与 O(N) statistics</text><text x="1188" y="930" text-anchor="middle" class="small">所有合法 QK pair 仍被计算 → exact attention</text>
+<text x="800" y="1045" text-anchor="middle" class="n">核心改变不是 Attention 公式，而是 execution order：让 N×N score/probability tile 的生命周期止于片上存储。</text>
+</svg>

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">GEMM–Softmax Overlap：QKⱼ₊₁ 为什么不必等待 tile j 的 PV 完成？</text>
+<text x="70" y="112" class="subtitle">A057 · FA3 从真实 dependency DAG 找 overlap，而不是把源码书写顺序误当成必须串行的硬件顺序</text>
+
+<text x="70" y="176" class="section">依赖图：同一 tile 内有依赖，但下一 tile 的 QK 可以提前发射</text>
+<rect x="70" y="210" width="1460" height="285" rx="22" class="box"/>
+<rect x="120" y="280" width="210" height="90" rx="16" class="blue"/><text x="165" y="333" class="node">QKⱼᵀ · WGMMA</text>
+<path d="M330 325 H430" class="flow"/>
+<rect x="430" y="280" width="210" height="90" rx="16" class="orange"/><text x="480" y="333" class="node">softmaxⱼ</text>
+<path d="M640 325 H740" class="flow"/>
+<rect x="740" y="280" width="210" height="90" rx="16" class="blue"/><text x="800" y="333" class="node">PⱼVⱼ · WGMMA</text>
+<rect x="430" y="400" width="210" height="70" rx="14" class="green"/><text x="470" y="444" class="node">QKⱼ₊₁ᵀ</text>
+<path d="M330 345 C370 395 390 435 425 435" class="good"/>
+<text x="680" y="438" class="small">QKⱼ₊₁ 只依赖 Q 与 Kⱼ₊₁；它不依赖 softmaxⱼ / PⱼVⱼ</text>
+
+<text x="70" y="565" class="section">时间轴：从完全串行 → 2-stage → 更深 pipeline</text>
+<rect x="70" y="600" width="1460" height="320" rx="22" class="box"/>
+<text x="105" y="668" class="node">同步 schedule</text>
+<text x="105" y="755" class="node">2-stage</text>
+<text x="105" y="842" class="node">3-stage / deeper</text>
+<line x1="300" y1="640" x2="1480" y2="640" stroke="#c9d6de" stroke-width="2"/>
+<line x1="300" y1="727" x2="1480" y2="727" stroke="#c9d6de" stroke-width="2"/>
+<line x1="300" y1="814" x2="1480" y2="814" stroke="#c9d6de" stroke-width="2"/>
+<g>
+<rect x="330" y="665" width="210" height="48" class="blue"/><text x="385" y="697" class="small">QK j</text>
+<rect x="550" y="665" width="170" height="48" class="orange"/><text x="592" y="697" class="small">softmax j</text>
+<rect x="730" y="665" width="210" height="48" class="blue"/><text x="790" y="697" class="small">PV j</text>
+<rect x="950" y="665" width="210" height="48" class="blue"/><text x="1000" y="697" class="small">QK j+1</text>
+
+<rect x="330" y="752" width="210" height="48" class="blue"/><text x="385" y="784" class="small">QK j</text>
+<rect x="550" y="752" width="180" height="48" class="orange"/><text x="590" y="784" class="small">softmax j</text>
+<rect x="550" y="812" width="270" height="48" class="green"/><text x="614" y="844" class="small">QK j+1 async</text>
+<rect x="750" y="752" width="210" height="48" class="blue"/><text x="808" y="784" class="small">PV j</text>
+
+<rect x="990" y="752" width="180" height="48" class="orange"/><text x="1032" y="784" class="small">softmax j+1</text>
+<rect x="990" y="812" width="270" height="48" class="green"/><text x="1055" y="844" class="small">QK j+2 async</text>
+<rect x="1190" y="752" width="210" height="48" class="blue"/><text x="1248" y="784" class="small">PV j+1</text>
+</g>
+<text x="330" y="895" class="small">更深 pipeline 可继续 overlap，但需要更多 in-flight S / P accumulators → register pressure 上升</text>
+
+<rect x="70" y="955" width="1460" height="110" rx="18" class="green"/>
+<text x="105" y="996" class="node">论文 ablation（固定 shape）</text>
+<text x="105" y="1038" class="body">Full FA3: 3.538 ms / 661 TFLOPs/s　·　无 GEMM-softmax pipeline: 4.021 ms / 582　·　无 warp specialization: 4.105 ms / 570</text>
+</svg>

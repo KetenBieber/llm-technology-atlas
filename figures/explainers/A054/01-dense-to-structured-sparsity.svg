@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>MInference：从 Dense Pair 到 GPU 友好的结构化稀疏</title><desc>为什么不能只看 sparsity ratio：动态位置、结构规则与真实 kernel 执行必须同时考虑。</desc><defs>
+  <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+  <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+  <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+  <style>
+  text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}
+  .title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}
+  .n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}
+  .panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}
+  .cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}
+  .green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}
+  .gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}
+  .comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}
+  .good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}
+  </style>
+</defs><rect width="1600" height="1100" fill="#FFFFFF"/><text x="70" y="72" class="title">MInference：从 Dense Pair 到 GPU 友好的结构化稀疏</text>
+<text x="70" y="112" class="sub">认知问题：为什么“Attention 很稀疏”仍不足以直接获得 GPU 加速？</text>
+<rect x="65" y="150" width="430" height="810" rx="24" class="red"/><text x="95" y="194" class="h">Baseline · Dense Prefill</text>
+<text x="95" y="230" class="n">每个 Query 与全部合法 Key 形成 QK pair</text>
+<rect x="118" y="285" width="320" height="320" fill="#fff" stroke="#C23B3B" stroke-width="3"/>
+<path d="M118 605L438 285" stroke="#7D8B99" stroke-width="3"/>
+<rect x="122" y="289" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="122" y="328" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="161" y="328" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="122" y="367" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="161" y="367" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="200" y="367" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="122" y="406" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="161" y="406" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="200" y="406" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="239" y="406" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="122" y="445" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="161" y="445" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="200" y="445" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="239" y="445" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="278" y="445" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="122" y="484" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="161" y="484" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="200" y="484" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="239" y="484" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="278" y="484" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="317" y="484" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="122" y="523" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="161" y="523" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="200" y="523" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="239" y="523" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="278" y="523" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="317" y="523" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="356" y="523" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="122" y="562" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="161" y="562" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="200" y="562" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="239" y="562" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="278" y="562" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="317" y="562" width="33" height="33" rx="4" fill="#DCE7F1"/><rect x="356" y="562" width="33" height="33" rx="4" fill="#EEF3F7"/><rect x="395" y="562" width="33" height="33" rx="4" fill="#EEF3F7"/>
+<text x="278" y="645" text-anchor="middle" class="mono">A ∈ R^(L×L)</text>
+<text x="95" y="708" class="n">问题：即使不 materialize A，仍需计算 O(L²) pairs</text>
+<path d="M108 760H452" class="bad"/><text x="278" y="800" text-anchor="middle" class="n" fill="#C23B3B">Dense 计算域随 L² 增长</text>
+
+<path d="M510 545H610" class="flow"/><text x="560" y="520" text-anchor="middle" class="small">观察 sparsity</text>
+
+<rect x="620" y="150" width="915" height="810" rx="24" class="panel"/><text x="650" y="194" class="h">关键：稀疏几何必须能映射到规则 kernel</text>
+<g transform="translate(665,255)">
+ <text x="150" y="0" text-anchor="middle" class="h">A-shape</text><text x="150" y="34" text-anchor="middle" class="small">静态 global + local</text>
+ <rect x="0" y="70" width="300" height="300" fill="#fff" stroke="#7D8B99" stroke-width="2"/>
+ <rect x="0" y="70" width="54" height="300" fill="#2E8B57" opacity=".78"/>
+ <path d="M0 370L300 70" stroke="#2E8B57" stroke-width="28" opacity=".62"/>
+ <text x="150" y="410" text-anchor="middle" class="small">无需 online index search</text>
+</g>
+<g transform="translate(995,255)">
+ <text x="150" y="0" text-anchor="middle" class="h">Vertical–Slash</text><text x="150" y="34" text-anchor="middle" class="small">动态列 + 动态相对偏移</text>
+ <rect x="0" y="70" width="300" height="300" fill="#fff" stroke="#7D8B99" stroke-width="2"/>
+ <rect x="70" y="70" width="18" height="300" fill="#0E9AA7"/><rect x="210" y="70" width="18" height="300" fill="#0E9AA7"/>
+ <path d="M20 370L260 130" stroke="#1557B0" stroke-width="18"/><path d="M95 370L295 170" stroke="#1557B0" stroke-width="18"/>
+ <text x="150" y="410" text-anchor="middle" class="small">位置随 prompt 改变</text>
+</g>
+<g transform="translate(830,690)">
+ <text x="150" y="0" text-anchor="middle" class="h">Block-Sparse</text><text x="150" y="34" text-anchor="middle" class="small">动态二维 cluster → tile</text>
+ <rect x="0" y="70" width="300" height="190" fill="#fff" stroke="#7D8B99" stroke-width="2"/>
+ <rect x="20" y="92" width="68" height="58" fill="#0E9AA7"/><rect x="115" y="160" width="68" height="58" fill="#1557B0"/><rect x="207" y="102" width="68" height="58" fill="#0E9AA7"/>
+</g>
+<rect x="1160" y="744" width="330" height="150" rx="18" class="orange"/><text x="1190" y="784" class="h">Kernel-aware</text>
+<text x="1190" y="824" class="n">比较真实 tile / row / block 执行</text><text x="1190" y="858" class="mono">F_kernel(mask) ≠ |mask|</text>
+<path d="M1118 818H1150" class="comm"/>
+<rect x="650" y="910" width="840" height="52" rx="15" class="green"/><text x="1070" y="944" text-anchor="middle" class="n">稳定的是 pattern family；动态的是具体 indices；速度取决于结构能否高效落到 GPU tile</text>
+</svg>

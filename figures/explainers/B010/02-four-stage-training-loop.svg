@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>DeepSeek-R1 four-stage post-training pipeline with RL-to-SFT data loop and reward scopes.</desc>
+<defs>
+<marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker>
+<marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 44px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 23px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 30px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 21px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 21px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.dash{fill:none;stroke:#64748B;stroke-width:2.5;stroke-dasharray:8 7}.d{stroke:#D9E2EC;stroke-width:2}</style></defs>
+<rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">DeepSeek‑R1 · 最终 R1 为什么要把 RL、数据回收与 SFT 分成四个阶段？</text><text x="65" y="108" class="s">对应 §11–§17｜回答：探索、行为塑形、轨迹固化、通用对齐分别由谁负责</text>
+<text x="65" y="160" class="h">同一个 V3‑Base 上，四个阶段承担不同职责</text>
+<rect x="65" y="210" width="300" height="165" rx="18" class="blue"/><text x="90" y="250" class="n">① Cold Start SFT</text><text x="90" y="292" class="x">少量可读 reasoning data</text><text x="90" y="327" class="x">先塑造稳定输出格式 / 可读性</text>
+<path d="M365 292 H455" class="f"/>
+<rect x="455" y="190" width="300" height="205" rx="18" class="green"/><text x="480" y="230" class="n">② Reasoning RL</text><text x="480" y="272" class="x">rule reward + GRPO</text><text x="480" y="307" class="x">rollout → reward → update</text>
+<path d="M755 292 H845" class="opt"/>
+<rect x="845" y="190" width="300" height="205" rx="18" class="cyan"/><text x="870" y="230" class="n">③ Rejection + SFT</text><text x="870" y="272" class="x">筛选 RL reasoning + 通用数据</text><text x="870" y="307" class="x">把探索成果固化回监督分布</text>
+<path d="M1145 292 H1235" class="f"/>
+<rect x="1235" y="190" width="300" height="205" rx="18" class="orange"/><text x="1260" y="230" class="n">④ All-scenario RL</text><text x="1260" y="272" class="x">reasoning + preference / safety</text><text x="1260" y="307" class="x">重新对齐通用 assistant 行为</text>
+<text x="65" y="465" class="h">阶段 ② → ③ 是关键 data loop：RL 不只更新权重，也生产下一阶段训练数据</text>
+<path d="M605 395 C605 500 700 525 855 525" class="opt"/>
+<rect x="820" y="475" width="360" height="120" rx="18" class="green"/><text x="845" y="515" class="n">High-quality trajectory pool</text><text x="845" y="553" class="x">filter → SFT targets</text>
+<path d="M1000 595 C1000 645 1010 665 1010 700" class="f"/>
+<line x1="65" y1="650" x2="1535" y2="650" class="d"/>
+<text x="65" y="710" class="h">最后一次 RL 的 reward scope 也被拆开</text>
+<rect x="95" y="755" width="540" height="175" rx="18" class="blue"/><text x="125" y="795" class="n">Helpful reward</text><text x="125" y="837" class="x">主要评价 final answer 的帮助性 / 正确性</text><text x="125" y="875" class="x">避免把长 CoT 的每个内部句子都当偏好目标</text>
+<rect x="805" y="755" width="540" height="175" rx="18" class="orange"/><text x="835" y="795" class="n">Safety reward</text><text x="835" y="837" class="x">检查整条 response 的安全行为</text><text x="835" y="875" class="x">scope 与 helpfulness 不同，是显式 reward design</text>
+<path d="M635 842 H805" class="cost"/>
+<text x="65" y="1010" class="m">主线：探索能力 ≠ 固化能力 ≠ 通用对齐；最终 R1 把三者拆成不同优化阶段。</text>
+</svg>

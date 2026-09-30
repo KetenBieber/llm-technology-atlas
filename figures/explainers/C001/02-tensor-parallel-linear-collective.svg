@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>Tensor Parallelism：Column Parallel → Local Activation → Row Parallel → Collective</title><desc>Transformer MLP 的典型 TP 数据流：先沿 W₁ 输出维切分，保持 activation shard；再沿 W₂ 输入维切分，最后对 partial outputs 做 collective。</desc><defs>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+<style>text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}.title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}.n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}.panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}.cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}.green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}.gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}.comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}.good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">Tensor Parallelism：Column Parallel → Local Activation → Row Parallel → Collective</text>
+<text x="70" y="112" class="sub">认知问题：为什么好的 TP 不是“切一次就 gather 一次”，而是尽量延长 local shard 的生命周期？</text>
+<rect x="65" y="155" width="1470" height="820" rx="24" class="panel"/>
+<rect x="95" y="430" width="180" height="115" rx="18" class="gray"/><text x="185" y="474" text-anchor="middle" class="n">Input X</text><text x="185" y="512" text-anchor="middle" class="mono">B × H</text>
+<path d="M275 487H355" class="flow"/>
+<text x="490" y="245" text-anchor="middle" class="h">Column-parallel W₁</text>
+<rect x="365" y="300" width="250" height="130" rx="18" class="blue"/><text x="490" y="344" text-anchor="middle" class="n">TP rank 0</text><text x="490" y="384" text-anchor="middle" class="mono">W₁⁰ : H × K/t</text>
+<rect x="365" y="555" width="250" height="130" rx="18" class="cyan"/><text x="490" y="599" text-anchor="middle" class="n">TP rank 1</text><text x="490" y="639" text-anchor="middle" class="mono">W₁¹ : H × K/t</text>
+<path d="M355 487L365 365" class="flow"/><path d="M355 487L365 620" class="flow"/>
+<path d="M615 365H700" class="flow"/><path d="M615 620H700" class="flow"/>
+<rect x="710" y="300" width="210" height="130" rx="18" class="green"/><text x="815" y="344" text-anchor="middle" class="n">φ(Y⁰)</text><text x="815" y="384" text-anchor="middle" class="small">local activation</text>
+<rect x="710" y="555" width="210" height="130" rx="18" class="green"/><text x="815" y="599" text-anchor="middle" class="n">φ(Y¹)</text><text x="815" y="639" text-anchor="middle" class="small">local activation</text>
+<text x="815" y="755" text-anchor="middle" class="small">逐元素激活不需要跨 rank gather</text>
+<path d="M920 365H1005" class="flow"/><path d="M920 620H1005" class="flow"/>
+<text x="1130" y="245" text-anchor="middle" class="h">Row-parallel W₂</text>
+<rect x="1015" y="300" width="230" height="130" rx="18" class="blue"/><text x="1130" y="344" text-anchor="middle" class="n">partial O⁰</text><text x="1130" y="384" text-anchor="middle" class="mono">Z⁰ W₂⁰</text>
+<rect x="1015" y="555" width="230" height="130" rx="18" class="cyan"/><text x="1130" y="599" text-anchor="middle" class="n">partial O¹</text><text x="1130" y="639" text-anchor="middle" class="mono">Z¹ W₂¹</text>
+<path d="M1245 365L1320 465" class="comm"/><path d="M1245 620L1320 535" class="comm"/>
+<rect x="1325" y="425" width="175" height="140" rx="18" class="orange"/><text x="1412" y="468" text-anchor="middle" class="n">Collective</text><text x="1412" y="506" text-anchor="middle" class="small">sum partials</text><text x="1412" y="542" text-anchor="middle" class="mono">O=Σ Oʳ</text>
+<rect x="330" y="835" width="940" height="90" rx="18" class="green"/><text x="800" y="872" text-anchor="middle" class="n">通信放在“必须恢复完整语义”的边界，而不是每个 shard 后立即同步</text><text x="800" y="907" text-anchor="middle" class="small">因此 TP collective 频率高，应优先映射到低延迟 / 高带宽互联</text>
+</svg>

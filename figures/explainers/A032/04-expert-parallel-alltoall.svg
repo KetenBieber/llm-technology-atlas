@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="o" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d97706"/></marker>
+  <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:28px;font-weight:700}.b{font-size:22px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .gpu{fill:#f7fafc;stroke:#64748b;stroke-width:2}.expert{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}.token{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}
+  .comm{stroke:#d97706;stroke-width:4;fill:none;marker-end:url(#o)}.flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#b)}.formula{fill:#fff7ed;stroke:#d97706;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Expert Parallel：Token 所有权改变，All-to-All 因此出现</text>
+<text x="800" y="101" text-anchor="middle" class="sub">expert weights 留在所属 GPU；跨卡移动的是被路由的 token activations 与对应输出</text>
+
+<text x="105" y="172" class="h">初始：tokens 按 data/batch ownership 分散</text>
+<g>
+<rect x="70" y="210" width="335" height="250" rx="18" class="gpu"/>
+<text x="237" y="247" text-anchor="middle" class="h">GPU 0</text><text x="237" y="279" text-anchor="middle" class="s">Experts 0–15</text>
+<rect x="105" y="315" width="82" height="58" rx="10" class="token"/><text x="146" y="351" text-anchor="middle" class="b">t₀</text>
+<rect x="200" y="315" width="82" height="58" rx="10" class="token"/><text x="241" y="351" text-anchor="middle" class="b">t₁</text>
+<rect x="295" y="315" width="82" height="58" rx="10" class="token"/><text x="336" y="351" text-anchor="middle" class="b">t₂</text>
+<text x="237" y="420" text-anchor="middle" class="s">router may choose remote experts</text>
+</g>
+<g>
+<rect x="435" y="210" width="335" height="250" rx="18" class="gpu"/>
+<text x="602" y="247" text-anchor="middle" class="h">GPU 1</text><text x="602" y="279" text-anchor="middle" class="s">Experts 16–31</text>
+<rect x="470" y="315" width="95" height="58" rx="10" class="expert"/><text x="517" y="351" text-anchor="middle" class="b">E18</text>
+<rect x="580" y="315" width="95" height="58" rx="10" class="expert"/><text x="627" y="351" text-anchor="middle" class="b">E25</text>
+</g>
+<g>
+<rect x="800" y="210" width="335" height="250" rx="18" class="gpu"/>
+<text x="967" y="247" text-anchor="middle" class="h">GPU 2</text><text x="967" y="279" text-anchor="middle" class="s">Experts 32–47</text>
+<rect x="835" y="315" width="95" height="58" rx="10" class="expert"/><text x="882" y="351" text-anchor="middle" class="b">E36</text>
+<rect x="945" y="315" width="95" height="58" rx="10" class="expert"/><text x="992" y="351" text-anchor="middle" class="b">E44</text>
+</g>
+<g>
+<rect x="1165" y="210" width="335" height="250" rx="18" class="gpu"/>
+<text x="1332" y="247" text-anchor="middle" class="h">GPU 3</text><text x="1332" y="279" text-anchor="middle" class="s">Experts 48–63</text>
+<rect x="1200" y="315" width="95" height="58" rx="10" class="expert"/><text x="1247" y="351" text-anchor="middle" class="b">E50</text>
+<rect x="1310" y="315" width="95" height="58" rx="10" class="expert"/><text x="1357" y="351" text-anchor="middle" class="b">E61</text>
+</g>
+
+<text x="800" y="520" text-anchor="middle" class="h">① dispatch All-to-All：按 expert ownership 重新分桶</text>
+<path d="M146 375 C300 560 500 610 627 460" class="comm"/>
+<path d="M241 375 C470 600 900 610 992 460" class="comm"/>
+<path d="M336 375 C650 620 1210 610 1247 460" class="comm"/>
+<text x="800" y="615" text-anchor="middle" class="s">每个 rank 给每个 rank 发“不同数量”的 token；这正是 All-to-All 型通信</text>
+
+<rect x="210" y="665" width="1180" height="135" rx="18" fill="#edf9f0" stroke="#2e8b57" stroke-width="2"/>
+<text x="800" y="707" text-anchor="middle" class="h">② local expert FFN：weights 不搬家，tokens 到所属 GPU 上做 batched / grouped GEMM</text>
+<text x="800" y="750" text-anchor="middle" class="b">expert-local compute  ←  regrouped tokens by expert id  →  expert-local outputs</text>
+<text x="800" y="784" text-anchor="middle" class="s">load imbalance 会直接变成不同 GPU 的计算时长差异</text>
+
+<text x="800" y="854" text-anchor="middle" class="h">③ combine All-to-All：把 expert outputs 发回原 token owner，再恢复原顺序</text>
+<path d="M1247 820 C1160 900 530 925 336 845" class="comm"/>
+<path d="M992 820 C920 900 520 900 241 845" class="comm"/>
+<path d="M627 820 C560 900 340 890 146 845" class="comm"/>
+
+<rect x="155" y="965" width="1290" height="82" rx="16" class="formula"/>
+<text x="800" y="999" text-anchor="middle" class="b">通信量级更接近 O(N_dispatched · d) activation bytes，而不是每步搬 expert weights。</text>
+<text x="800" y="1033" text-anchor="middle" class="s">因此大规模 MoE 性能同时受 network bandwidth、token permutation、load balance 与 compute/communication overlap 约束。</text>
+</svg>

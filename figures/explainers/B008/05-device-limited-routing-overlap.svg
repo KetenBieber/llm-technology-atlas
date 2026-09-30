@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="o" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d97706"/></marker>
+  <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2e8b57"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:28px;font-weight:700}.b{font-size:22px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .dev{fill:#f7fafc;stroke:#64748b;stroke-width:2}.cand{fill:#fff7ed;stroke:#d97706;stroke-width:3}.expert{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}
+  .shared{fill:#edf9f0;stroke:#2e8b57;stroke-width:3}.comm{stroke:#d97706;stroke-width:4;fill:none;marker-end:url(#o)}.compute{stroke:#2e8b57;stroke-width:4;fill:none;marker-end:url(#g)}
+  .loss{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">DeepSeek-V2 Device-Limited Routing：把拓扑约束写进 Router</text>
+<text x="800" y="101" text-anchor="middle" class="sub">Routing 不再只问“哪个 expert 最适合 token”，还要问“这些 experts 分散到多少设备，会产生多少 All-to-All”</text>
+
+<rect x="55" y="150" width="1490" height="560" rx="22" class="panel"/>
+<text x="160" y="200" class="h">token x</text>
+<rect x="100" y="235" width="170" height="90" rx="14" fill="#e9f2ff" stroke="#1557b0" stroke-width="2"/>
+<text x="185" y="288" text-anchor="middle" class="b">router affinities</text>
+
+<g>
+<rect x="330" y="250" width="185" height="180" rx="16" class="cand"/>
+<text x="422" y="292" text-anchor="middle" class="h">Device 0 ✓</text><text x="422" y="330" text-anchor="middle" class="s">experts 0…19</text>
+<rect x="355" y="355" width="60" height="48" rx="9" class="expert"/><text x="385" y="386" text-anchor="middle" class="s">E3</text>
+<rect x="425" y="355" width="60" height="48" rx="9" class="expert"/><text x="455" y="386" text-anchor="middle" class="s">E7</text>
+
+<rect x="535" y="250" width="185" height="180" rx="16" class="dev"/>
+<text x="627" y="292" text-anchor="middle" class="h">Device 1</text><text x="627" y="330" text-anchor="middle" class="s">experts 20…39</text>
+
+<rect x="740" y="250" width="185" height="180" rx="16" class="cand"/>
+<text x="832" y="292" text-anchor="middle" class="h">Device 2 ✓</text><text x="832" y="330" text-anchor="middle" class="s">experts 40…59</text>
+<rect x="765" y="355" width="60" height="48" rx="9" class="expert"/><text x="795" y="386" text-anchor="middle" class="s">E44</text>
+<rect x="835" y="355" width="60" height="48" rx="9" class="expert"/><text x="865" y="386" text-anchor="middle" class="s">E51</text>
+
+<rect x="945" y="250" width="185" height="180" rx="16" class="cand"/>
+<text x="1037" y="292" text-anchor="middle" class="h">Device 3 ✓</text><text x="1037" y="330" text-anchor="middle" class="s">experts 60…79</text>
+<rect x="970" y="355" width="60" height="48" rx="9" class="expert"/><text x="1000" y="386" text-anchor="middle" class="s">E61</text>
+<rect x="1040" y="355" width="60" height="48" rx="9" class="expert"/><text x="1070" y="386" text-anchor="middle" class="s">E72</text>
+
+<rect x="1150" y="250" width="185" height="180" rx="16" class="dev"/>
+<text x="1242" y="292" text-anchor="middle" class="h">Device 4</text><text x="1242" y="330" text-anchor="middle" class="s">…</text>
+</g>
+
+<text x="800" y="470" text-anchor="middle" class="h">Step 1：先保留最多 M=3 个 candidate devices</text>
+<text x="800" y="515" text-anchor="middle" class="h">Step 2：只在候选设备内做 Top-6 routed experts</text>
+<path d="M270 280 C330 170 390 210 422 240" class="comm"/><path d="M270 280 C500 120 760 180 832 240" class="comm"/><path d="M270 280 C650 100 980 170 1037 240" class="comm"/>
+<rect x="480" y="555" width="640" height="105" rx="16" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+<text x="800" y="596" text-anchor="middle" class="b">dispatch activations only to selected devices / experts</text>
+<text x="800" y="633" text-anchor="middle" class="s">论文报告 M≥3 时性能大致可与 unrestricted Top-K 对齐（在其设置下）</text>
+
+<rect x="55" y="750" width="900" height="300" rx="22" class="panel"/>
+<text x="505" y="795" text-anchor="middle" class="h">系统 overlap：shared compute ∥ expert-parallel communication</text>
+<rect x="105" y="855" width="300" height="100" rx="16" class="shared"/>
+<text x="255" y="897" text-anchor="middle" class="b">Shared experts compute</text><text x="255" y="934" text-anchor="middle" class="s">local / always-active path</text>
+<rect x="600" y="855" width="300" height="100" rx="16" class="cand"/>
+<text x="750" y="897" text-anchor="middle" class="b">EP All-to-All dispatch</text><text x="750" y="934" text-anchor="middle" class="s">remote routed path</text>
+<path d="M405 905 H585" class="compute"/>
+<text x="505" y="885" text-anchor="middle" class="s">overlap in time</text>
+<text x="505" y="1000" text-anchor="middle" class="s">V2 training stack: PP16 + EP8 + ZeRO-1, no Tensor Parallelism</text>
+
+<rect x="995" y="750" width="550" height="300" rx="22" class="panel"/>
+<text x="1270" y="795" text-anchor="middle" class="h">为什么还要三种 balance objective？</text>
+<rect x="1045" y="845" width="140" height="95" rx="14" class="loss"/><text x="1115" y="884" text-anchor="middle" class="b">Expert</text><text x="1115" y="916" text-anchor="middle" class="s">token count</text>
+<rect x="1210" y="845" width="140" height="95" rx="14" class="loss"/><text x="1280" y="884" text-anchor="middle" class="b">Device</text><text x="1280" y="916" text-anchor="middle" class="s">compute load</text>
+<rect x="1375" y="845" width="140" height="95" rx="14" class="loss"/><text x="1445" y="884" text-anchor="middle" class="b">Comm</text><text x="1445" y="916" text-anchor="middle" class="s">remote traffic</text>
+<text x="1270" y="985" text-anchor="middle" class="s">Expert / Device / Comm 三个尺度不等价。</text>
+<text x="1270" y="1018" text-anchor="middle" class="s">Soft balance 仍会遇到瞬时 overflow，因此还需 token dropping。</text>
+</svg>

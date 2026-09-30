@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2e8b57"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .node{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}.noise{fill:#fff7ed;stroke:#d97706;stroke-width:2}.sel{fill:#edf9f0;stroke:#2e8b57;stroke-width:3}
+  .off{fill:#f4f6f8;stroke:#aeb8c2;stroke-width:2}.flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#a)}.grad{stroke:#2e8b57;stroke-width:3;stroke-dasharray:8 6;fill:none;marker-end:url(#g)}
+  .formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Noisy Top-k Router：探索、稀疏选择与梯度信号</text>
+<text x="800" y="101" text-anchor="middle" class="sub">Top-k index 本身离散，但 selected gates、task loss 与 balancing loss 仍能给 Router 提供训练信号</text>
+
+<rect x="55" y="145" width="1490" height="700" rx="22" class="panel"/>
+<rect x="95" y="265" width="175" height="100" rx="15" class="node"/>
+<text x="182" y="305" text-anchor="middle" class="h">X</text><text x="182" y="339" text-anchor="middle" class="b">[N,d]</text>
+<path d="M270 315 H350" class="flow"/>
+<rect x="365" y="245" width="210" height="140" rx="16" class="node"/>
+<text x="470" y="288" text-anchor="middle" class="h">Router</text><text x="470" y="325" text-anchor="middle" class="b">Z = X W_g</text><text x="470" y="357" text-anchor="middle" class="s">[N,E] logits</text>
+<path d="M575 315 H650" class="flow"/>
+<rect x="665" y="235" width="235" height="160" rx="16" class="noise"/>
+<text x="782" y="277" text-anchor="middle" class="h">learned noise</text>
+<text x="782" y="316" text-anchor="middle" class="b">z̃_i = z_i + σ_i ε_i</text>
+<text x="782" y="352" text-anchor="middle" class="s">ε_i ~ N(0,1)</text>
+<path d="M900 315 H975" class="flow"/>
+<rect x="990" y="235" width="230" height="160" rx="16" class="sel"/>
+<text x="1105" y="277" text-anchor="middle" class="h">Top-k</text>
+<text x="1105" y="316" text-anchor="middle" class="b">indices I [N,k]</text>
+<text x="1105" y="352" text-anchor="middle" class="b">gates G [N,k]</text>
+<path d="M1220 315 H1295" class="flow"/>
+<rect x="1310" y="245" width="190" height="140" rx="16" fill="#e7fbfc" stroke="#0e8f9b" stroke-width="2"/>
+<text x="1405" y="289" text-anchor="middle" class="h">Dispatch</text><text x="1405" y="326" text-anchor="middle" class="b">token → expert</text><text x="1405" y="358" text-anchor="middle" class="s">按 expert regroup</text>
+
+<text x="150" y="470" class="h">一个 token 的稀疏选择例子</text>
+<g>
+<rect x="120" y="510" width="180" height="86" rx="13" class="off"/><text x="210" y="545" text-anchor="middle" class="b">E1</text><text x="210" y="575" text-anchor="middle" class="s">g₁=0</text>
+<rect x="330" y="510" width="180" height="86" rx="13" class="sel"/><text x="420" y="545" text-anchor="middle" class="b">E2 ✓</text><text x="420" y="575" text-anchor="middle" class="s">g₂=0.62</text>
+<rect x="540" y="510" width="180" height="86" rx="13" class="off"/><text x="630" y="545" text-anchor="middle" class="b">E3</text><text x="630" y="575" text-anchor="middle" class="s">g₃=0</text>
+<rect x="750" y="510" width="180" height="86" rx="13" class="sel"/><text x="840" y="545" text-anchor="middle" class="b">E4 ✓</text><text x="840" y="575" text-anchor="middle" class="s">g₄=0.38</text>
+<rect x="960" y="510" width="180" height="86" rx="13" class="off"/><text x="1050" y="545" text-anchor="middle" class="b">E5</text><text x="1050" y="575" text-anchor="middle" class="s">g₅=0</text>
+</g>
+<path d="M420 596 C420 660 700 660 700 720" class="flow"/><path d="M840 596 C840 660 700 660 700 720" class="flow"/>
+<rect x="560" y="725" width="280" height="90" rx="15" class="node"/>
+<text x="700" y="763" text-anchor="middle" class="h">weighted combine</text><text x="700" y="795" text-anchor="middle" class="b">y = Σ_i g_i E_i(x)</text>
+
+<rect x="935" y="670" width="530" height="145" rx="16" class="formula"/>
+<text x="1200" y="708" text-anchor="middle" class="h">训练信号到底从哪里回来？</text>
+<text x="1200" y="748" text-anchor="middle" class="b">selected gate softmax → main task gradient</text>
+<text x="1200" y="785" text-anchor="middle" class="b">importance / load losses → router-wide pressure</text>
+<path d="M960 720 C900 700 900 440 805 405" class="grad"/>
+<text x="914" y="615" class="s">gradient / auxiliary signal</text>
+
+<rect x="95" y="895" width="1410" height="150" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="935" text-anchor="middle" class="b">Noise：score 接近时扰动局部排名，让更多 experts 偶尔被选中并接收梯度。</text>
+<text x="800" y="980" text-anchor="middle" class="b">稀疏性仍成立：未选 expert 的 gate=0；生产系统按 expert regroup 后执行 batched GEMM。</text>
+<text x="800" y="1020" text-anchor="middle" class="s">Noisy Top-k 的目的不是随机化最终模型，而是在离散选择边界附近保留探索与可训练性。</text>
+</svg>

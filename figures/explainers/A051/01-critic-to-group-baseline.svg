@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>PPO learned critic versus GRPO group-relative baseline.</desc>
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 44px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 23px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 30px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 21px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 21px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.d{stroke:#D9E2EC;stroke-width:2}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">GRPO · 删除 Critic 以后，baseline 到底被什么替代？</text><text x="65" y="108" class="s">对应 §1–§5｜PPO 用 prefix-level V(sₜ)；GRPO 改用同一 prompt 下 G 个 response 的组内相对统计</text>
+<text x="65" y="165" class="h">PPO / Actor-Critic：每个 token state 都有一个 learned value baseline</text>
+<rect x="70" y="205" width="270" height="145" rx="18" class="gray"/><text x="95" y="245" class="n">Prefix state sₜ</text><text x="95" y="285" class="x">q + y₍&lt;t₎</text><text x="95" y="320" class="x">同一 response 内随 t 改变</text>
+<path d="M340 277 H430" class="f"/>
+<rect x="430" y="190" width="330" height="175" rx="18" class="blue"/><text x="455" y="230" class="n">Value / Critic Vψ(sₜ)</text><text x="455" y="272" class="x">估计当前 prefix 的 expected return</text><text x="455" y="310" class="mono">Âₜ = Gₜ − Vψ(sₜ)</text>
+<path d="M760 277 H860" class="f"/>
+<rect x="860" y="205" width="300" height="145" rx="18" class="green"/><text x="885" y="245" class="n">Token policy gradient</text><text x="885" y="285" class="x">每个 state 有自己的 baseline</text><text x="885" y="320" class="x">目标：主要降低 variance</text>
+<rect x="1260" y="200" width="275" height="155" rx="18" class="red"/><text x="1285" y="240" class="n">LLM 成本</text><text x="1285" y="280" class="x">额外 Value Model</text><text x="1285" y="315" class="x">训练 / 显存 / 推理开销</text>
+<line x1="65" y1="420" x2="1535" y2="420" class="d"/>
+<text x="65" y="480" class="h">GRPO：同一个 prompt 直接采样 G 条 response，让它们互相形成 difficulty-relative baseline</text>
+<rect x="70" y="530" width="245" height="120" rx="18" class="gray"/><text x="95" y="570" class="n">Prompt q</text><text x="95" y="610" class="x">同题一次采 G 条回答</text>
+<path d="M315 590 H400" class="f"/>
+<g>
+<rect x="400" y="500" width="280" height="65" rx="13" class="blue"/><text x="420" y="541" class="x">y₁ → reward r₁</text>
+<rect x="400" y="580" width="280" height="65" rx="13" class="cyan"/><text x="420" y="621" class="x">y₂ → reward r₂</text>
+<rect x="400" y="660" width="280" height="65" rx="13" class="blue"/><text x="420" y="701" class="x">… y_G → reward r_G</text>
+</g>
+<path d="M680 612 H780" class="f"/>
+<rect x="780" y="520" width="350" height="190" rx="18" class="orange"/><text x="805" y="560" class="n">Group statistics</text><text x="805" y="605" class="mono">μ = mean(r₁…r_G)</text><text x="805" y="640" class="mono">σ = std(r₁…r_G)</text><text x="805" y="675" class="mono">Âᵢ = (rᵢ−μ)/σ</text>
+<path d="M1130 615 H1220" class="opt"/>
+<rect x="1220" y="535" width="315" height="160" rx="18" class="green"/><text x="1245" y="575" class="n">No learned Critic</text><text x="1245" y="615" class="x">保留 baseline 思想</text><text x="1245" y="650" class="x">但 baseline 粒度变成 prompt-group</text>
+<text x="65" y="805" class="h">必须分清：group mean ≠ V(sₜ)</text>
+<rect x="100" y="850" width="610" height="130" rx="18" class="blue"/><text x="130" y="890" class="n">V(sₜ)</text><text x="130" y="930" class="x">条件于具体 prefix；不同 token state 可以不同</text>
+<rect x="890" y="850" width="610" height="130" rx="18" class="orange"/><text x="920" y="890" class="n">Group baseline</text><text x="920" y="930" class="x">同 prompt 多条完整 response 的 reward 统计；不是 prefix value</text>
+</svg>

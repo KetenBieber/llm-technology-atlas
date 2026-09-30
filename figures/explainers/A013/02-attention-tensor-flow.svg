@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.grid{stroke:#c9d6de;stroke-width:1.3}.mask{fill:#c64a4a;opacity:.18}.ok{fill:#2b6f9f;opacity:.18}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">Scaled Dot-Product Attention：从 X 到输出的完整 tensor flow</text><text x="70" y="112" class="subtitle">A013 · 每个箭头都对应 reshape / matmul / mask / reduction，不把 Attention 画成一个黑箱</text>
+<text x="70" y="170" class="section">Q / K / V 投影与 head reshape</text>
+<rect x="70" y="210" width="220" height="95" rx="16" class="gray"/><text x="98" y="250" class="node">Xq [B,T,d]</text><text x="98" y="283" class="small">query states</text>
+<rect x="70" y="340" width="220" height="95" rx="16" class="gray"/><text x="98" y="380" class="node">Xm [B,S,d]</text><text x="98" y="413" class="small">memory / self states</text>
+<path d="M290 255 H390" class="flow"/><path d="M290 385 H390" class="flow"/>
+<rect x="390" y="195" width="260" height="125" rx="18" class="blue"/><text x="420" y="240" class="node">WQ</text><text x="420" y="278" class="body">[d, h·dₖ]</text>
+<rect x="390" y="335" width="260" height="155" rx="18" class="cyan"/><text x="420" y="380" class="node">WK , WV</text><text x="420" y="420" class="body">[d,h·dₖ] / [d,h·dᵥ]</text>
+<path d="M650 255 H745" class="flow"/><path d="M650 390 H745" class="flow"/>
+<rect x="745" y="185" width="300" height="315" rx="22" class="box"/>
+<text x="775" y="230" class="node">reshape + transpose</text>
+<text x="775" y="282" class="body">Q : [B,h,T,dₖ]</text>
+<text x="775" y="328" class="body">K : [B,h,S,dₖ]</text>
+<text x="775" y="374" class="body">V : [B,h,S,dᵥ]</text>
+<text x="775" y="430" class="small">head 轴独立并行</text>
+<text x="775" y="466" class="small">softmax 不在 head 轴归一化</text>
+
+<text x="70" y="585" class="section">score → mask → probability → value aggregation</text>
+<path d="M1045 285 H1135" class="flow"/>
+<rect x="1135" y="195" width="395" height="145" rx="20" class="orange"/>
+<text x="1165" y="238" class="node">Q Kᵀ / √dₖ</text>
+<text x="1165" y="278" class="math">[B,h,T,dₖ] × [B,h,dₖ,S]</text>
+<text x="1165" y="317" class="body">→ scores [B,h,T,S]</text>
+<path d="M1330 340 V410" class="flow"/>
+<rect x="1135" y="410" width="395" height="118" rx="18" class="red"/>
+<text x="1165" y="454" class="node">+ Mask M</text>
+<text x="1165" y="493" class="small">future / PAD → −∞；合法位置 → 0</text>
+<path d="M1330 528 V595" class="flow"/>
+<rect x="1120" y="595" width="410" height="118" rx="18" class="blue"/>
+<text x="1150" y="640" class="node">softmax over Key axis S</text>
+<text x="1150" y="680" class="math">A [B,h,T,S],  Σⱼ Aᵢⱼ = 1</text>
+<path d="M1120 655 H1020" class="flow"/>
+<path d="M900 500 V655 H1020" class="aux"/>
+<rect x="745" y="595" width="275" height="118" rx="18" class="cyan"/>
+<text x="775" y="638" class="node">A × V</text><text x="775" y="678" class="body">→ [B,h,T,dᵥ]</text>
+<path d="M745 655 H650" class="flow"/>
+<rect x="360" y="575" width="290" height="160" rx="20" class="green"/>
+<text x="390" y="620" class="node">transpose + concat</text>
+<text x="390" y="661" class="body">[B,T,h·dᵥ]</text>
+<text x="390" y="701" class="small">h heads 拼回模型宽</text>
+<path d="M360 655 H270" class="flow"/>
+<rect x="70" y="590" width="200" height="130" rx="18" class="blue"/>
+<text x="100" y="635" class="node">Wᴼ</text><text x="100" y="677" class="body">[h·dᵥ,d]</text>
+
+<rect x="70" y="795" width="1460" height="210" rx="22" class="box"/>
+<text x="100" y="840" class="node">两个容易混淆的轴</text>
+<text x="100" y="885" class="body">T = Query 位置数；S = Key/Value 位置数。Self-Attention 时 T=S；Cross-Attention 时通常 T≠S。</text>
+<text x="100" y="930" class="body">矩阵顺序固定为 [T,dₖ]·[dₖ,S]→[T,S]，随后 [T,S]·[S,dᵥ]→[T,dᵥ]。</text>
+<text x="100" y="972" class="math">Attention(Q,K,V) = softmax(QKᵀ / √dₖ + M) V</text>
+</svg>

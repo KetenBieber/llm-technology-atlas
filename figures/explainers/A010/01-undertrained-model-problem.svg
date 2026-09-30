@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.grid{stroke:#d9e2e8;stroke-width:1.2}.curve{fill:none;stroke:#246b9b;stroke-width:5}.curve2{fill:none;stroke:#178d98;stroke-width:5}.curve3{fill:none;stroke:#d47a20;stroke-width:5}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style><defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Chinchilla：为什么“大模型”在固定 FLOPs 下可能反而 undertrained？</text><text x="70" y="112" class="subtitle">A010 · C≈6ND 把模型容量与训练 token 绑定成一个资源交换问题</text>
+<text x="70" y="175" class="section">1  固定训练预算：每增加参数，都必须用更少 token 来支付</text>
+<rect x="70" y="210" width="1460" height="330" rx="22" class="box"/>
+<line x1="150" y1="480" x2="900" y2="480" class="axis"/><line x1="150" y1="480" x2="150" y2="265" class="axis"/>
+<text x="125" y="280" class="small">D</text><text x="850" y="515" class="small">N</text>
+<path d="M210 300 C350 355 540 420 840 462" class="curve"/>
+<text x="505" y="330" class="math">C = 6ND = constant</text>
+<circle cx="270" cy="324" r="15" fill="#c64a4a"/><circle cx="515" cy="405" r="15" fill="#2f8a57"/><circle cx="790" cy="457" r="15" fill="#c64a4a"/>
+<text x="190" y="360" class="body">N 小 / D 多</text><text x="435" y="448" class="body">平衡区</text><text x="745" y="420" class="body">N 大 / D 少</text>
+
+<rect x="970" y="250" width="500" height="230" rx="20" class="red"/>
+<text x="1000" y="295" class="node">两端各有一种失败</text>
+<text x="1000" y="342" class="body">左端：capacity bottleneck</text>
+<text x="1000" y="383" class="body">右端：undertraining / finite-data error</text>
+<text x="1000" y="430" class="math">D = C / (6N)</text>
+
+<text x="70" y="610" class="section">2  同一预算下的 loss 因而形成 IsoFLOP valley</text>
+<rect x="70" y="650" width="900" height="320" rx="22" class="box"/>
+<line x1="145" y1="910" x2="890" y2="910" class="axis"/><line x1="145" y1="910" x2="145" y2="700" class="axis"/>
+<path d="M185 740 C300 790 360 875 500 885 C650 895 715 790 845 730" class="curve"/>
+<circle cx="500" cy="885" r="13" fill="#2f8a57"/>
+<text x="440" y="860" class="node">N*(C)</text>
+<text x="165" y="724" class="small">Loss</text><text x="820" y="947" class="small">Model size N</text>
+<text x="190" y="945" class="small">太小：容量不足</text><text x="650" y="945" class="small">太大：训练不足</text>
+
+<rect x="1030" y="650" width="500" height="320" rx="22" class="cyan"/>
+<text x="1060" y="695" class="node">论文中的现实动机</text>
+<text x="1060" y="742" class="body">Gopher：280B params / ~300B tokens</text>
+<text x="1060" y="783" class="body">Chinchilla：70B params / 1.4T tokens</text>
+<text x="1060" y="830" class="body">问题不是“70B 永远优于 280B”，</text>
+<text x="1060" y="866" class="body">而是旧训练配方是否落在 valley 右侧。</text>
+<text x="1060" y="918" class="small">旗舰对照还包含 recipe 变化，不能当单变量 ablation</text>
+
+<text x="70" y="1025" class="math">目标： (N_opt(C), D_opt(C)) = argmin L(N,D)  subject to  6ND=C</text>
+</svg>

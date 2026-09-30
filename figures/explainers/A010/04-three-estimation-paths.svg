@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}
+.node{font-size:24px;font-weight:700}.body{font-size:21px}.small{font-size:19px;fill:#60758a}.math{font-size:22px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#9db7c8;stroke-width:2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#e9f9fa;stroke:#178d98;stroke-width:2.4}
+.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:4.5;marker-end:url(#a)}.goodflow{fill:none;stroke:#2f8a57;stroke-width:4.5;marker-end:url(#ag)}.cost{fill:none;stroke:#d47a20;stroke-width:4;marker-end:url(#ao)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">Chinchilla：三种路径如何交叉校验 compute-optimal frontier？</text>
+<text x="70" y="112" class="subtitle">A010 · Training-curve envelope、IsoFLOP profile、parametric L(N,D) 的观测对象与误差来源不同</text>
+
+<text x="70" y="170" class="section">同一问题：给定 FLOPs C，找使 loss 最低的 (N,D)</text>
+
+<!-- panel 1 -->
+<rect x="70" y="205" width="455" height="500" rx="22" class="blue"/>
+<text x="100" y="250" class="node">① Training-curve envelope</text>
+<text x="100" y="285" class="small">多个 model size 的 L(C) 轨迹；同一 C 取最低 loss</text>
+<line x1="125" y1="590" x2="470" y2="590" class="axis"/><line x1="125" y1="330" x2="125" y2="590" class="axis"/>
+<path d="M135 540 C220 430 310 390 455 360" fill="none" stroke="#2b6f9f" stroke-width="4"/>
+<path d="M135 570 C235 470 330 420 455 405" fill="none" stroke="#178d98" stroke-width="4"/>
+<path d="M135 585 C250 520 350 470 455 455" fill="none" stroke="#d47a20" stroke-width="4"/>
+<circle cx="230" cy="460" r="8" fill="#2f8a57"/><circle cx="305" cy="432" r="8" fill="#2f8a57"/><circle cx="385" cy="402" r="8" fill="#2f8a57"/>
+<path d="M230 460 Q305 420 385 402" fill="none" stroke="#2f8a57" stroke-width="5"/>
+<text x="250" y="650" class="body">跨训练轨迹抽取 envelope</text>
+<text x="100" y="682" class="math">N_opt ∝ C^0.50,  D_opt ∝ C^0.50</text>
+
+<!-- panel 2 -->
+<rect x="570" y="205" width="455" height="500" rx="22" class="cyan"/>
+<text x="600" y="250" class="node">② IsoFLOP profiles</text>
+<text x="600" y="285" class="small">固定 C；扫 N，同时强制 D=C/(6N)</text>
+<line x1="625" y1="590" x2="970" y2="590" class="axis"/><line x1="625" y1="330" x2="625" y2="590" class="axis"/>
+<path d="M650 370 Q770 600 940 390" fill="none" stroke="#d47a20" stroke-width="4"/>
+<path d="M650 410 Q795 590 950 430" fill="none" stroke="#178d98" stroke-width="4"/>
+<path d="M650 450 Q815 585 960 470" fill="none" stroke="#2b6f9f" stroke-width="4"/>
+<circle cx="775" cy="545" r="9" fill="#d47a20"/><circle cx="800" cy="548" r="9" fill="#178d98"/><circle cx="820" cy="550" r="9" fill="#2b6f9f"/>
+<path d="M775 545 L800 548 L820 550" class="goodflow"/>
+<text x="670" y="650" class="body">直接观测每条 U-curve 的 valley</text>
+<text x="600" y="682" class="math">N_opt ∝ C^0.49,  D_opt ∝ C^0.51</text>
+
+<!-- panel 3 -->
+<rect x="1070" y="205" width="460" height="500" rx="22" class="green"/>
+<text x="1100" y="250" class="node">③ Parametric loss model</text>
+<text x="1100" y="285" class="math">L=E+A/N^α+B/D^β</text>
+<line x1="1135" y1="590" x2="1485" y2="590" class="axis"/><line x1="1135" y1="330" x2="1135" y2="590" class="axis"/>
+<ellipse cx="1310" cy="470" rx="135" ry="85" fill="none" stroke="#9db7c8" stroke-width="2"/>
+<ellipse cx="1310" cy="470" rx="100" ry="62" fill="none" stroke="#178d98" stroke-width="2.5"/>
+<ellipse cx="1310" cy="470" rx="66" ry="40" fill="none" stroke="#2f8a57" stroke-width="3"/>
+<path d="M1160 350 C1240 420 1330 500 1460 570" fill="none" stroke="#d47a20" stroke-width="4"/>
+<circle cx="1300" cy="466" r="10" fill="#c64a4a"/>
+<text x="1330" y="450" class="small">C≈6ND 与 iso-loss 相切</text>
+<text x="1100" y="650" class="body">拟合连续 surface，再解约束优化</text>
+<text x="1100" y="682" class="math">N_opt ∝ C^0.46,  D_opt ∝ C^0.54</text>
+
+<!-- convergence -->
+<path d="M300 705 C420 800 590 820 760 850" class="flow"/><path d="M800 705 V840" class="flow"/><path d="M1300 705 C1180 800 1010 820 850 850" class="flow"/>
+<rect x="360" y="855" width="880" height="165" rx="24" class="orange"/>
+<text x="800" y="900" text-anchor="middle" class="node">三条证据链在趋势上汇合</text>
+<text x="800" y="944" text-anchor="middle" class="body">新增 compute 不应主要只增大 N；N 与 processed tokens D 应更接近同步扩展</text>
+<text x="800" y="986" text-anchor="middle" class="small">强结论是“allocation 方向一致”，而不是把 0.50 / 0.49 / 0.46 平均成一个永恒常数。</text>
+</svg>

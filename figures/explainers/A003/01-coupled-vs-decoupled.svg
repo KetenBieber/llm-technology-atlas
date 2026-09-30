@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200"><defs><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#14213d}.title{font-size:48px;font-weight:700}.sub{font-size:24px;fill:#607086}.h{font-size:29px;font-weight:700}.n{font-size:24px;font-weight:650}.b{font-size:21px}.s{font-size:20px;fill:#607086}.formula{font-family:"STIX Two Math","Cambria Math",serif;font-size:23px}
+.box{fill:#f8fbff;stroke:#8fb6d9;stroke-width:2}.state{fill:#ecfbfc;stroke:#3ba9b3;stroke-width:2}.gray{fill:#f4f6f8;stroke:#aab6c3;stroke-width:2}.warn{fill:#fff2f1;stroke:#cf5c57;stroke-width:2}.good{fill:#eef9f2;stroke:#4ca267;stroke-width:2}.cost{fill:#fff7e9;stroke:#df942c;stroke-width:2}
+.blue{stroke:#246aa5;stroke-width:5;fill:none}.cyan{stroke:#2599a6;stroke-width:4;fill:none}.green{stroke:#3d995c;stroke-width:5;fill:none}.orange{stroke:#d9871c;stroke-width:4;fill:none}.red{stroke:#c8504b;stroke-width:5;fill:none}.dash{stroke-dasharray:12 10}
+</style><marker id="ab" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#246aa5"/></marker><marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2599a6"/></marker><marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3d995c"/></marker><marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d9871c"/></marker><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c8504b"/></marker></defs><rect width="1600" height="1200" fill="#fff"/><text x="70" y="75" class="title">A003 · AdamW：解耦的是计算路径</text><text x="72" y="115" class="sub">同样想“把参数往 0 拉”，为什么 coupled L2 与 decoupled weight decay 在 Adam 中不是一回事？</text>
+<rect x="55" y="165" width="720" height="835" rx="28" class="warn"/><text x="90" y="220" class="h">Coupled L2 · 正则项先混进 gradient</text>
+<rect x="95" y="300" width="190" height="105" rx="18" class="box"/><text x="190" y="342" text-anchor="middle" class="n">data grad</text><text x="190" y="375" text-anchor="middle" class="formula">gₜ</text>
+<rect x="95" y="485" width="190" height="105" rx="18" class="cost"/><text x="190" y="527" text-anchor="middle" class="n">L2 grad</text><text x="190" y="560" text-anchor="middle" class="formula">λ′θₜ₋₁</text>
+<circle cx="375" cy="445" r="45" fill="#fff" stroke="#c8504b" stroke-width="3"/><text x="375" y="454" text-anchor="middle" class="n">＋</text>
+<path d="M285 350 C330 360 345 395 360 405" class="blue" marker-end="url(#ab)"/><path d="M285 540 C335 520 350 490 363 480" class="red" marker-end="url(#ar)"/>
+<rect x="485" y="355" width="230" height="180" rx="20" class="state"/><text x="600" y="400" text-anchor="middle" class="n">Adam moments</text><text x="600" y="440" text-anchor="middle" class="formula">m( g+λ′θ )</text><text x="600" y="480" text-anchor="middle" class="formula">v( (g+λ′θ)² )</text><text x="600" y="510" text-anchor="middle" class="s">regularizer 被统计</text>
+<path d="M420 445 H485" class="red" marker-end="url(#ar)"/>
+<rect x="485" y="645" width="230" height="125" rx="20" class="warn"/><text x="600" y="690" text-anchor="middle" class="n">adaptive scaling</text><text x="600" y="730" text-anchor="middle" class="formula">Mₜ(g+λ′θ)</text>
+<path d="M600 535 V645" class="red" marker-end="url(#ar)"/>
+<rect x="190" y="830" width="430" height="110" rx="20" class="gray"/><text x="405" y="875" text-anchor="middle" class="formula">decay term = −αλ′Mₜθ</text><text x="405" y="910" text-anchor="middle" class="b">不同坐标被 Mₜ 再缩放一次</text>
+<path d="M600 770 C570 810 520 825 500 830" class="red" marker-end="url(#ar)"/>
+
+<rect x="825" y="165" width="720" height="835" rx="28" class="good"/><text x="860" y="220" class="h">AdamW · task path 与 decay path 分离</text>
+<rect x="865" y="300" width="190" height="105" rx="18" class="box"/><text x="960" y="342" text-anchor="middle" class="n">pure data grad</text><text x="960" y="375" text-anchor="middle" class="formula">gₜ=∇fₜ(θ)</text>
+<rect x="1125" y="270" width="250" height="165" rx="20" class="state"/><text x="1250" y="315" text-anchor="middle" class="n">Adam moments</text><text x="1250" y="355" text-anchor="middle" class="formula">mₜ ← gₜ</text><text x="1250" y="393" text-anchor="middle" class="formula">vₜ ← gₜ²</text>
+<path d="M1055 352 H1125" class="blue" marker-end="url(#ab)"/>
+<rect x="1125" y="500" width="250" height="120" rx="20" class="box"/><text x="1250" y="545" text-anchor="middle" class="n">task displacement</text><text x="1250" y="585" text-anchor="middle" class="formula">−α m̂/(√v̂+ε)</text><path d="M1250 435 V500" class="blue" marker-end="url(#ab)"/>
+
+<rect x="865" y="705" width="210" height="115" rx="18" class="cost"/><text x="970" y="750" text-anchor="middle" class="n">old θₜ₋₁</text><text x="970" y="787" text-anchor="middle" class="formula">[P]</text>
+<rect x="1125" y="690" width="250" height="145" rx="20" class="good"/><text x="1250" y="735" text-anchor="middle" class="n">decay displacement</text><text x="1250" y="778" text-anchor="middle" class="formula">−αλw θₜ₋₁</text><text x="1250" y="810" text-anchor="middle" class="s">不经过 m / v</text>
+<path d="M1075 762 H1125" class="green" marker-end="url(#ag)"/>
+<circle cx="1430" cy="590" r="48" fill="#fff" stroke="#4ca267" stroke-width="3"/><text x="1430" y="599" text-anchor="middle" class="n">Σ</text>
+<path d="M1375 560 H1382" class="blue" marker-end="url(#ab)"/><path d="M1375 762 C1410 725 1420 665 1425 638" class="green" marker-end="url(#ag)"/><path d="M970 820 C1110 915 1320 825 1400 635" class="orange dash" marker-end="url(#ao)"/>
+<text x="1430" y="680" text-anchor="middle" class="formula">θₜ</text>
+
+<rect x="135" y="1040" width="1330" height="115" rx="22" class="gray"/><text x="800" y="1085" text-anchor="middle" class="formula">θₜ = (1−αλw)θₜ₋₁ − α m̂ₜ/(√v̂ₜ+ε)</text><text x="800" y="1125" text-anchor="middle" class="b">“decoupled” 的含义不是多一个超参数，而是 decay 不再穿过 adaptive-gradient 预条件器。</text>
+</svg>

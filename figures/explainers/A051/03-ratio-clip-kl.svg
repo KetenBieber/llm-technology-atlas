@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>GRPO old-policy ratio clipping and reference-policy KL control.</desc>
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 44px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 23px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 30px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 21px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 21px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.d{stroke:#D9E2EC;stroke-width:2}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">GRPO · Critic 被删了，为什么 PPO ratio / clip 与 reference KL 还在？</text><text x="65" y="108" class="s">对应 §6–§8｜回答：old-policy 数据复用与 reference drift 是两个独立稳定性问题</text>
+<text x="65" y="165" class="h">① Old policy → current policy：ratio 修正“这批 token 现在有多可能”</text>
+<rect x="70" y="210" width="280" height="130" rx="18" class="gray"/><text x="95" y="250" class="n">Rollout buffer</text><text x="95" y="290" class="x">由 π_old 采样 token actions</text>
+<path d="M350 275 H445" class="f"/>
+<rect x="445" y="195" width="370" height="160" rx="18" class="blue"/><text x="470" y="235" class="n">Importance ratio</text><text x="470" y="278" class="mono">ρₜ = πθ(aₜ|sₜ) / π_old(aₜ|sₜ)</text><text x="470" y="315" class="x">仅修正 action conditional</text>
+<path d="M815 275 H910" class="f"/>
+<rect x="910" y="195" width="390" height="160" rx="18" class="orange"/><text x="935" y="235" class="n">PPO-style clipped surrogate</text><text x="935" y="278" class="mono">min(ρₜÂₜ, clip(ρₜ,1±ε)Âₜ)</text><text x="935" y="315" class="x">限制同一 batch 多轮更新的步幅</text>
+<path d="M1300 275 H1390" class="opt"/>
+<rect x="1390" y="220" width="145" height="110" rx="18" class="green"/><text x="1415" y="260" class="n">Policy</text><text x="1415" y="295" class="x">stable step</text>
+<text x="65" y="430" class="h">Clip 的几何直觉：positive / negative advantage 的“危险方向”相反</text>
+<line x1="190" y1="545" x2="760" y2="545" stroke="#64748B" stroke-width="3"/><line x1="475" y1="480" x2="475" y2="610" stroke="#64748B" stroke-width="3"/>
+<rect x="285" y="505" width="380" height="80" rx="15" fill="#EAF3FF" stroke="#0B4F9C" stroke-width="2"/>
+<line x1="360" y1="492" x2="360" y2="598" stroke="#F59E0B" stroke-width="4"/><line x1="590" y1="492" x2="590" y2="598" stroke="#F59E0B" stroke-width="4"/>
+<text x="330" y="635" class="mono">1−ε</text><text x="555" y="635" class="mono">1+ε</text><text x="255" y="455" class="n">Â &gt; 0：阻止 ρ 过度增大</text>
+<text x="860" y="455" class="n">Â &lt; 0：阻止 ρ 过度减小</text>
+<line x1="980" y1="545" x2="1500" y2="545" stroke="#64748B" stroke-width="3"/><line x1="1240" y1="480" x2="1240" y2="610" stroke="#64748B" stroke-width="3"/>
+<rect x="1060" y="505" width="360" height="80" rx="15" fill="#FFF0F0" stroke="#DC2626" stroke-width="2"/>
+<line x1="1130" y1="492" x2="1130" y2="598" stroke="#F59E0B" stroke-width="4"/><line x1="1350" y1="492" x2="1350" y2="598" stroke="#F59E0B" stroke-width="4"/>
+<text x="1100" y="635" class="mono">1−ε</text><text x="1320" y="635" class="mono">1+ε</text>
+<line x1="65" y1="700" x2="1535" y2="700" class="d"/>
+<text x="65" y="760" class="h">② Current policy ↔ Reference policy：KL 约束解决的是“别漂离基准太远”</text>
+<rect x="100" y="805" width="300" height="125" rx="18" class="blue"/><text x="125" y="845" class="n">πθ · trainable</text><text x="125" y="885" class="x">接受 GRPO policy gradient</text>
+<path d="M400 867 H540" class="cost"/>
+<rect x="540" y="795" width="480" height="145" rx="18" class="orange"/><text x="565" y="835" class="n">Reference KL estimator</text><text x="565" y="875" class="mono">x = π_ref/πθ；D̂ = x − log x − 1 ≥ 0</text><text x="565" y="910" class="x">在 πθ 采样下估计 D_KL(πθ || π_ref)</text>
+<path d="M1020 867 H1160" class="cost"/>
+<rect x="1160" y="805" width="300" height="125" rx="18" class="gray"/><text x="1185" y="845" class="n">π_ref · frozen</text><text x="1185" y="885" class="x">提供 drift anchor</text>
+<text x="65" y="1015" class="m">删除 Critic ≠ 删除 old policy ≠ 删除 reference policy：三者解决的是不同问题。</text>
+</svg>

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200">
+<defs>
+  <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1d4ed8"/></marker>
+  <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16a34a"/></marker>
+  <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#ea580c"/></marker>
+  <style>
+    text{font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;fill:#0f172a}
+    .title{font-size:48px;font-weight:700}.sub{font-size:22px;fill:#475569}.sec{font-size:28px;font-weight:700}
+    .lab{font-size:23px;font-weight:700}.body{font-size:20px;fill:#334155}.mono{font-size:20px;font-family:Consolas,monospace}.num{font-size:26px;font-weight:700}
+    .box{rx:18;ry:18;stroke-width:2.2}.flow{stroke:#1d4ed8;stroke-width:4;fill:none;marker-end:url(#b)}
+    .good{stroke:#16a34a;stroke-width:4;fill:none;marker-end:url(#g)}.cost{stroke:#ea580c;stroke-width:3.5;fill:none;marker-end:url(#o)}
+    .thin{stroke:#64748b;stroke-width:2.5;fill:none}
+  </style>
+</defs>
+<rect width="1800" height="1200" fill="#fff"/>
+<text x="80" y="78" class="title">Qwen2.5 架构栈：Dense 主干不新奇，真正变化在 GQA 共享与 MoE token routing</text>
+<text x="80" y="116" class="sub">核心问题：同一个 token 如何穿过统一 tokenizer、decoder block，并在 Dense FFN 与服务侧 MoE 之间产生不同的计算/容量结构？</text>
+
+<!-- tokenizer protocol -->
+<rect x="80" y="170" width="330" height="240" class="box" fill="#ecfeff" stroke="#0891b2"/>
+<text x="115" y="215" class="sec" fill="#0891b2">Tokenizer / protocol</text>
+<text x="115" y="260" class="num">151,643</text><text x="250" y="260" class="body">regular BPE tokens</text>
+<text x="115" y="305" class="num">+ 22</text><text x="205" y="305" class="body">control tokens</text>
+<text x="115" y="350" class="body">chat boundary / tool call / structured output</text>
+<text x="115" y="385" class="body">同一 vocabulary 贯穿所有尺寸</text>
+
+<!-- tensor flow -->
+<text x="470" y="170" class="sec" fill="#1d4ed8">① Decoder token / tensor flow</text>
+<rect x="470" y="215" width="185" height="85" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="562" y="248" text-anchor="middle" class="lab">Token IDs</text><text x="562" y="278" text-anchor="middle" class="mono">[B, L]</text>
+<rect x="715" y="215" width="205" height="85" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="817" y="248" text-anchor="middle" class="lab">Embedding</text><text x="817" y="278" text-anchor="middle" class="mono">X:[B,L,d]</text>
+<rect x="980" y="215" width="200" height="85" class="box" fill="#f8fafc" stroke="#64748b"/>
+<text x="1080" y="248" text-anchor="middle" class="lab">RMSNorm</text><text x="1080" y="278" text-anchor="middle" class="body">pre-norm</text>
+<path d="M410 290H455" class="flow"/><path d="M655 257H705" class="flow"/><path d="M920 257H970" class="flow"/>
+
+<!-- attention -->
+<rect x="1240" y="170" width="480" height="300" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="1270" y="212" class="sec">GQA + RoPE + QKV bias</text>
+<text x="1270" y="252" class="body">72B 例：Q heads = 64；KV heads = 8</text>
+<text x="1270" y="286" class="body">8 个 query heads 共享一组 K/V</text>
+<!-- head glyphs -->
+<text x="1270" y="332" class="body">Q</text>
+<g fill="#60a5fa"><rect x="1310" y="312" width="17" height="34" rx="4"/><rect x="1333" y="312" width="17" height="34" rx="4"/><rect x="1356" y="312" width="17" height="34" rx="4"/><rect x="1379" y="312" width="17" height="34" rx="4"/><rect x="1402" y="312" width="17" height="34" rx="4"/><rect x="1425" y="312" width="17" height="34" rx="4"/><rect x="1448" y="312" width="17" height="34" rx="4"/><rect x="1471" y="312" width="17" height="34" rx="4"/><rect x="1494" y="312" width="17" height="34" rx="4"/><rect x="1517" y="312" width="17" height="34" rx="4"/><rect x="1540" y="312" width="17" height="34" rx="4"/><rect x="1563" y="312" width="17" height="34" rx="4"/><rect x="1586" y="312" width="17" height="34" rx="4"/><rect x="1609" y="312" width="17" height="34" rx="4"/><rect x="1632" y="312" width="17" height="34" rx="4"/><rect x="1655" y="312" width="17" height="34" rx="4"/></g>
+<text x="1270" y="387" class="body">K/V</text>
+<g fill="#22d3ee"><rect x="1340" y="366" width="28" height="34" rx="4"/><rect x="1386" y="366" width="28" height="34" rx="4"/><rect x="1432" y="366" width="28" height="34" rx="4"/><rect x="1478" y="366" width="28" height="34" rx="4"/><rect x="1524" y="366" width="28" height="34" rx="4"/><rect x="1570" y="366" width="28" height="34" rx="4"/><rect x="1616" y="366" width="28" height="34" rx="4"/><rect x="1662" y="366" width="28" height="34" rx="4"/></g>
+<text x="1270" y="440" class="mono">Q:[B,L,Hq,dh] · K,V:[B,L,Hkv,dh]</text>
+<path d="M1180 257H1230" class="flow"/>
+
+<!-- residual -->
+<rect x="980" y="515" width="200" height="85" class="box" fill="#f8fafc" stroke="#64748b"/>
+<text x="1080" y="548" text-anchor="middle" class="lab">Residual add</text><text x="1080" y="578" text-anchor="middle" class="body">X + Attention(X)</text>
+<path d="M1480 470V505H1180" class="flow"/>
+<rect x="715" y="515" width="205" height="85" class="box" fill="#f8fafc" stroke="#64748b"/>
+<text x="817" y="548" text-anchor="middle" class="lab">RMSNorm</text><text x="817" y="578" text-anchor="middle" class="body">FFN pre-norm</text>
+<path d="M980 557H930" class="flow"/>
+
+<!-- FFN branch -->
+<text x="80" y="690" class="sec" fill="#1d4ed8">② FFN 分叉：Dense compute vs Sparse capacity</text>
+<path d="M817 600V690H230V815" class="flow"/><path d="M817 600V690H1010V815" class="cost"/>
+<rect x="80" y="735" width="720" height="300" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="115" y="780" class="sec">Open Dense family · SwiGLU</text>
+<rect x="135" y="825" width="190" height="85" class="box" fill="#dbeafe" stroke="#1d4ed8"/><text x="230" y="860" text-anchor="middle" class="lab">up / gate proj</text><text x="230" y="890" text-anchor="middle" class="mono">d → d_ff</text>
+<rect x="385" y="825" width="150" height="85" class="box" fill="#dbeafe" stroke="#1d4ed8"/><text x="460" y="860" text-anchor="middle" class="lab">SwiGLU</text><text x="460" y="890" text-anchor="middle" class="body">elementwise</text>
+<rect x="595" y="825" width="160" height="85" class="box" fill="#dbeafe" stroke="#1d4ed8"/><text x="675" y="860" text-anchor="middle" class="lab">down proj</text><text x="675" y="890" text-anchor="middle" class="mono">d_ff → d</text>
+<path d="M325 868H375M535 868H585" class="flow"/>
+<text x="135" y="960" class="body">每个 token 经过同一个 Dense FFN；计算随 d_ff 固定发生。</text>
+<text x="135" y="995" class="body">适合家族化部署：结构简单、checkpoint 直观、推理图稳定。</text>
+
+<rect x="880" y="735" width="840" height="300" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="915" y="780" class="sec" fill="#9a3412">Turbo / Plus · MoE Layer</text>
+<rect x="930" y="825" width="160" height="85" class="box" fill="#fff7ed" stroke="#ea580c"/><text x="1010" y="860" text-anchor="middle" class="lab">Router</text><text x="1010" y="890" text-anchor="middle" class="body">token → Top-K</text>
+<rect x="1160" y="805" width="165" height="65" rx="12" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><text x="1242" y="845" text-anchor="middle" class="body">fine expert 1</text>
+<rect x="1160" y="885" width="165" height="65" rx="12" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/><text x="1242" y="925" text-anchor="middle" class="body">fine expert 2</text>
+<rect x="1380" y="805" width="165" height="65" rx="12" fill="#ecfdf5" stroke="#16a34a" stroke-width="2"/><text x="1462" y="845" text-anchor="middle" class="body">shared expert</text>
+<rect x="1380" y="885" width="165" height="65" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/><text x="1462" y="925" text-anchor="middle" class="body">other routed experts</text>
+<rect x="1590" y="845" width="100" height="75" rx="12" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/><text x="1640" y="878" text-anchor="middle" class="body">Combine</text><text x="1640" y="906" text-anchor="middle" class="body">Σ</text>
+<path d="M1090 868H1145M1090 868C1120 868 1120 918 1145 918M1090 868C1280 868 1280 838 1365 838M1090 868C1280 868 1280 918 1365 918" class="cost"/>
+<path d="M1325 838H1575M1325 918H1575M1545 838H1575M1545 918H1575" class="good"/>
+<text x="930" y="995" class="body">容量由 total experts 决定；单 token 只激活 Top-K routed + shared experts。</text>
+
+<!-- GQA size inset -->
+<rect x="80" y="1080" width="1640" height="80" class="box" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="115" y="1130" class="body">GQA family evidence：0.5B = 14Q/2KV · 1.5B = 12/2 · 3B = 16/2 · 7B = 28/4 · 14B/32B = 40/8 · 72B = 64/8。KV sharing 是全家族 decode-memory 设计。</text>
+</svg>

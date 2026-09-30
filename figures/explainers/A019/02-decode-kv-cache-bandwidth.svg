@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.cache{fill:#dff1f3;stroke:#178d98;stroke-width:2}.query{fill:#e3eef7;stroke:#2b6f9f;stroke-width:2}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">MQA Decode：KV Cache 为什么会成为带宽瓶颈？</text><text x="70" y="112" class="subtitle">A019 · 改变的是 KV ownership / memory traffic，不是把 dense Attention 的 O(T²) 降阶</text>
+<text x="70" y="178" class="section">每层 KV Cache 的主尺寸</text>
+<rect x="70" y="220" width="610" height="300" rx="24" class="blue"/>
+<text x="105" y="275" class="math">K,V : [B, T, Hₖᵥ, dₕ]</text>
+<text x="105" y="330" class="math">M_KV = 2 · L · B · T · Hₖᵥ · dₕ · b</text>
+<rect x="110" y="380" width="500" height="90" rx="16" class="gray"/>
+<text x="140" y="418" class="body">MHA: Hₖᵥ = H</text><text x="140" y="455" class="body">MQA: Hₖᵥ = 1</text>
+
+<text x="760" y="178" class="section">Decode step t：算力少，但历史 KV 必须读取</text>
+<rect x="720" y="220" width="810" height="300" rx="24" class="orange"/>
+<rect x="760" y="285" width="180" height="105" rx="16" class="query"/><text x="790" y="327" class="node">qₜ</text><text x="790" y="366" class="small">[B,H,1,dₕ]</text>
+<path d="M940 337 H1030" class="flow"/>
+<rect x="1030" y="265" width="300" height="145" rx="18" class="cache"/>
+<text x="1060" y="310" class="node">历史 K/V Cache</text><text x="1060" y="352" class="body">长度 = t</text><text x="1060" y="390" class="small">HBM → SM / registers</text>
+<path d="M1330 337 H1430" class="comm"/>
+<text x="760" y="460" class="math">read/token ≈ 2 · L · t · Hₖᵥ · dₕ · b</text>
+
+<text x="70" y="595" class="section">同一模型宽度下，MHA → MQA 只改 Hₖᵥ</text>
+<rect x="70" y="635" width="700" height="300" rx="24" class="red"/>
+<text x="105" y="682" class="node">MHA：H 份历史 K + H 份历史 V</text>
+<rect x="115" y="730" width="52" height="115" rx="8" fill="#f2dede" stroke="#c64a4a" stroke-width="2"/><rect x="185" y="730" width="52" height="115" rx="8" fill="#f2dede" stroke="#c64a4a" stroke-width="2"/><rect x="255" y="730" width="52" height="115" rx="8" fill="#f2dede" stroke="#c64a4a" stroke-width="2"/><rect x="325" y="730" width="52" height="115" rx="8" fill="#f2dede" stroke="#c64a4a" stroke-width="2"/><rect x="395" y="730" width="52" height="115" rx="8" fill="#f2dede" stroke="#c64a4a" stroke-width="2"/><rect x="465" y="730" width="52" height="115" rx="8" fill="#f2dede" stroke="#c64a4a" stroke-width="2"/><rect x="535" y="730" width="52" height="115" rx="8" fill="#f2dede" stroke="#c64a4a" stroke-width="2"/><rect x="605" y="730" width="52" height="115" rx="8" fill="#f2dede" stroke="#c64a4a" stroke-width="2"/>
+<text x="105" y="890" class="body">HBM traffic ∝ H</text>
+
+<rect x="830" y="635" width="700" height="300" rx="24" class="green"/>
+<text x="865" y="682" class="node">MQA：1 份历史 K + 1 份历史 V</text>
+<rect x="875" y="730" width="52" height="115" rx="8" class="cache"/>
+<text x="970" y="785" class="body">→ 所有 H 个 Q heads 复用</text>
+<text x="865" y="890" class="body">KV Cache / KV read 的理想比值 = 1/H</text>
+
+<rect x="70" y="975" width="1460" height="70" rx="15" class="box"/>
+<text x="100" y="1020" class="body">注意：总 decode latency 不会必然提升 H 倍；FFN、Q/O projection、softmax、weight loading、kernel launch 与通信仍然存在。</text>
+</svg>

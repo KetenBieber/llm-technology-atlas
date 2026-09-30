@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1f5f8b"/></marker>
+<marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d97706"/></marker>
+<marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c94a4a"/></marker>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16855b"/></marker>
+<style>.t{font-family:"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#15324b}.title{font-size:44px;font-weight:700}.sub{font-size:25px;font-weight:650}.b{font-size:22px}.s{font-size:20px}.muted{fill:#607487}.box{fill:#f7fafc;stroke:#94a7b6;stroke-width:2}.blue{fill:#eaf4fb;stroke:#2f77a8;stroke-width:2}.cyan{fill:#e9fbfb;stroke:#249ca0;stroke-width:2}.green{fill:#edf9f2;stroke:#269267;stroke-width:2}.orange{fill:#fff5e7;stroke:#d97706;stroke-width:2}.red{fill:#fff0f0;stroke:#c94a4a;stroke-width:2}.f{fill:none;stroke:#1f5f8b;stroke-width:4;marker-end:url(#a)}.fo{fill:none;stroke:#d97706;stroke-width:4;marker-end:url(#o)}.fr{fill:none;stroke:#c94a4a;stroke-width:4;marker-end:url(#r)}.fg{fill:none;stroke:#16855b;stroke-width:4;marker-end:url(#g)}</style></defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text class="t title" x="62" y="72">FlashAttention · Backward：重算换掉 N×N activation IO</text>
+<text class="t b muted" x="64" y="112">核心问题：训练反向明明需要 P，为什么 forward 不保存 P、backward 再重算反而更快？</text>
+
+<rect x="65" y="155" width="660" height="450" rx="22" class="red"/>
+<text class="t sub" x="95" y="200">Standard：forward 保存 P ∈ Rᴺˣᴺ</text>
+<rect x="105" y="245" width="150" height="65" rx="12" class="blue"/><text class="t b" x="150" y="286">Q,K,V</text>
+<rect x="330" y="245" width="160" height="65" rx="12" class="box"/><text class="t b" x="360" y="286">S → softmax</text>
+<rect x="565" y="245" width="110" height="65" rx="12" class="red"/><text class="t b" x="600" y="286">P</text>
+<path d="M255 278 L328 278" class="f"/><path d="M490 278 L563 278" class="fr"/>
+<rect x="520" y="385" width="165" height="75" rx="14" class="box"/><text class="t b" x="548" y="430">HBM save P</text>
+<path d="M620 310 L620 383" class="fr"/>
+<text class="t b" x="105" y="505">Backward：load P → dV=PᵀdO；dP=dOVᵀ</text>
+<text class="t b" x="105" y="550">dS=P⊙(dP−row-reduction) → dQ,dK</text>
+<text class="t s muted" x="105" y="585">瓶颈：N×N P 的写出 + 重新读入。</text>
+
+<rect x="795" y="155" width="740" height="450" rx="22" class="green"/>
+<text class="t sub" x="825" y="200">FlashAttention：forward 只保存 O,m,ℓ（O(Nd)+O(N)）</text>
+<rect x="835" y="245" width="165" height="65" rx="12" class="blue"/><text class="t b" x="875" y="286">Q,K,V</text>
+<rect x="1070" y="235" width="385" height="85" rx="14" class="cyan"/><text class="t b" x="1100" y="270">tile compute → O, m, ℓ</text><text class="t s" x="1100" y="300">Sᵢⱼ/Pᵢⱼ ephemeral</text>
+<path d="M1000 278 L1068 278" class="f"/>
+<rect x="1110" y="375" width="300" height="80" rx="14" class="box"/><text class="t b" x="1140" y="410">Backward on demand</text><text class="t s" x="1140" y="440">reload Qᵢ,Kⱼ,Vⱼ + dOᵢ</text>
+<path d="M1260 320 L1260 373" class="fg"/>
+<text class="t b" x="835" y="500">Sᵢⱼ = QᵢKⱼᵀ → Pᵢⱼ = exp(Sᵢⱼ−mᵢ)/ℓᵢ</text>
+<text class="t b" x="835" y="542">Dᵢ = dOᵢᵀOᵢ → dSᵢⱼ = Pᵢⱼ⊙(dPᵢⱼ−Dᵢ)</text>
+<text class="t s muted" x="835" y="580">随后 tile-wise 累加 dQᵢ、dKⱼ、dVⱼ；无需 materialize 全局 P。</text>
+
+<path d="M710 650 C790 650 790 650 870 650" class="fg"/>
+<rect x="80" y="690" width="1440" height="240" rx="22" class="orange"/>
+<text class="t sub" x="110" y="735">原论文 microbenchmark · GPT-2 medium attention · A100</text>
+<line x1="110" y1="770" x2="1490" y2="770" stroke="#d7a15c" stroke-width="2"/>
+<text class="t b" x="135" y="812">Metric</text><text class="t b" x="560" y="812">Standard</text><text class="t b" x="900" y="812">FlashAttention</text><text class="t b" x="1190" y="812">系统含义</text>
+<text class="t b" x="135" y="852">GFLOPs</text><text class="t b" x="560" y="852">66.6</text><text class="t b" x="900" y="852">75.2 ↑</text><text class="t b" x="1190" y="852">重算使算术增加</text>
+<text class="t b" x="135" y="892">HBM R/W</text><text class="t b" x="560" y="892">40.3 GB</text><text class="t b" x="900" y="892">4.4 GB ↓</text><text class="t b" x="1190" y="892">约 9× 少 traffic</text>
+<text class="t b" x="135" y="932">Runtime</text><text class="t b" x="560" y="932">41.7 ms</text><text class="t b" x="900" y="932">7.3 ms ↓</text><text class="t b" x="1190" y="932">更多 FLOPs，反而更快</text>
+
+<rect x="305" y="975" width="990" height="75" rx="16" class="cyan"/>
+<text class="t b" x="335" y="1020">Trade：compute-on-demand intermediate　↔　avoid HBM activation traffic；这是一种 IO-for-compute 交换。</text>
+</svg>

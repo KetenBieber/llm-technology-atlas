@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1f5f8b"/></marker>
+<marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d97706"/></marker>
+<marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c94a4a"/></marker>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16855b"/></marker>
+<style>.t{font-family:"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#15324b}.title{font-size:44px;font-weight:700}.sub{font-size:25px;font-weight:650}.b{font-size:22px}.s{font-size:20px}.muted{fill:#607487}.box{fill:#f7fafc;stroke:#94a7b6;stroke-width:2}.blue{fill:#eaf4fb;stroke:#2f77a8;stroke-width:2}.cyan{fill:#e9fbfb;stroke:#249ca0;stroke-width:2}.green{fill:#edf9f2;stroke:#269267;stroke-width:2}.orange{fill:#fff5e7;stroke:#d97706;stroke-width:2}.red{fill:#fff0f0;stroke:#c94a4a;stroke-width:2}.f{fill:none;stroke:#1f5f8b;stroke-width:4;marker-end:url(#a)}.fo{fill:none;stroke:#d97706;stroke-width:4;marker-end:url(#o)}.fr{fill:none;stroke:#c94a4a;stroke-width:4;marker-end:url(#r)}.fg{fill:none;stroke:#16855b;stroke-width:4;marker-end:url(#g)}</style></defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text class="t title" x="62" y="72">FlashAttention · Online Softmax：只携带 (m, ℓ, U) 仍保持 exact</text>
+<text class="t b muted" x="64" y="112">核心问题：整行 logits 不同时驻留 SRAM 时，怎样递归合并局部 softmax 而不引入近似？</text>
+
+<rect x="70" y="165" width="430" height="245" rx="20" class="blue"/>
+<text class="t sub" x="100" y="208">Block 1 · logits x⁽¹⁾</text>
+<text class="t b" x="100" y="255">m₁ = max x⁽¹⁾</text>
+<text class="t b" x="100" y="300">ℓ₁ = Σ exp(x⁽¹⁾−m₁)</text>
+<text class="t b" x="100" y="345">U₁ = Σ exp(x⁽¹⁾−m₁)V</text>
+<text class="t s muted" x="100" y="385">不保留完整 logits，只保留 sufficient statistics</text>
+
+<rect x="70" y="470" width="430" height="245" rx="20" class="cyan"/>
+<text class="t sub" x="100" y="513">Block 2 · logits x⁽²⁾</text>
+<text class="t b" x="100" y="560">m₂ = max x⁽²⁾</text>
+<text class="t b" x="100" y="605">ℓ₂ = Σ exp(x⁽²⁾−m₂)</text>
+<text class="t b" x="100" y="650">U₂ = Σ exp(x⁽²⁾−m₂)V</text>
+
+<path d="M500 287 C610 287 610 380 720 380" class="f"/>
+<path d="M500 592 C610 592 610 500 720 500" class="f"/>
+
+<rect x="720" y="250" width="790" height="385" rx="22" class="orange"/>
+<text class="t sub" x="750" y="295">Merge to a common numerical scale</text>
+<text class="t b" x="750" y="345">m = max(m₁,m₂)</text>
+<text class="t b" x="750" y="395">α = exp(m₁−m)　·　γ = exp(m₂−m)</text>
+<text class="t b" x="750" y="445">ℓ = αℓ₁ + γℓ₂</text>
+<text class="t b" x="750" y="495">U = αU₁ + γU₂</text>
+<line x1="750" y1="525" x2="1450" y2="525" stroke="#d7a15c" stroke-width="2"/>
+<text class="t sub" x="750" y="575">O = U / ℓ</text>
+<text class="t s muted" x="930" y="575">= softmax([x⁽¹⁾,x⁽²⁾]) · V（数值稳定形式）</text>
+
+<rect x="180" y="790" width="1240" height="195" rx="22" class="green"/>
+<text class="t sub" x="215" y="835">递归状态：处理第 k 个 block 时只更新 running state</text>
+<text class="t b" x="215" y="880">m⁽ᵏ⁾ = max(m⁽ᵏ⁻¹⁾, m̃⁽ᵏ⁾)</text>
+<text class="t b" x="215" y="920">ℓ⁽ᵏ⁾ = exp(m⁽ᵏ⁻¹⁾−m⁽ᵏ⁾)ℓ⁽ᵏ⁻¹⁾ + exp(m̃⁽ᵏ⁾−m⁽ᵏ⁾)ℓ̃⁽ᵏ⁾</text>
+<text class="t s muted" x="215" y="960">同样缩放旧 output numerator 与新 tile numerator；扫描结束后与一次性 stable softmax 等价。</text>
+<path d="M800 635 C800 720 800 720 800 788" class="fg"/>
+</svg>

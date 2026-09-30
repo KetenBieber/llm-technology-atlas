@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>FlashAttention Backward：用 Recomputation 换掉 N×N HBM Reload</title><desc>Forward 只保存 O 与 softmax statistics；Backward 需要 P 时重算 tile，从而用额外 GEMM 换更少的 HBM traffic。</desc><defs>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+<style>text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}.title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}.n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}.panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}.cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}.green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}.gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}.comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}.good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">FlashAttention Backward：用 Recomputation 换掉 N×N HBM Reload</text>
+<text x="70" y="112" class="sub">认知问题：为什么“多算一点”会让训练更快，而不是更慢？</text>
+<rect x="65" y="160" width="720" height="790" rx="24" class="panel"/><text x="100" y="208" class="h">Forward · 不保存 S / P</text>
+<rect x="110" y="270" width="215" height="92" rx="16" class="blue"/><text x="218" y="326" text-anchor="middle" class="n">Q,K,V tiles</text>
+<path d="M325 316H410" class="flow"/>
+<rect x="420" y="255" width="285" height="125" rx="18" class="cyan"/><text x="562" y="300" text-anchor="middle" class="n">QKᵀ → softmax → PV</text><text x="562" y="338" text-anchor="middle" class="small">Sᵢⱼ,Pᵢⱼ 只在片上存在</text>
+<path d="M562 380V455" class="good"/>
+<rect x="405" y="465" width="315" height="140" rx="18" class="green"/><text x="562" y="507" text-anchor="middle" class="n">HBM 持久保存</text><text x="562" y="546" text-anchor="middle" class="mono">O ∈ R^(N×d)</text><text x="562" y="580" text-anchor="middle" class="mono">m, ℓ ∈ R^N</text>
+<rect x="110" y="670" width="610" height="160" rx="20" class="red"/><text x="415" y="714" text-anchor="middle" class="n">被移除的 baseline 路径</text><text x="415" y="754" text-anchor="middle" class="mono">P ∈ R^(N×N) → HBM → backward reload</text><path d="M175 788H655" class="bad"/>
+<text x="415" y="875" text-anchor="middle" class="small">不存 P，显存与 HBM traffic 都下降</text>
+
+<rect x="835" y="160" width="700" height="790" rx="24" class="panel"/><text x="870" y="208" class="h">Backward · compute-on-demand</text>
+<rect x="880" y="270" width="210" height="100" rx="16" class="gray"/><text x="985" y="310" text-anchor="middle" class="n">Qᵢ,Kⱼ,Vⱼ,dOᵢ</text><text x="985" y="344" text-anchor="middle" class="small">从 HBM 读 tile</text>
+<path d="M1090 320H1170" class="flow"/>
+<rect x="1180" y="250" width="290" height="140" rx="18" class="orange"/><text x="1325" y="294" text-anchor="middle" class="n">重算 Sᵢⱼ 与 Pᵢⱼ</text><text x="1325" y="334" text-anchor="middle" class="mono">S=QKᵀ</text><text x="1325" y="368" text-anchor="middle" class="small">用保存的 m,ℓ 恢复 P</text>
+<path d="M1325 390V455" class="flow"/>
+<rect x="970" y="465" width="410" height="145" rx="18" class="blue"/><text x="1175" y="508" text-anchor="middle" class="n">tile-local gradients</text><text x="1175" y="548" text-anchor="middle" class="mono">dV=PᵀdO · dS · dQ=dSK · dK=dSᵀQ</text><text x="1175" y="582" text-anchor="middle" class="small">P 用完即丢弃</text>
+<rect x="900" y="675" width="570" height="180" rx="20" class="orange"/><text x="1185" y="716" text-anchor="middle" class="h">论文 microbenchmark · A100 / GPT-2 medium attention</text>
+<text x="955" y="760" class="n">GFLOPs</text><text x="1105" y="760" class="mono">66.6 → 75.2 ↑</text>
+<text x="955" y="800" class="n">HBM R/W</text><text x="1105" y="800" class="mono">40.3 GB → 4.4 GB ↓</text>
+<text x="955" y="840" class="n">Runtime</text><text x="1105" y="840" class="mono">41.7 ms → 7.3 ms ↓</text>
+<path d="M785 570H835" class="good"/><text x="810" y="548" text-anchor="middle" class="small">trade</text>
+<text x="800" y="1015" text-anchor="middle" class="n">系统结论：当 GEMM 的额外 FLOPs 比 HBM reload 更“便宜”时，recomputation 同时降低 memory 与 wall-clock。</text>
+</svg>

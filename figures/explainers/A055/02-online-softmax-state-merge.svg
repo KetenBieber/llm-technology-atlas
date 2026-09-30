@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>FlashAttention Online Softmax：跨 Tile 只维护三类状态</title><desc>Blockwise softmax 的 exact merge：running max m、running denominator ℓ 与 weighted output numerator/output。</desc><defs>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+<style>text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}.title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}.n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}.panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}.cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}.green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}.gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}.comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}.good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">FlashAttention Online Softmax：跨 Tile 只维护三类状态</text>
+<text x="70" y="112" class="sub">认知问题：没有完整 Attention row 同时驻留 SRAM，Softmax 如何仍与全局计算等价？</text>
+<rect x="65" y="160" width="1470" height="820" rx="24" class="panel"/>
+<text x="100" y="215" class="h">一行 score 被切成连续 KV tiles</text>
+<g transform="translate(105,270)">
+ <rect x="0" y="0" width="310" height="120" rx="18" class="blue"/><text x="155" y="46" text-anchor="middle" class="n">Tile 1 · scores s¹</text><text x="155" y="82" text-anchor="middle" class="mono">m₁, ℓ₁, u₁</text>
+ <rect x="465" y="0" width="310" height="120" rx="18" class="cyan"/><text x="620" y="46" text-anchor="middle" class="n">Tile 2 · scores s²</text><text x="620" y="82" text-anchor="middle" class="mono">m₂, ℓ₂, u₂</text>
+ <rect x="930" y="0" width="310" height="120" rx="18" class="blue"/><text x="1085" y="46" text-anchor="middle" class="n">Tile k · scores sᵏ</text><text x="1085" y="82" text-anchor="middle" class="mono">mₖ, ℓₖ, uₖ</text>
+ <path d="M310 60H450" class="flow"/><path d="M775 60H915" class="flow"/>
+</g>
+<text x="110" y="455" class="h">Merge 规则：新 tile 到来时，旧状态先换到新的 global max 基准</text>
+<rect x="115" y="500" width="425" height="205" rx="20" class="orange"/>
+<text x="328" y="548" text-anchor="middle" class="n">① 更新 running max</text><text x="328" y="594" text-anchor="middle" class="mono">m' = max(m, m̃)</text>
+<text x="328" y="642" text-anchor="middle" class="small">旧 exp-sum 需乘 e^(m−m')</text><text x="328" y="675" text-anchor="middle" class="small">新 tile 需乘 e^(m̃−m')</text>
+
+<rect x="585" y="500" width="425" height="205" rx="20" class="cyan"/>
+<text x="798" y="548" text-anchor="middle" class="n">② 合并 denominator</text><text x="798" y="594" text-anchor="middle" class="mono">ℓ' = αℓ + γℓ̃</text>
+<text x="798" y="642" text-anchor="middle" class="mono">α=e^(m−m') · γ=e^(m̃−m')</text><text x="798" y="675" text-anchor="middle" class="small">不保存历史 logits</text>
+
+<rect x="1055" y="500" width="425" height="205" rx="20" class="green"/>
+<text x="1268" y="548" text-anchor="middle" class="n">③ 合并 weighted output</text><text x="1268" y="594" text-anchor="middle" class="mono">u' = αu + γũ</text>
+<text x="1268" y="642" text-anchor="middle" class="mono">O' = u' / ℓ'</text><text x="1268" y="675" text-anchor="middle" class="small">ũ = exp(s̃−m̃)V_tile</text>
+<path d="M540 600H575" class="flow"/><path d="M1010 600H1045" class="flow"/>
+<rect x="265" y="790" width="1070" height="120" rx="22" class="green"/><text x="800" y="834" text-anchor="middle" class="h">跨 tile 持久状态 = (m, ℓ, O/u)，而不是整行 S 或 P</text>
+<text x="800" y="878" text-anchor="middle" class="n">扫描完所有 KV tiles 后，所有 score 都进入同一个 global max / denominator → exact softmax</text>
+<path d="M800 705V782" class="good"/>
+<text x="800" y="1030" text-anchor="middle" class="small">这也是 FlashAttention 能把 softmax 与 tiling 兼容的数学核心：tile 可以独立计算，状态通过可结合的统计量递归合并。</text>
+</svg>

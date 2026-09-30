@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>Qwen2.5 one-million-context training, extrapolation and sparse serving stack.</desc><defs>
+<marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 43px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 22px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 29px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 20px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 20px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.d{stroke:#D9E2EC;stroke-width:2}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">Qwen2.5 · 1M Context：training / extrapolation / runtime 三层栈</text><text x="65" y="106" class="s">对应 §17–§22 / §44–§50｜32K→262K training、YaRN+DCA 外推、sparse runtime 共同支撑 1M serving</text>
+<text x="65" y="155" class="h">① Training curriculum：Turbo 先把真实训练 context 分阶段推到 262K</text>
+<rect x="85" y="205" width="200" height="90" rx="15" class="blue"/><text x="135" y="260" class="n">32K</text>
+<path d="M285 250 H360" class="f"/><rect x="360" y="205" width="200" height="90" rx="15" class="cyan"/><text x="410" y="260" class="n">65K</text>
+<path d="M560 250 H635" class="f"/><rect x="635" y="205" width="200" height="90" rx="15" class="cyan"/><text x="675" y="260" class="n">131K</text>
+<path d="M835 250 H910" class="f"/><rect x="910" y="205" width="200" height="90" rx="15" class="green"/><text x="950" y="260" class="n">262K</text>
+<path d="M1110 250 H1205" class="cost"/><rect x="1205" y="190" width="330" height="120" rx="18" class="orange"/><text x="1230" y="230" class="n">Long-context SFT</text><text x="1230" y="270" class="x">后训练继续显式保持长输入行为</text>
+<line x1="65" y1="370" x2="1535" y2="370" class="d"/>
+<text x="65" y="430" class="h">② Extrapolation stack：YaRN 处理 RoPE frequency；DCA 重新组织 chunk 间 attention</text>
+<rect x="90" y="480" width="340" height="145" rx="18" class="blue"/><text x="115" y="520" class="n">RoPE / YaRN</text><text x="115" y="560" class="x">频率缩放 → 更长 position 可编码</text><text x="115" y="595" class="x">解决“位置表示如何外推”</text>
+<path d="M430 553 H540" class="f"/>
+<rect x="540" y="470" width="390" height="165" rx="18" class="cyan"/><text x="565" y="510" class="n">Dual Chunk Attention</text><text x="565" y="550" class="x">chunk → local / successor / inter-chunk</text><text x="565" y="585" class="x">groups → global softmax merge</text>
+<path d="M930 553 H1040" class="opt"/>
+<rect x="1040" y="480" width="400" height="145" rx="18" class="green"/><text x="1065" y="520" class="n">1M extrapolated / serving context</text><text x="1065" y="560" class="x">训练长度 ≠ 外推长度 ≠ 服务允许长度</text><text x="1065" y="595" class="x">必须分别报告，不能混成一个数字</text>
+<line x1="65" y1="700" x2="1535" y2="700" class="d"/>
+<text x="65" y="760" class="h">③ Runtime：1M full attention 即使“能算”，TTFT 也可能不可接受 → sparse prefill acceleration</text>
+<rect x="90" y="815" width="330" height="150" rx="18" class="red"/><text x="115" y="855" class="n">Dense full attention</text><text x="115" y="895" class="mono">score matrix ∝ L²</text><text x="115" y="930" class="x">prefill cost 随 L 急剧增长</text>
+<path d="M420 890 H530" class="opt"/>
+<rect x="530" y="805" width="390" height="170" rx="18" class="green"/><text x="555" y="845" class="n">MInference-derived runtime</text><text x="555" y="885" class="x">只计算预测的重要 sparse blocks</text><text x="555" y="920" class="x">runtime acceleration ≠ 重训模型</text>
+<path d="M920 890 H1030" class="opt"/>
+<rect x="1030" y="805" width="440" height="170" rx="18" class="orange"/><text x="1055" y="845" class="n">Paper evidence</text><text x="1055" y="885" class="x">attention computation load ≈12.5× reduction</text><text x="1055" y="920" class="x">TTFT speedup ≈3.2–4.3×；Passkey 1M retrieval = 100%</text><text x="1055" y="955" class="m">retrieval success ≠ full-document reasoning proof</text>
+</svg>

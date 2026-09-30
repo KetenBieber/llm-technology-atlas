@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="r" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c43d3d"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .slot{fill:#edf9f0;stroke:#2e8b57;stroke-width:2}.overflow{fill:#fff1f0;stroke:#c43d3d;stroke-width:2}.cap{fill:#fff7ed;stroke:#d97706;stroke-width:2}
+  .red{stroke:#c43d3d;stroke-width:4;fill:none;marker-end:url(#r)}.formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Switch Capacity Factor：有限 Expert Buffer 如何承受动态负载</text>
+<text x="800" y="101" text-anchor="middle" class="sub">capacity 是效率—质量耦合点：太小会 overflow/drop，太大则为最坏负载预留大量空槽</text>
+
+<rect x="55" y="150" width="540" height="735" rx="22" class="panel"/>
+<text x="325" y="195" text-anchor="middle" class="h">公式从“平均负载”开始</text>
+<rect x="105" y="250" width="440" height="230" rx="16" class="formula"/>
+<text x="325" y="300" text-anchor="middle" class="b">N = 8192 tokens</text>
+<text x="325" y="345" text-anchor="middle" class="b">E = 64 experts</text>
+<text x="325" y="390" text-anchor="middle" class="b">average = N/E = 128</text>
+<text x="325" y="440" text-anchor="middle" class="h">C = ceil(c · N/E)</text>
+<rect x="135" y="550" width="380" height="150" rx="16" class="cap"/>
+<text x="325" y="596" text-anchor="middle" class="b">c = 1.25</text>
+<text x="325" y="641" text-anchor="middle" class="h">C = 160 slots / expert</text>
+<text x="325" y="680" text-anchor="middle" class="s">不是期望值，而是实际 buffer 上限</text>
+<text x="325" y="782" text-anchor="middle" class="s">balance 越好，系统越敢把 c 压低。</text>
+
+<rect x="625" y="150" width="920" height="735" rx="22" class="panel"/>
+<text x="1085" y="195" text-anchor="middle" class="h">一个 hot expert 收到 190 tokens：160 个可执行，30 个 overflow</text>
+<rect x="690" y="270" width="790" height="330" rx="16" fill="#f8fafc" stroke="#9aa9b8" stroke-width="2"/>
+<text x="1085" y="315" text-anchor="middle" class="b">Expert 7 buffer</text>
+<line x1="735" y1="515" x2="1435" y2="515" stroke="#d97706" stroke-width="4" stroke-dasharray="10 7"/>
+<text x="1450" y="523" class="s">C=160</text>
+<g>
+<rect x="750" y="365" width="80" height="140" class="slot"/><rect x="845" y="365" width="80" height="140" class="slot"/>
+<rect x="940" y="365" width="80" height="140" class="slot"/><rect x="1035" y="365" width="80" height="140" class="slot"/>
+<rect x="1130" y="365" width="80" height="140" class="slot"/><rect x="1225" y="365" width="80" height="140" class="overflow"/>
+<rect x="1320" y="365" width="80" height="140" class="overflow"/>
+</g>
+<text x="1080" y="565" text-anchor="middle" class="b">accepted 160</text>
+<text x="1360" y="565" text-anchor="middle" class="b" fill="#c43d3d">overflow 30</text>
+<path d="M1360 600 V665" class="red"/>
+<rect x="730" y="690" width="165" height="92" rx="14" class="overflow"/><text x="812" y="744" text-anchor="middle" class="b">drop</text>
+<rect x="930" y="690" width="165" height="92" rx="14" class="cap"/><text x="1012" y="744" text-anchor="middle" class="b">reroute</text>
+<rect x="1130" y="690" width="165" height="92" rx="14" fill="#e9f2ff" stroke="#1557b0" stroke-width="2"/><text x="1212" y="744" text-anchor="middle" class="b">residual bypass</text>
+<rect x="1330" y="690" width="165" height="92" rx="14" class="slot"/><text x="1412" y="744" text-anchor="middle" class="b">increase c</text>
+
+<rect x="120" y="935" width="1360" height="110" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="973" text-anchor="middle" class="b">c=1.0：总 slots≈N，几乎无冗余但任何不均衡都可能 overflow；c=2.0：总 slots≈2N，容错更强但最坏可有约一半 buffer 空闲。</text>
+<text x="800" y="1014" text-anchor="middle" class="s">因此 capacity factor 不是孤立超参：Router balancing 决定负载尾部，capacity 决定运行时如何承受这个尾部。</text>
+</svg>

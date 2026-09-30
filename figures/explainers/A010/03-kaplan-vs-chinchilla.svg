@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.grid{stroke:#d9e2e8;stroke-width:1.2}.curve{fill:none;stroke:#246b9b;stroke-width:5}.curve2{fill:none;stroke:#178d98;stroke-width:5}.curve3{fill:none;stroke:#d47a20;stroke-width:5}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style><defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Kaplan → Chinchilla：固定 compute 的新增预算究竟分给谁？</text><text x="70" y="112" class="subtitle">A010 · 保留 scaling-law 范式，重新校准 N 与 D 的 compute-optimal exponent</text>
+<text x="70" y="175" class="section">同样把训练 compute 放大 10×，两种经验前沿给出不同资源分配</text>
+<rect x="70" y="215" width="700" height="370" rx="24" class="gray"/>
+<text x="105" y="260" class="node">Kaplan 2020</text>
+<text x="105" y="305" class="math">N_opt ∝ C⁰·⁷³      D_opt ∝ C⁰·²⁷</text>
+<text x="105" y="355" class="body">10× compute</text>
+<rect x="105" y="390" width="520" height="42" rx="9" fill="#2b6f9f"/><text x="120" y="420" class="body" fill="#fff">模型规模 ≈ 5.4×</text>
+<rect x="105" y="452" width="180" height="42" rx="9" fill="#178d98"/><text x="120" y="482" class="body" fill="#fff">tokens ≈ 1.86×</text>
+<text x="105" y="535" class="small">新增算力主要进入更大的 N</text>
+
+<rect x="830" y="215" width="700" height="370" rx="24" class="green"/>
+<text x="865" y="260" class="node">Chinchilla 2022</text>
+<text x="865" y="305" class="math">N_opt ∝ C≈⁰·⁵      D_opt ∝ C≈⁰·⁵</text>
+<text x="865" y="355" class="body">10× compute</text>
+<rect x="865" y="390" width="330" height="42" rx="9" fill="#2b6f9f"/><text x="880" y="420" class="body" fill="#fff">模型规模 ≈ √10 = 3.16×</text>
+<rect x="865" y="452" width="330" height="42" rx="9" fill="#178d98"/><text x="880" y="482" class="body" fill="#fff">tokens ≈ √10 = 3.16×</text>
+<text x="865" y="535" class="small">新增算力更接近同步扩展 N 与 D</text>
+
+<path d="M770 400 H830" class="good"/><text x="750" y="370" class="small">recalibrate</text>
+
+<text x="70" y="655" class="section">为什么会得到新的平衡？不是追求固定 token/parameter，而是平衡边际误差</text>
+<rect x="70" y="695" width="920" height="260" rx="22" class="blue"/>
+<text x="105" y="745" class="math">L(N,D) = E + A/Nᵅ + B/Dᵝ</text>
+<path d="M235 785 V840" class="flow"/>
+<text x="105" y="882" class="math">α A N⁻ᵅ = β B D⁻ᵝ</text>
+<text x="105" y="925" class="body">最优点平衡的是“再增加 N”与“再增加 D”的边际价值</text>
+
+<rect x="1040" y="695" width="490" height="260" rx="22" class="orange"/>
+<text x="1070" y="742" class="node">经验验证锚点</text>
+<text x="1070" y="790" class="body">Gopher：280B / ~300B tokens</text>
+<text x="1070" y="832" class="body">Chinchilla：70B / 1.4T tokens</text>
+<text x="1070" y="878" class="small">该旗舰对照并非纯 N/D 单变量实验；</text>
+<text x="1070" y="910" class="small">核心证据仍是三种 scaling 方法趋势一致。</text>
+
+<rect x="70" y="985" width="1460" height="65" rx="18" class="cyan"/>
+<text x="100" y="1028" class="body">没有被推翻：loss 可随规模建立经验规律。被修正：固定 FLOPs 下“最优模型多大、应训练多少 token”。</text>
+</svg>

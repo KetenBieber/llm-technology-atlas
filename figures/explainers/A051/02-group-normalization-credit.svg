@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>GRPO group normalization and broadcast outcome credit.</desc>
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 44px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 23px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 30px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 21px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 21px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.d{stroke:#D9E2EC;stroke-width:2}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">GRPO · Group normalization：response reward 怎样变成 token credit？</text><text x="65" y="108" class="s">对应 §3–§5 / §9｜G 个 reward → mean/std → response advantage → 广播到该 response 的全部 token</text>
+<text x="65" y="165" class="h">一个最小数值例子：同题 4 个 response，reward = [1, 1, 0, 0]</text>
+<g>
+<rect x="75" y="210" width="240" height="95" rx="16" class="green"/><text x="100" y="248" class="n">y₁ · r=1</text><text x="100" y="280" class="x">正确 trajectory</text>
+<rect x="340" y="210" width="240" height="95" rx="16" class="green"/><text x="365" y="248" class="n">y₂ · r=1</text><text x="365" y="280" class="x">正确 trajectory</text>
+<rect x="605" y="210" width="240" height="95" rx="16" class="red"/><text x="630" y="248" class="n">y₃ · r=0</text><text x="630" y="280" class="x">错误 trajectory</text>
+<rect x="870" y="210" width="240" height="95" rx="16" class="red"/><text x="895" y="248" class="n">y₄ · r=0</text><text x="895" y="280" class="x">错误 trajectory</text>
+</g>
+<path d="M1110 258 H1200" class="f"/>
+<rect x="1200" y="195" width="335" height="125" rx="18" class="orange"/><text x="1225" y="235" class="n">Normalize within group</text><text x="1225" y="275" class="mono">μ=0.5, σ=0.5</text><text x="1225" y="305" class="mono">Â=[+1,+1,−1,−1]</text>
+<text x="65" y="390" class="h">Outcome GRPO：一个 response-level Âᵢ 被广播给整条 token trajectory</text>
+<rect x="85" y="440" width="260" height="105" rx="18" class="green"/><text x="110" y="480" class="n">Response y₁ · Â₁=+1</text><text x="110" y="515" class="x">最终 outcome：好</text>
+<path d="M345 492 H435" class="opt"/>
+<g>
+<rect x="435" y="438" width="130" height="82" rx="13" class="blue"/><text x="470" y="487" class="n">token 1</text>
+<rect x="585" y="438" width="130" height="82" rx="13" class="blue"/><text x="620" y="487" class="n">token 2</text>
+<rect x="735" y="438" width="130" height="82" rx="13" class="blue"/><text x="770" y="487" class="n">…</text>
+<rect x="885" y="438" width="130" height="82" rx="13" class="blue"/><text x="920" y="487" class="n">token T</text>
+</g>
+<path d="M565 540 V600" class="opt"/><path d="M715 540 V600" class="opt"/><path d="M865 540 V600" class="opt"/><path d="M1015 540 V600" class="opt"/>
+<rect x="435" y="600" width="580" height="100" rx="18" class="green"/><text x="465" y="640" class="n">所有 token 使用同一个 Â₁</text><text x="465" y="675" class="x">credit 粒度 = response；不是定位哪个 reasoning step 做对了</text>
+<line x1="65" y1="755" x2="1535" y2="755" class="d"/>
+<text x="65" y="815" class="h">有限 group 的统计边界：self-including mean 不能直接套标准 action-independent baseline 证明</text>
+<rect x="85" y="860" width="560" height="130" rx="18" class="gray"/><text x="115" y="900" class="n">标准 state baseline</text><text x="115" y="940" class="mono">E[b(s)∇logπ(a|s)] = 0</text>
+<rect x="780" y="850" width="690" height="150" rx="18" class="orange"/><text x="810" y="890" class="n">Self-including group mean</text><text x="810" y="930" class="x">μ 含当前样本 rᵢ；简化“只减均值、不除 σ”时得到有限 G 缩放</text><text x="810" y="970" class="mono">expected gradient coefficient ∝ (1 − 1/G)</text>
+</svg>

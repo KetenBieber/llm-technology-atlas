@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>Llama 3 scaling-law workflow from controlled runs to flagship design.</desc><defs>
+<marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 43px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 22px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 29px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 20px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 20px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.d{stroke:#D9E2EC;stroke-width:2}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">Llama 3 · Scaling law：405B 不是先拍脑袋决定，再去补 token</text><text x="65" y="106" class="s">对应 §10–§14｜回答：小规模 controlled runs 如何拟合 compute-optimal region，再落到 flagship training choice</text>
+<text x="65" y="160" class="h">实验设计：同一个 compute budget 下扫描 model size × token count</text>
+<rect x="75" y="205" width="270" height="120" rx="18" class="gray"/><text x="100" y="245" class="n">Controlled small runs</text><text x="100" y="283" class="x">固定 architecture / data recipe</text>
+<path d="M345 265 H435" class="f"/>
+<rect x="435" y="190" width="340" height="150" rx="18" class="blue"/><text x="460" y="230" class="n">IsoFLOPs sweep</text><text x="460" y="270" class="mono">C ≈ 6ND</text><text x="460" y="305" class="x">每个 C 找 loss 最低的 (N,D) 区域</text>
+<path d="M775 265 H870" class="f"/>
+<rect x="870" y="185" width="340" height="160" rx="18" class="cyan"/><text x="895" y="225" class="n">Empirical fit + extrapolation</text><text x="895" y="265" class="x">fit N*(C), D*(C), benchmark trend</text><text x="895" y="300" class="x">外推到 flagship compute regime</text>
+<path d="M1210 265 H1305" class="opt"/>
+<rect x="1305" y="200" width="230" height="130" rx="18" class="green"/><text x="1330" y="240" class="n">Prediction</text><text x="1330" y="280" class="mono">≈402B / 16.55T</text>
+<text x="65" y="430" class="h">为什么最后是 405B / ≈15.6T？Scaling law 给的是 optimal region，不是唯一整数答案</text>
+<path d="M150 570 C300 470 480 470 630 570 S960 670 1120 570 S1340 475 1480 555" fill="none" stroke="#0B4F9C" stroke-width="5"/>
+<line x1="110" y1="670" x2="1490" y2="670" stroke="#64748B" stroke-width="3"/><line x1="110" y1="470" x2="110" y2="670" stroke="#64748B" stroke-width="3"/>
+<circle cx="790" cy="612" r="12" fill="#16A34A"/><circle cx="840" cy="606" r="12" fill="#F59E0B"/>
+<text x="735" y="705" class="m">平坦 minimum region</text><text x="650" y="740" class="mono">predicted ~402B</text><text x="855" y="740" class="mono">chosen 405B</text>
+<rect x="1150" y="495" width="360" height="145" rx="18" class="orange"/><text x="1175" y="535" class="n">Engineering choice inside region</text><text x="1175" y="575" class="x">model family / schedule / deployment 约束</text><text x="1175" y="610" class="x">允许在近似最优谷底内做实际取舍</text>
+<line x1="65" y1="800" x2="1535" y2="800" class="d"/>
+<text x="65" y="860" class="h">训练最优 ≠ 推理预算最优：小模型可以故意 overtrain</text>
+<rect x="100" y="905" width="420" height="110" rx="18" class="blue"/><text x="125" y="945" class="n">Training-compute optimal</text><text x="125" y="982" class="x">给定训练 FLOPs，寻找 N / D 平衡</text>
+<path d="M520 960 H680" class="cost"/>
+<rect x="680" y="895" width="720" height="130" rx="18" class="green"/><text x="705" y="935" class="n">Inference-budget optimal</text><text x="705" y="975" class="x">更小参数 → 可用更多 tokens 预训练 → 摊薄长期 serving 成本</text>
+</svg>

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:10 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">TP vs CP：一个切 Layer 内 Tensor，一个切 Sequence，通信为何完全不同？</text>
+<text x="70" y="112" class="subtitle">C001 · 选择并行轴的关键是：局部 shard 能否独立推进，以及何时必须重新获得全局信息</text>
+
+<text x="70" y="178" class="section">Tensor Parallel：先 column-parallel 保持 local shard，再 row-parallel 汇总 partial output</text>
+<rect x="70" y="215" width="1460" height="365" rx="22" class="blue"/>
+<rect x="105" y="300" width="190" height="110" rx="15" class="gray"/><text x="145" y="345" class="node">X [B·S,H]</text><text x="135" y="382" class="small">replicated input</text>
+<path d="M295 355 H380" class="flow"/>
+<g>
+<rect x="380" y="265" width="210" height="100" rx="15" class="blue"/><text x="420" y="307" class="node">Wcol,0</text><text x="405" y="342" class="small">H × K/2</text>
+<rect x="380" y="405" width="210" height="100" rx="15" class="cyan"/><text x="420" y="447" class="node">Wcol,1</text><text x="405" y="482" class="small">H × K/2</text>
+</g>
+<path d="M590 315 H675" class="flow"/><path d="M590 455 H675" class="flow"/>
+<g>
+<rect x="675" y="265" width="205" height="100" rx="15" class="green"/><text x="705" y="307" class="node">Y₀ = XW₀</text><text x="704" y="342" class="small">local activation</text>
+<rect x="675" y="405" width="205" height="100" rx="15" class="green"/><text x="705" y="447" class="node">Y₁ = XW₁</text><text x="704" y="482" class="small">local activation</text>
+</g>
+<path d="M880 315 H970" class="flow"/><path d="M880 455 H970" class="flow"/>
+<g>
+<rect x="970" y="265" width="205" height="100" rx="15" class="blue"/><text x="1003" y="307" class="node">O partial₀</text><text x="995" y="342" class="small">row-parallel</text>
+<rect x="970" y="405" width="205" height="100" rx="15" class="cyan"/><text x="1003" y="447" class="node">O partial₁</text><text x="995" y="482" class="small">row-parallel</text>
+</g>
+<path d="M1175 315 C1240 315 1240 385 1290 385" class="comm"/><path d="M1175 455 C1240 455 1240 400 1290 400" class="comm"/>
+<rect x="1290" y="335" width="200" height="115" rx="15" class="orange"/>
+<text x="1320" y="378" class="node">Collective</text><text x="1315" y="416" class="math">O = O₀ + O₁</text>
+<text x="105" y="540" class="small">TP collective 频率高：几乎每个 Transformer layer 都出现，因此通常优先映射到高速 intra-node 互联。</text>
+
+<text x="70" y="650" class="section">Context Parallel：Q 保持 local，K/V block 在 ranks 间流动，直到覆盖整个 sequence</text>
+<rect x="70" y="685" width="1460" height="330" rx="22" class="cyan"/>
+<g>
+<rect x="120" y="760" width="255" height="130" rx="18" class="blue"/><text x="160" y="803" class="node">Rank 0</text><text x="145" y="840" class="body">Q₀ · K₀ · V₀</text><text x="145" y="875" class="small">sequence shard S/c</text>
+<rect x="485" y="760" width="255" height="130" rx="18" class="cyan"/><text x="525" y="803" class="node">Rank 1</text><text x="510" y="840" class="body">Q₁ · K₁ · V₁</text><text x="510" y="875" class="small">sequence shard S/c</text>
+<rect x="850" y="760" width="255" height="130" rx="18" class="green"/><text x="890" y="803" class="node">Rank 2</text><text x="875" y="840" class="body">Q₂ · K₂ · V₂</text><text x="875" y="875" class="small">sequence shard S/c</text>
+<rect x="1215" y="760" width="255" height="130" rx="18" class="gray"/><text x="1255" y="803" class="node">Rank 3</text><text x="1240" y="840" class="body">Q₃ · K₃ · V₃</text><text x="1240" y="875" class="small">sequence shard S/c</text>
+</g>
+<path d="M375 825 H480" class="comm"/><path d="M740 825 H845" class="comm"/><path d="M1105 825 H1210" class="comm"/>
+<path d="M1340 900 C1340 965 245 965 245 895" class="comm"/>
+<text x="500" y="945" class="small">K/V ring：每轮消费收到的 K/V block，用 online softmax 累积 local Q 的 exact attention</text>
+<rect x="70" y="1040" width="1460" height="42" rx="11" class="box"/>
+<text x="100" y="1068" class="small">TP 的“全局信息”来自 partial-output reduction；CP 的“全局信息”来自跨 sequence 的 K/V interaction。两者都在通信，但 dependency graph 完全不同。</text>
+</svg>

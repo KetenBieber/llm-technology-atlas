@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.grid{stroke:#d9e2e8;stroke-width:1.2}.curve{fill:none;stroke:#246b9b;stroke-width:5}.curve2{fill:none;stroke:#178d98;stroke-width:5}.curve3{fill:none;stroke:#d47a20;stroke-width:5}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style><defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Chinchilla：IsoFLOP Profile 如何直接找到 compute-optimal 点？</text><text x="70" y="112" class="subtitle">A010 · 固定 C，扫描 N，并用 D=C/(6N) 自动支付模型变大的 token 成本</text>
+<text x="70" y="175" class="section">实验数据流</text>
+<rect x="70" y="215" width="260" height="115" rx="18" class="blue"/><text x="100" y="260" class="node">选择 FLOP budget C</text><text x="100" y="298" class="small">同一条 profile 内固定</text>
+<path d="M330 272 H405" class="flow"/>
+<rect x="405" y="215" width="260" height="115" rx="18" class="cyan"/><text x="435" y="260" class="node">扫描模型规模 N</text><text x="435" y="298" class="small">70M → &gt;16B 的实验区间</text>
+<path d="M665 272 H740" class="flow"/>
+<rect x="740" y="215" width="300" height="115" rx="18" class="orange"/><text x="770" y="260" class="node">计算 token budget</text><text x="770" y="298" class="math">D = C / (6N)</text>
+<path d="M1040 272 H1115" class="flow"/>
+<rect x="1115" y="200" width="415" height="145" rx="18" class="green"/><text x="1145" y="246" class="node">训练到目标 horizon</text><text x="1145" y="284" class="body">LR schedule 与该 budget 匹配</text><text x="1145" y="320" class="small">避免把长 schedule 中间点当 optimum</text>
+
+<text x="70" y="420" class="section">固定不同 C 得到多条 U-shaped profile；每条最低点就是 N*(C)</text>
+<rect x="70" y="455" width="1000" height="430" rx="22" class="box"/>
+<line x1="150" y1="825" x2="995" y2="825" class="axis"/><line x1="150" y1="825" x2="150" y2="520" class="axis"/>
+<text x="115" y="535" class="small">Loss</text><text x="910" y="862" class="small">log N</text>
+<path d="M185 610 C330 690 350 790 470 798 C600 806 655 700 775 600" class="curve3"/>
+<path d="M225 635 C390 700 430 770 565 780 C700 790 760 690 865 620" class="curve2"/>
+<path d="M285 660 C450 710 515 755 650 765 C780 775 845 700 930 650" class="curve"/>
+<circle cx="470" cy="798" r="11" fill="#d47a20"/><circle cx="565" cy="780" r="11" fill="#178d98"/><circle cx="650" cy="765" r="11" fill="#246b9b"/>
+<path d="M470 798 C520 786 595 775 650 765" class="good"/>
+<text x="680" y="742" class="node">compute-optimal frontier</text>
+<text x="205" y="585" class="small">C₁</text><text x="250" y="620" class="small">C₂</text><text x="310" y="655" class="small">C₃</text>
+<text x="182" y="855" class="small">capacity error</text><text x="760" y="855" class="small">undertraining error</text>
+
+<rect x="1120" y="455" width="410" height="430" rx="22" class="cyan"/>
+<text x="1150" y="502" class="node">Approach 2 的拟合结果</text>
+<text x="1150" y="555" class="math">N_opt ∝ C⁰·⁴⁹</text>
+<text x="1150" y="603" class="math">D_opt ∝ C⁰·⁵¹</text>
+<line x1="1150" y1="640" x2="1490" y2="640" class="dash"/>
+<text x="1150" y="690" class="body">与 Approach 1：</text>
+<text x="1150" y="730" class="math">0.50 / 0.50</text>
+<text x="1150" y="780" class="body">高度接近。</text>
+<text x="1150" y="832" class="small">曲线为机制示意；指数来自论文拟合</text>
+
+<rect x="70" y="920" width="1460" height="110" rx="20" class="orange"/>
+<text x="100" y="965" class="node">Evidence boundary</text>
+<text x="350" y="965" class="body">论文训练 &gt;400 个模型；tokens 约 5B → &gt;400B。IsoFLOP 的关键证据是 valley 位置，而不是“模型越大 loss 越低”。</text>
+</svg>

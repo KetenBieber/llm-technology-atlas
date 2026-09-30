@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>Llama 3 long-context training with document mask, curriculum, context parallelism and SFT retention.</desc><defs>
+<marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 43px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 22px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 29px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 20px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 20px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.d{stroke:#D9E2EC;stroke-width:2}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">Llama 3 · 128K Context：为什么不能只把 RoPE θ 调大？</text><text x="65" y="106" class="s">对应 §6 / §15–§17 / §33｜回答：position range、training distribution、document mask、CP 与 long-context SFT 缺一不可</text>
+<text x="65" y="155" class="h">① Packed training：长 sequence 里可以塞多个 document，但 attention 不能跨 document 泄漏</text>
+<g transform="translate(80,205)">
+<rect x="0" y="0" width="190" height="70" rx="14" class="blue"/><text x="30" y="44" class="n">Doc A tokens</text>
+<rect x="210" y="0" width="190" height="70" rx="14" class="cyan"/><text x="240" y="44" class="n">Doc B tokens</text>
+<rect x="420" y="0" width="190" height="70" rx="14" class="green"/><text x="450" y="44" class="n">Doc C tokens</text>
+</g>
+<path d="M690 240 H790" class="f"/>
+<g transform="translate(790,175)">
+<rect x="0" y="0" width="330" height="210" rx="16" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2"/>
+<path d="M20 20h85v55h-85z M125 95h85v55h-85z M230 155h80v35h-80z" fill="#BFE2FF"/>
+<path d="M20 95h85v95h-85z M125 20h185v55h-185z M230 95h80v55h-80z" fill="#FFF0F0"/>
+<text x="30" y="205" class="m">blue = causal within-doc ｜ red = masked cross-doc</text>
+</g>
+<path d="M1120 280 H1220" class="f"/>
+<rect x="1220" y="205" width="310" height="145" rx="18" class="green"/><text x="1245" y="245" class="n">Document mask</text><text x="1245" y="285" class="x">packed efficiency 保留</text><text x="1245" y="320" class="x">跨文档 attention 明确禁止</text>
+<line x1="65" y1="430" x2="1535" y2="430" class="d"/>
+<text x="65" y="490" class="h">② Context extension 是训练 curriculum：8K → … → 128K，并持续检查 short-context recovery</text>
+<rect x="85" y="540" width="210" height="95" rx="16" class="blue"/><text x="135" y="595" class="n">8K base</text>
+<path d="M295 588 H390" class="f"/><rect x="390" y="540" width="210" height="95" rx="16" class="cyan"/><text x="440" y="595" class="n">longer stage</text>
+<path d="M600 588 H695" class="f"/><rect x="695" y="540" width="210" height="95" rx="16" class="cyan"/><text x="745" y="595" class="n">continued PT</text>
+<path d="M905 588 H1000" class="f"/><rect x="1000" y="530" width="250" height="115" rx="16" class="green"/><text x="1050" y="575" class="n">128K context</text><text x="1030" y="615" class="x">~800B continued-PT tokens</text>
+<path d="M1250 588 H1350" class="cost"/><rect x="1350" y="530" width="185" height="115" rx="16" class="orange"/><text x="1380" y="575" class="n">Recovery</text><text x="1380" y="610" class="x">short + long eval</text>
+<text x="65" y="715" class="h">③ 128K attention 还需要把 sequence dimension 切给更多 GPU：Context Parallelism</text>
+<rect x="95" y="765" width="270" height="110" rx="18" class="gray"/><text x="120" y="805" class="n">Sequence [B,128K,H]</text><text x="120" y="842" class="x">单卡 attention state 太大</text>
+<path d="M365 820 H470" class="f"/>
+<g><rect x="470" y="755" width="210" height="130" rx="16" class="blue"/><text x="495" y="795" class="n">CP rank 0</text><text x="495" y="833" class="x">token chunk 0</text><rect x="700" y="755" width="210" height="130" rx="16" class="cyan"/><text x="725" y="795" class="n">CP rank 1</text><text x="725" y="833" class="x">token chunk 1</text><rect x="930" y="755" width="210" height="130" rx="16" class="blue"/><text x="955" y="795" class="n">…</text><text x="955" y="833" class="x">sequence shards</text></g>
+<path d="M1140 820 H1240" class="opt"/><rect x="1240" y="745" width="295" height="150" rx="18" class="green"/><text x="1265" y="785" class="n">Long-context SFT</text><text x="1265" y="825" class="x">继续混入 long SFT examples</text><text x="1265" y="860" class="x">防止 instruction tuning 遗忘</text>
+<text x="65" y="1010" class="m">RoPE 负责位置表示范围；curriculum / mask / CP / SFT 分别解决数据、隔离、显存通信与后训练能力保持。</text>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">RMSNorm：它到底从 LayerNorm 的数据路径里删掉了什么？</text><text x="70" y="112" class="subtitle">A016 · 保留 re-scaling invariance，删除 re-centering 路径；统计轴仍是每个 token 的 hidden dimension</text>
+<text x="70" y="180" class="section">共同输入：单个 token hidden vector x ∈ Rᵈ</text>
+<rect x="70" y="220" width="1460" height="100" rx="18" class="gray"/>
+<rect x="110" y="246" width="78" height="48" rx="8" fill="#dcecf7" stroke="#8795a1" stroke-width="1.5"/><text x="132" y="279" class="body">x1</text><rect x="218" y="246" width="78" height="48" rx="8" fill="#edf3f6" stroke="#8795a1" stroke-width="1.5"/><text x="240" y="279" class="body">x2</text><rect x="326" y="246" width="78" height="48" rx="8" fill="#edf3f6" stroke="#8795a1" stroke-width="1.5"/><text x="348" y="279" class="body">x3</text><rect x="434" y="246" width="78" height="48" rx="8" fill="#dcecf7" stroke="#8795a1" stroke-width="1.5"/><text x="456" y="279" class="body">x4</text><rect x="542" y="246" width="78" height="48" rx="8" fill="#edf3f6" stroke="#8795a1" stroke-width="1.5"/><text x="564" y="279" class="body">x5</text><rect x="650" y="246" width="78" height="48" rx="8" fill="#edf3f6" stroke="#8795a1" stroke-width="1.5"/><text x="672" y="279" class="body">x6</text><rect x="758" y="246" width="78" height="48" rx="8" fill="#dcecf7" stroke="#8795a1" stroke-width="1.5"/><text x="780" y="279" class="body">x7</text><rect x="866" y="246" width="78" height="48" rx="8" fill="#edf3f6" stroke="#8795a1" stroke-width="1.5"/><text x="888" y="279" class="body">x8</text><rect x="974" y="246" width="78" height="48" rx="8" fill="#edf3f6" stroke="#8795a1" stroke-width="1.5"/><text x="996" y="279" class="body">x9</text><rect x="1082" y="246" width="78" height="48" rx="8" fill="#dcecf7" stroke="#8795a1" stroke-width="1.5"/><text x="1104" y="279" class="body">x10</text><rect x="1190" y="246" width="78" height="48" rx="8" fill="#edf3f6" stroke="#8795a1" stroke-width="1.5"/><text x="1212" y="279" class="body">x11</text><rect x="1298" y="246" width="78" height="48" rx="8" fill="#edf3f6" stroke="#8795a1" stroke-width="1.5"/><text x="1320" y="279" class="body">x12</text>
+
+<text x="70" y="390" class="section">LayerNorm：mean 路径 + centered variance 路径</text>
+<rect x="70" y="430" width="700" height="470" rx="24" class="gray"/>
+<rect x="105" y="480" width="245" height="95" rx="18" class="orange"/><text x="135" y="520" class="node">Reduce mean</text><text x="135" y="556" class="math">μ = (1/d)Σxᵢ</text>
+<path d="M350 527 H430" class="aux"/>
+<rect x="430" y="480" width="285" height="95" rx="18" class="red"/><text x="460" y="520" class="node">Center</text><text x="460" y="556" class="math">x̃ᵢ = xᵢ − μ</text>
+<path d="M570 575 V635" class="aux"/>
+<rect x="410" y="635" width="315" height="100" rx="18" class="orange"/><text x="440" y="675" class="node">Reduce variance</text><text x="440" y="713" class="math">σ²=(1/d)Σx̃ᵢ²</text>
+<path d="M410 685 H320" class="flow"/>
+<rect x="105" y="635" width="215" height="100" rx="18" class="blue"/><text x="135" y="675" class="node">Normalize</text><text x="135" y="713" class="math">x̃ / √(σ²+ε)</text>
+<path d="M212 735 V800" class="flow"/>
+<rect x="105" y="800" width="610" height="65" rx="14" class="box"/><text x="135" y="842" class="body">× gain γ  (+ bias β in canonical LayerNorm)</text>
+
+<text x="840" y="390" class="section">RMSNorm：只保留 energy / scale 路径</text>
+<rect x="810" y="430" width="720" height="470" rx="24" class="green"/>
+<rect x="855" y="490" width="290" height="115" rx="18" class="cyan"/>
+<text x="885" y="532" class="node">Square + Reduce</text><text x="885" y="574" class="math">m₂=(1/d)Σxᵢ²</text>
+<path d="M1145 547 H1225" class="flow"/>
+<rect x="1225" y="490" width="260" height="115" rx="18" class="blue"/>
+<text x="1255" y="532" class="node">RMS scale</text><text x="1255" y="574" class="math">r=√(m₂+ε)</text>
+<path d="M1355 605 V670 H1060 V670" class="flow"/>
+<rect x="855" y="640" width="420" height="115" rx="18" class="green"/>
+<text x="885" y="682" class="node">Normalize + gain</text><text x="885" y="724" class="math">yᵢ = γᵢ xᵢ / r</text>
+<rect x="855" y="800" width="630" height="65" rx="14" class="box"/><text x="885" y="842" class="body">没有 μ reduction，也没有 x−μ subtraction</text>
+
+<rect x="70" y="940" width="1460" height="100" rx="18" class="blue"/>
+<text x="100" y="981" class="node">两种统计量不是同一个东西：</text>
+<text x="485" y="981" class="math">RMS²(x) = Var(x) + μ²</text>
+<text x="885" y="981" class="body">只有 μ=0 时 RMS 才等于标准差。</text>
+</svg>

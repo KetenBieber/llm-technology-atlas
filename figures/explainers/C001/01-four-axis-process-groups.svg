@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>4D Parallelism：一个 Rank 同时属于四种正交 Process Groups</title><desc>用 rank 坐标 (r_d,r_p,r_c,r_t) 表示 4D 分解；固定三维、只变化一维即可得到 TP/CP/PP/DP communicator。</desc><defs>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+<style>text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}.title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}.n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}.panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}.cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}.green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}.gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}.comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}.good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">4D Parallelism：一个 Rank 同时属于四种正交 Process Groups</text>
+<text x="70" y="112" class="sub">认知问题：TP × CP × PP × DP 不是四套独立机器；同一个 GPU 如何同时嵌入四张通信图？</text>
+<rect x="65" y="155" width="1470" height="820" rx="24" class="panel"/>
+<text x="800" y="220" text-anchor="middle" class="mono">world size N = t · c · p · d</text>
+<circle cx="800" cy="555" r="108" fill="#17324D"/><text x="800" y="535" text-anchor="middle" font-size="26" font-weight="700" fill="#fff">Rank R</text><text x="800" y="575" text-anchor="middle" font-size="22" fill="#fff">(r_d,r_p,r_c,r_t)</text><text x="800" y="610" text-anchor="middle" font-size="20" fill="#DCE7F1">同一 GPU</text>
+
+<path d="M690 515C560 455 450 390 335 330" class="flow"/><path d="M910 515C1040 455 1150 390 1265 330" class="comm"/><path d="M690 600C550 680 450 745 335 805" class="good"/><path d="M910 600C1045 685 1155 750 1270 810" class="comm"/>
+
+<g transform="translate(95,235)">
+ <rect x="0" y="0" width="430" height="225" rx="22" class="blue"/><text x="215" y="45" text-anchor="middle" class="h">TP group · vary t</text>
+ <text x="215" y="86" text-anchor="middle" class="small">固定 d,p,c；切 layer 内 tensor / heads</text>
+ <g transform="translate(60,125)"><circle cx="0" cy="0" r="28" fill="#1557B0"/><text x="0" y="7" text-anchor="middle" font-size="20" fill="#fff">t0</text><circle cx="95" cy="0" r="28" fill="#1557B0"/><text x="95" y="7" text-anchor="middle" font-size="20" fill="#fff">t1</text><circle cx="190" cy="0" r="28" fill="#1557B0"/><text x="190" y="7" text-anchor="middle" font-size="20" fill="#fff">t2</text><circle cx="285" cy="0" r="28" fill="#1557B0"/><text x="285" y="7" text-anchor="middle" font-size="20" fill="#fff">t3</text></g>
+ <text x="215" y="195" text-anchor="middle" class="small">高频 collective</text>
+</g>
+
+<g transform="translate(1075,235)">
+ <rect x="0" y="0" width="430" height="225" rx="22" class="orange"/><text x="215" y="45" text-anchor="middle" class="h">PP chain · vary p</text>
+ <text x="215" y="86" text-anchor="middle" class="small">固定 d,c,t；切 layer depth</text>
+ <g transform="translate(60,125)"><rect x="0" y="-27" width="64" height="54" rx="10" fill="#E58A1F"/><text x="32" y="7" text-anchor="middle" font-size="20" fill="#fff">p0</text><rect x="90" y="-27" width="64" height="54" rx="10" fill="#E58A1F"/><text x="122" y="7" text-anchor="middle" font-size="20" fill="#fff">p1</text><rect x="180" y="-27" width="64" height="54" rx="10" fill="#E58A1F"/><text x="212" y="7" text-anchor="middle" font-size="20" fill="#fff">p2</text><rect x="270" y="-27" width="64" height="54" rx="10" fill="#E58A1F"/><text x="302" y="7" text-anchor="middle" font-size="20" fill="#fff">p3</text></g>
+ <text x="215" y="195" text-anchor="middle" class="small">stage-boundary P2P</text>
+</g>
+
+<g transform="translate(95,690)">
+ <rect x="0" y="0" width="430" height="225" rx="22" class="green"/><text x="215" y="45" text-anchor="middle" class="h">CP group · vary c</text>
+ <text x="215" y="86" text-anchor="middle" class="small">固定 d,p,t；切 sequence / context</text>
+ <g transform="translate(60,125)"><circle cx="0" cy="0" r="28" fill="#2E8B57"/><text x="0" y="7" text-anchor="middle" font-size="20" fill="#fff">c0</text><circle cx="95" cy="0" r="28" fill="#2E8B57"/><text x="95" y="7" text-anchor="middle" font-size="20" fill="#fff">c1</text><circle cx="190" cy="0" r="28" fill="#2E8B57"/><text x="190" y="7" text-anchor="middle" font-size="20" fill="#fff">c2</text><circle cx="285" cy="0" r="28" fill="#2E8B57"/><text x="285" y="7" text-anchor="middle" font-size="20" fill="#fff">c3</text></g>
+ <text x="215" y="195" text-anchor="middle" class="small">KV exchange / ring</text>
+</g>
+
+<g transform="translate(1075,690)">
+ <rect x="0" y="0" width="430" height="225" rx="22" class="cyan"/><text x="215" y="45" text-anchor="middle" class="h">DP / FSDP group · vary d</text>
+ <text x="215" y="86" text-anchor="middle" class="small">固定 p,c,t；不同 data replicas</text>
+ <g transform="translate(60,125)"><circle cx="0" cy="0" r="28" fill="#0E9AA7"/><text x="0" y="7" text-anchor="middle" font-size="20" fill="#fff">d0</text><circle cx="95" cy="0" r="28" fill="#0E9AA7"/><text x="95" y="7" text-anchor="middle" font-size="20" fill="#fff">d1</text><circle cx="190" cy="0" r="28" fill="#0E9AA7"/><text x="190" y="7" text-anchor="middle" font-size="20" fill="#fff">d2</text><circle cx="285" cy="0" r="28" fill="#0E9AA7"/><text x="285" y="7" text-anchor="middle" font-size="20" fill="#fff">d3</text></g>
+ <text x="215" y="195" text-anchor="middle" class="small">all-gather / reduce-scatter</text>
+</g>
+<text x="800" y="1028" text-anchor="middle" class="n">FSDP 不是第五个坐标：它描述 DP group 内 model-state 的 sharding / ownership 与通信策略。</text>
+</svg>

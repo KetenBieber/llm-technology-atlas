@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200">
+<defs>
+  <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1d4ed8"/></marker>
+  <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16a34a"/></marker>
+  <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#ea580c"/></marker>
+  <style>
+    text{font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;fill:#0f172a}
+    .title{font-size:48px;font-weight:700}.sub{font-size:22px;fill:#475569}.sec{font-size:28px;font-weight:700}
+    .lab{font-size:23px;font-weight:700}.body{font-size:20px;fill:#334155}.num{font-size:26px;font-weight:700}.mono{font-size:20px;font-family:Consolas,monospace}
+    .box{rx:18;ry:18;stroke-width:2.2}.flow{stroke:#1d4ed8;stroke-width:4;fill:none;marker-end:url(#b)}
+    .good{stroke:#16a34a;stroke-width:4;fill:none;marker-end:url(#g)}.cost{stroke:#ea580c;stroke-width:3.5;fill:none;marker-end:url(#o)}
+    .dash{stroke:#16a34a;stroke-width:3;stroke-dasharray:10 8;fill:none;marker-end:url(#g)}
+  </style>
+</defs>
+<rect width="1800" height="1200" fill="#fff"/>
+<text x="80" y="78" class="title">Qwen2.5：一个训练家族，覆盖多尺寸 Dense、云端 MoE 与 Specialist</text>
+<text x="80" y="116" class="sub">核心问题：为什么 0.5B→72B、Turbo/Plus 与 Math/Coder 不是型号堆叠，而是同一数据/协议/训练底座上的 deployment curve？</text>
+
+<!-- shared foundation -->
+<rect x="80" y="180" width="360" height="340" class="box" fill="#f8fafc" stroke="#94a3b8"/>
+<text x="115" y="225" class="sec" fill="#475569">Shared foundation</text>
+<rect x="120" y="260" width="280" height="65" class="box" fill="#ecfeff" stroke="#0891b2"/>
+<text x="260" y="302" text-anchor="middle" class="lab">Byte-BPE tokenizer</text>
+<text x="120" y="365" class="body">151,643 regular tokens</text><text x="120" y="398" class="body">+ 22 control tokens / tool protocol</text>
+<rect x="120" y="430" width="280" height="65" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="260" y="472" text-anchor="middle" class="lab">18T staged pre-training</text>
+
+<!-- dense deployment curve -->
+<text x="520" y="180" class="sec" fill="#1d4ed8">① Open Dense checkpoints：同一 recipe，落在不同部署约束上</text>
+<line x1="560" y1="350" x2="1690" y2="350" stroke="#1d4ed8" stroke-width="6" marker-end="url(#b)"/>
+<text x="560" y="315" class="body">低 VRAM / 低延迟</text><text x="1690" y="315" text-anchor="end" class="body">更高质量 / 更高成本</text>
+<g>
+  <circle cx="610" cy="350" r="30" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2.5"/><text x="610" y="359" text-anchor="middle" class="lab">0.5</text>
+  <circle cx="750" cy="350" r="30" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2.5"/><text x="750" y="359" text-anchor="middle" class="lab">1.5</text>
+  <circle cx="890" cy="350" r="30" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2.5"/><text x="890" y="359" text-anchor="middle" class="lab">3</text>
+  <circle cx="1040" cy="350" r="30" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2.5"/><text x="1040" y="359" text-anchor="middle" class="lab">7</text>
+  <circle cx="1200" cy="350" r="34" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2.5"/><text x="1200" y="359" text-anchor="middle" class="lab">14</text>
+  <circle cx="1380" cy="350" r="38" fill="#93c5fd" stroke="#1d4ed8" stroke-width="2.5"/><text x="1380" y="359" text-anchor="middle" class="lab">32</text>
+  <circle cx="1590" cy="350" r="44" fill="#60a5fa" stroke="#1d4ed8" stroke-width="2.5"/><text x="1590" y="359" text-anchor="middle" class="lab" fill="#fff">72</text>
+</g>
+<text x="610" y="415" text-anchor="middle" class="body">B</text><text x="750" y="415" text-anchor="middle" class="body">B</text><text x="890" y="415" text-anchor="middle" class="body">B</text>
+<text x="1040" y="415" text-anchor="middle" class="body">B</text><text x="1200" y="415" text-anchor="middle" class="body">B</text><text x="1380" y="415" text-anchor="middle" class="body">B</text><text x="1590" y="415" text-anchor="middle" class="body">B</text>
+<rect x="550" y="445" width="340" height="75" class="box" fill="#ecfdf5" stroke="#16a34a"/><text x="720" y="480" text-anchor="middle" class="lab">Edge / local deployment</text><text x="720" y="508" text-anchor="middle" class="body">0.5B / 1.5B / 3B / 7B</text>
+<rect x="980" y="445" width="390" height="75" class="box" fill="#ecfdf5" stroke="#16a34a"/><text x="1175" y="480" text-anchor="middle" class="lab">Single-node / enterprise</text><text x="1175" y="508" text-anchor="middle" class="body">14B / 32B / 72B</text>
+<text x="1510" y="480" class="body">每个主尺寸：Base → Instruct → quantized variants</text>
+<path d="M440 345H520" class="flow"/>
+
+<!-- GQA family evidence -->
+<rect x="520" y="565" width="670" height="185" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="550" y="607" class="lab">家族化并不意味着每个尺寸完全同构：GQA 共享程度随尺寸变化</text>
+<text x="550" y="653" class="mono">0.5B: Q/KV = 14/2   ·   7B: 28/4   ·   72B: 64/8</text>
+<text x="550" y="697" class="body">所有尺寸都把 KV sharing 当成 decode-memory 的默认设计，而不是旗舰特例。</text>
+<text x="550" y="730" class="body">Context：小尺寸 32K；7B+ 公开配置可到 128K（generation 8K）。</text>
+
+<!-- moe service branch -->
+<text x="1240" y="565" class="sec" fill="#ea580c">② Cloud service branch · MoE</text>
+<rect x="1240" y="610" width="210" height="110" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="1345" y="652" text-anchor="middle" class="lab">Qwen2.5-Turbo</text><text x="1345" y="687" text-anchor="middle" class="body">MoE · long-context service</text>
+<rect x="1510" y="610" width="210" height="110" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="1615" y="652" text-anchor="middle" class="lab">Qwen2.5-Plus</text><text x="1615" y="687" text-anchor="middle" class="body">MoE · API service</text>
+<path d="M440 470H480V790H1345V730" class="cost"/><path d="M1450 665H1500" class="cost"/>
+<text x="1240" y="755" class="body">Dense FFN → router → fine-grained routed experts + shared experts</text>
+
+<!-- specialist/generalist loop -->
+<text x="80" y="840" class="sec" fill="#16a34a">③ Generalist ↔ Specialist：能力不是单向派生，而是数据飞轮</text>
+<rect x="80" y="885" width="300" height="120" class="box" fill="#dbeafe" stroke="#1d4ed8"/>
+<text x="230" y="928" text-anchor="middle" class="lab">General Qwen foundation</text><text x="230" y="962" text-anchor="middle" class="body">共享语言 / 代码 / 数学底座</text>
+<rect x="500" y="860" width="260" height="95" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="630" y="897" text-anchor="middle" class="lab">Qwen2.5-Math</text><text x="630" y="928" text-anchor="middle" class="body">reasoning + verifier data</text>
+<rect x="500" y="980" width="260" height="95" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="630" y="1017" text-anchor="middle" class="lab">Qwen2.5-Coder</text><text x="630" y="1048" text-anchor="middle" class="body">code + execution feedback</text>
+<rect x="880" y="895" width="360" height="145" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="1060" y="935" text-anchor="middle" class="lab">高质量 domain data / verifier</text>
+<text x="1060" y="973" text-anchor="middle" class="body">specialist pipeline 产出的数据</text>
+<text x="1060" y="1007" text-anchor="middle" class="body">回流下一代 general pre-training</text>
+<rect x="1370" y="895" width="350" height="145" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="1545" y="935" text-anchor="middle" class="lab">Next general family</text>
+<text x="1545" y="973" text-anchor="middle" class="body">更强通用底座再派生 specialists</text>
+<text x="1545" y="1007" text-anchor="middle" class="body">形成 capability flywheel</text>
+<path d="M380 945H490" class="good"/><path d="M380 955C430 955 430 1028 490 1028" class="good"/>
+<path d="M760 907H870M760 1028H870" class="good"/><path d="M1240 968H1360" class="good"/>
+<path d="M1545 1040V1120H230V1015" class="dash"/>
+
+<rect x="80" y="1100" width="1640" height="60" class="box" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="900" y="1138" text-anchor="middle" class="body">one training family → many deployment points；“Better in Size”本质是在质量、VRAM、延迟、吞吐、成本之间填满产品曲线。</text>
+</svg>

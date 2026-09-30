@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>Llama 3 model-based data filtering and active data mixture flywheel.</desc><defs>
+<marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 43px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 22px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 29px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 20px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 20px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.d{stroke:#D9E2EC;stroke-width:2}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">Llama 3 · Data flywheel：上一代模型怎样参与制造下一代训练分布？</text><text x="65" y="106" class="s">对应 §5–§9｜回答：dedup / quality filter / model-based classifier / active data mix 怎样串成真实数据流</text>
+<text x="65" y="160" class="h">Raw corpus 不是 training distribution：先抽取、去重，再让模型辅助做质量判断</text>
+<rect x="70" y="205" width="245" height="135" rx="18" class="gray"/><text x="95" y="245" class="n">Raw data</text><text x="95" y="282" class="x">web / code / math</text><text x="95" y="315" class="x">原始频率 ≠ 目标能力比例</text>
+<path d="M315 273 H405" class="f"/>
+<rect x="405" y="195" width="300" height="155" rx="18" class="cyan"/><text x="430" y="235" class="n">Extract + Dedup</text><text x="430" y="275" class="x">URL / document / line dedup</text><text x="430" y="310" class="x">heuristics + PII / safety filters</text>
+<path d="M705 273 H800" class="f"/>
+<rect x="800" y="185" width="335" height="175" rx="18" class="blue"/><text x="825" y="225" class="n">Model-based quality filter</text><text x="825" y="265" class="x">Llama 2 标注 quality examples</text><text x="825" y="300" class="x">cheap classifier 扩展到海量 corpus</text>
+<path d="M1135 273 H1230" class="opt"/>
+<rect x="1230" y="195" width="305" height="155" rx="18" class="green"/><text x="1255" y="235" class="n">Curated pool</text><text x="1255" y="275" class="x">code / reasoning / language</text><text x="1255" y="310" class="x">quality score + domain tags</text>
+<text x="65" y="440" class="h">Active mix：模型训练的是人为选择后的 p_train(x)，而不是互联网自然分布</text>
+<rect x="90" y="500" width="260" height="110" rx="18" class="blue"/><text x="115" y="540" class="n">General · 50%</text><text x="115" y="575" class="x">大规模通用语料</text>
+<rect x="385" y="500" width="260" height="110" rx="18" class="cyan"/><text x="410" y="540" class="n">Math · 25%</text><text x="410" y="575" class="x">reasoning 主动上采样</text>
+<rect x="680" y="500" width="260" height="110" rx="18" class="green"/><text x="705" y="540" class="n">Code · 17%</text><text x="705" y="575" class="x">能力定向配比</text>
+<rect x="975" y="500" width="260" height="110" rx="18" class="orange"/><text x="1000" y="540" class="n">Multilingual · 8%</text><text x="1000" y="575" class="x">受控比例</text>
+<path d="M1235 555 H1340" class="f"/>
+<rect x="1340" y="495" width="195" height="120" rx="18" class="gray"/><text x="1365" y="535" class="n">15.6T tokens</text><text x="1365" y="575" class="x">最终 pretrain mix</text>
+<line x1="65" y1="680" x2="1535" y2="680" class="d"/>
+<text x="65" y="740" class="h">Flywheel：上一代模型的能力进入数据管线，再训练下一代模型</text>
+<rect x="100" y="800" width="270" height="120" rx="18" class="blue"/><text x="125" y="840" class="n">Previous model</text><text x="125" y="878" class="x">quality / domain judgments</text>
+<path d="M370 860 H520" class="opt"/>
+<rect x="520" y="790" width="310" height="140" rx="18" class="cyan"/><text x="545" y="830" class="n">Better selected data</text><text x="545" y="870" class="x">classifier 扩展 + active mixture</text><text x="545" y="905" class="x">提高 P(high quality | selected)</text>
+<path d="M830 860 H980" class="opt"/>
+<rect x="980" y="800" width="300" height="120" rx="18" class="green"/><text x="1005" y="840" class="n">Stronger next model</text><text x="1005" y="878" class="x">反过来成为下一轮 judge</text>
+<path d="M1130 920 C1130 1010 230 1010 230 920" class="opt"/>
+</svg>

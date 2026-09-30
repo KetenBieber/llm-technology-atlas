@@ -87,12 +87,6 @@ Kaplan 2020
 ---
 
 
-## 总结架构图
-
-![教学总结图：A009-kaplan-scaling-laws](../../../figures/explainers/A009-kaplan-scaling-laws-summary.svg)
-
-> **教学总结图**：从受控实验拟合 N/D/C 幂律到工程外推，概括 Kaplan Scaling Laws 的资源规划逻辑及其边界。
-
 ## 1. 这篇论文真正面对的工程问题是什么？
 
 假设你现在有一笔训练预算。
@@ -425,6 +419,11 @@ $$
 ## 7. 三条最著名的单资源 scaling law
 
 Kaplan 报告：
+
+![教学解释图：Scaling Laws](../../../figures/explainers/A009/01-scaling-laws.svg)
+
+*教学解释图｜Scaling Laws。*
+
 
 ### 7.1 参数受限
 
@@ -1065,6 +1064,11 @@ $$
 
 原论文拟合：
 
+![教学解释图：Critical Batch Cmin](../../../figures/explainers/A009/03-critical-batch-cmin.svg)
+
+*教学解释图｜Critical Batch Cmin。*
+
+
 $$
 \boxed{
 B_{\rm crit}(L)
@@ -1396,6 +1400,11 @@ $$
 ## 28. Scaling law 为什么天然存在 extrapolation risk？
 
 我们观测：
+
+![教学解释图：Scaling Extrapolation](../../../figures/explainers/A009/02-scaling-extrapolation.svg)
+
+*教学解释图｜Scaling Extrapolation。*
+
 
 $$
 X\in[X_{\min},X_{\max}]

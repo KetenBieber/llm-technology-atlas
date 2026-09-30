@@ -25,12 +25,6 @@ $$
 本篇阅读有两条并行主线：第一条是**算法数学主线**，看零初始化、逐坐标更新与复杂度；第二条是**论文论证主线**，看作者怎样从摘要里的多个优点，逐段过渡到 Algorithm 1、偏差修正证明，再用四组不同实验分别支持部分主张。
 
 
-## 总结架构图
-
-![教学总结图：A002-adam](../../../figures/explainers/A002-adam-summary.svg)
-
-> **教学总结图**：Adam 用一阶矩追踪方向、二阶矩追踪尺度，并通过偏差校正形成自适应步长。
-
 # 输入、输出与任务
 
 ## 精确定义一轮优化的接口
@@ -82,6 +76,11 @@ flowchart TD
   UP --> NEXT["theta_t 用于下一步前向"]
 ~~~
 
+![教学解释图：Moment State Flow](../../../figures/explainers/A002/01-moment-state-flow.svg)
+
+*教学解释图｜Moment State Flow。*
+
+
 这张示意图是**本文教学重绘**，不是论文原图。它把 Adam 明确放在「反向传播之后」，避免把优化器误解成网络的一层。训练停止以后只需保留适当的模型权重用于推理；通常不需要把 $m_t,v_t$ 加进线上模型。
 
 标准更新式由 Algorithm 1 逐行组合：
@@ -103,11 +102,21 @@ $$
 
 只存一阶 EMA，能平滑梯度方向，却不能单独适应各坐标梯度的典型大小；只存二阶 EMA，能够估计典型梯度量级，却丢失了历史方向平均。两者组合时，$\hat m_{t,i}/\sqrt{\hat v_{t,i}}$ 才同时表示方向与尺度的相对关系。这也解释论文 §2.1 为何在给出算法之后单独讨论 update rule：伪代码告诉读者「怎样算」，下一节才解释「为什么这样的步长可能合理」。
 
+![教学解释图：Coordinate Adaptive Step](../../../figures/explainers/A002/03-coordinate-adaptive-step.svg)
+
+*教学解释图｜Coordinate Adaptive Step。*
+
+
 # 关键技术
 
 ## 1. 推导 EMA 的偏差修正：为什么偏偏是 $1-\beta^t$？
 
 先研究一个坐标的二阶平均，令 $v_0=0$：
+
+![教学解释图：Bias Correction Weights](../../../figures/explainers/A002/02-bias-correction-weights.svg)
+
+*教学解释图｜Bias Correction Weights。*
+
 
 $$
 v_t=\beta_2v_{t-1}+(1-\beta_2)g_t^2.

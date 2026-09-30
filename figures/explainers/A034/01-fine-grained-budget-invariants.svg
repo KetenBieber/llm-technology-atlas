@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .coarse{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}.small{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}.active{fill:#edf9f0;stroke:#2e8b57;stroke-width:3}
+  .flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#b)}.formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Fine-Grained Experts：切小 Expert，同时守恒参数与 Active Compute</text>
+<text x="800" y="101" text-anchor="middle" class="sub">真正改变的不是预算，而是 Router 能选择的最小函数块颗粒度</text>
+
+<rect x="55" y="150" width="650" height="745" rx="22" class="panel"/>
+<text x="380" y="195" text-anchor="middle" class="h">传统 MoE：N 个宽 experts，Top-K</text>
+<g>
+<rect x="115" y="265" width="210" height="140" rx="16" class="active"/><text x="220" y="318" text-anchor="middle" class="h">Expert A ✓</text><text x="220" y="360" text-anchor="middle" class="b">width = d_ff</text>
+<rect x="385" y="265" width="210" height="140" rx="16" class="active"/><text x="490" y="318" text-anchor="middle" class="h">Expert B ✓</text><text x="490" y="360" text-anchor="middle" class="b">width = d_ff</text>
+<rect x="115" y="455" width="210" height="140" rx="16" class="coarse"/><text x="220" y="508" text-anchor="middle" class="h">Expert C</text><text x="220" y="550" text-anchor="middle" class="b">width = d_ff</text>
+<rect x="385" y="455" width="210" height="140" rx="16" class="coarse"/><text x="490" y="508" text-anchor="middle" class="h">… N experts</text><text x="490" y="550" text-anchor="middle" class="b">Top-K active</text>
+</g>
+<rect x="110" y="665" width="540" height="150" rx="16" class="formula"/>
+<text x="380" y="708" text-anchor="middle" class="b">P_total ≈ N · P_expert</text>
+<text x="380" y="751" text-anchor="middle" class="b">P_active/token ≈ K · P_expert</text>
+<text x="380" y="793" text-anchor="middle" class="s">Router 只能整块选择“大 FFN expert”</text>
+
+<path d="M730 520 H860" class="flow"/>
+<text x="795" y="490" text-anchor="middle" class="h">split × m</text>
+
+<rect x="890" y="150" width="655" height="745" rx="22" class="panel"/>
+<text x="1217" y="195" text-anchor="middle" class="h">DeepSeekMoE：mN 个窄 experts，Top-mK</text>
+<g>
+<rect x="940" y="265" width="115" height="115" rx="14" class="active"/><text x="997" y="315" text-anchor="middle" class="b">A₁ ✓</text><text x="997" y="347" text-anchor="middle" class="s">d_ff/m</text>
+<rect x="1070" y="265" width="115" height="115" rx="14" class="small"/><text x="1127" y="315" text-anchor="middle" class="b">A₂</text><text x="1127" y="347" text-anchor="middle" class="s">d_ff/m</text>
+<rect x="1200" y="265" width="115" height="115" rx="14" class="active"/><text x="1257" y="315" text-anchor="middle" class="b">A₃ ✓</text><text x="1257" y="347" text-anchor="middle" class="s">d_ff/m</text>
+<rect x="1330" y="265" width="115" height="115" rx="14" class="active"/><text x="1387" y="315" text-anchor="middle" class="b">A₄ ✓</text><text x="1387" y="347" text-anchor="middle" class="s">d_ff/m</text>
+
+<rect x="940" y="420" width="115" height="115" rx="14" class="small"/><text x="997" y="470" text-anchor="middle" class="b">B₁</text><text x="997" y="502" text-anchor="middle" class="s">d_ff/m</text>
+<rect x="1070" y="420" width="115" height="115" rx="14" class="active"/><text x="1127" y="470" text-anchor="middle" class="b">B₂ ✓</text><text x="1127" y="502" text-anchor="middle" class="s">d_ff/m</text>
+<rect x="1200" y="420" width="115" height="115" rx="14" class="active"/><text x="1257" y="470" text-anchor="middle" class="b">B₃ ✓</text><text x="1257" y="502" text-anchor="middle" class="s">d_ff/m</text>
+<rect x="1330" y="420" width="115" height="115" rx="14" class="small"/><text x="1387" y="470" text-anchor="middle" class="b">…</text><text x="1387" y="502" text-anchor="middle" class="s">mN total</text>
+</g>
+<rect x="930" y="600" width="575" height="220" rx="16" class="formula"/>
+<text x="1217" y="642" text-anchor="middle" class="b">P_small = P_expert / m</text>
+<text x="1217" y="685" text-anchor="middle" class="b">mN · (P_expert/m) = N·P_expert</text>
+<text x="1217" y="728" text-anchor="middle" class="b">mK · (P_expert/m) = K·P_expert</text>
+<text x="1217" y="778" text-anchor="middle" class="h">总参数不变，active compute 近似不变</text>
+
+<rect x="120" y="940" width="1360" height="105" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="978" text-anchor="middle" class="b">结构变化：N → mN，K → mK，d_ff → d_ff/m；预算守恒后，Router 获得更细的“可重组函数块”。</text>
+<text x="800" y="1017" text-anchor="middle" class="s">因此 Fine-Grained Segmentation 的主张不是“多算更多 experts”，而是在同等预算下提高 specialization 的结构自由度。</text>
+</svg>

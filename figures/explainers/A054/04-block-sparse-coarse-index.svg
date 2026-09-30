@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>MInference Block-Sparse：先在粗网格找重要 Tile，再回到原分辨率计算</title><desc>Mean pooling 在 score 层把 L×L 搜索降到 (L/B)×(L/B)，用粗 attention 选择真正执行的 64×64 tiles。</desc><defs>
+  <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+  <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+  <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+  <style>
+  text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}
+  .title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}
+  .n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}
+  .panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}
+  .cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}
+  .green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}
+  .gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}
+  .comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}
+  .good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}
+  </style>
+</defs><rect width="1600" height="1100" fill="#FFFFFF"/><text x="70" y="72" class="title">MInference Block-Sparse：先在粗网格找重要 Tile，再回到原分辨率计算</text>
+<text x="70" y="112" class="sub">认知问题：二维重要区域不是线条时，怎样低成本定位动态 block，而不先算完整 QKᵀ？</text>
+<rect x="70" y="165" width="360" height="770" rx="22" class="panel"/><text x="100" y="210" class="h">1 · Sequence 分块</text>
+<text x="100" y="252" class="mono">Q,K ∈ R^(L×d)</text>
+<rect x="115" y="305" width="240" height="52" rx="10" fill="#EAF3FF" stroke="#1557B0" stroke-width="2"/><text x="235" y="338" text-anchor="middle" class="small">block 0</text><rect x="115" y="380" width="240" height="52" rx="10" fill="#E8FAFB" stroke="#0E9AA7" stroke-width="2"/><text x="235" y="413" text-anchor="middle" class="small">block 1</text><rect x="115" y="455" width="240" height="52" rx="10" fill="#EAF3FF" stroke="#1557B0" stroke-width="2"/><text x="235" y="488" text-anchor="middle" class="small">block 2</text><rect x="115" y="530" width="240" height="52" rx="10" fill="#E8FAFB" stroke="#0E9AA7" stroke-width="2"/><text x="235" y="563" text-anchor="middle" class="small">block 3</text><rect x="115" y="605" width="240" height="52" rx="10" fill="#EAF3FF" stroke="#1557B0" stroke-width="2"/><text x="235" y="638" text-anchor="middle" class="small">block 4</text><rect x="115" y="680" width="240" height="52" rx="10" fill="#E8FAFB" stroke="#0E9AA7" stroke-width="2"/><text x="235" y="713" text-anchor="middle" class="small">block 5</text>
+<text x="100" y="810" class="mono">B = 64 (paper setting)</text><text x="100" y="850" class="small">每 B 个 token → 一个 coarse token</text>
+<path d="M430 520H515" class="flow"/>
+
+<rect x="525" y="165" width="390" height="770" rx="22" class="panel"/><text x="555" y="210" class="h">2 · Mean Pool Q/K</text>
+<rect x="575" y="290" width="290" height="120" rx="18" class="cyan"/><text x="720" y="338" text-anchor="middle" class="mono">q̂_a = (1/B) Σ q_i</text><text x="720" y="378" text-anchor="middle" class="small">a-th Query block</text>
+<rect x="575" y="470" width="290" height="120" rx="18" class="blue"/><text x="720" y="518" text-anchor="middle" class="mono">k̂_b = (1/B) Σ k_j</text><text x="720" y="558" text-anchor="middle" class="small">b-th Key block</text>
+<path d="M720 410V455" class="flow"/>
+<rect x="575" y="675" width="290" height="150" rx="18" class="green"/><text x="720" y="720" text-anchor="middle" class="n">粗分辨率</text><text x="720" y="758" text-anchor="middle" class="mono">Q̂,K̂ ∈ R^((L/B)×d)</text><text x="720" y="796" text-anchor="middle" class="small">score count ↓ B²</text>
+<path d="M915 520H990" class="flow"/>
+
+<rect x="1000" y="165" width="530" height="770" rx="22" class="panel"/><text x="1030" y="210" class="h">3 · Coarse Score → Top Blocks</text>
+<rect x="1075" y="270" width="360" height="300" fill="#fff" stroke="#1557B0" stroke-width="2.5"/>
+<rect x="1082" y="277" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1140" y="277" width="48" height="38" rx="4" fill="#0E9AA7"/><rect x="1198" y="277" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1256" y="277" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1314" y="277" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1372" y="277" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1082" y="325" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1140" y="325" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1198" y="325" width="48" height="38" rx="4" fill="#0E9AA7"/><rect x="1256" y="325" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1314" y="325" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1372" y="325" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1082" y="373" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1140" y="373" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1198" y="373" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1256" y="373" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1314" y="373" width="48" height="38" rx="4" fill="#0E9AA7"/><rect x="1372" y="373" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1082" y="421" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1140" y="421" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1198" y="421" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1256" y="421" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1314" y="421" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1372" y="421" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1082" y="469" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1140" y="469" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1198" y="469" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1256" y="469" width="48" height="38" rx="4" fill="#0E9AA7"/><rect x="1314" y="469" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1372" y="469" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1082" y="517" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1140" y="517" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1198" y="517" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1256" y="517" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1314" y="517" width="48" height="38" rx="4" fill="#EEF3F7"/><rect x="1372" y="517" width="48" height="38" rx="4" fill="#0E9AA7"/>
+<text x="1255" y="618" text-anchor="middle" class="mono">Ŝ = Q̂K̂ᵀ / √d</text>
+<rect x="1070" y="670" width="370" height="96" rx="16" class="orange"/><text x="1255" y="710" text-anchor="middle" class="n">每个 Query block 选择 Top tiles</text><text x="1255" y="744" text-anchor="middle" class="small">得到 prompt-specific block indices</text>
+<path d="M1255 766V815" class="good"/>
+<rect x="1070" y="820" width="370" height="80" rx="16" class="green"/><text x="1255" y="870" text-anchor="middle" class="n">原分辨率 Sparse Attention</text>
+<text x="800" y="1005" text-anchor="middle" class="n">Mean pooling 保留的是 block pair 的平均 dot-product 结构；它用于“找块”，最终 attention 仍在被选中的原始 token tiles 上计算。</text>
+</svg>

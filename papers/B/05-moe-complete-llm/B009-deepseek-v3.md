@@ -57,12 +57,6 @@ DeepSeek-V3 真正有代表性的地方，恰恰是它把**模型参数化、训
 ---
 
 
-## 总结架构图
-
-![教学总结图：B009-deepseek-v3](../../../figures/explainers/B009-deepseek-v3-summary.svg)
-
-> **教学总结图**：将 MLA、DeepSeekMoE、FP8、MTP 与 DualPipe 放到模型—训练—系统三层视角中，形成 V3 的整体工程图。
-
 ## 1. 先把 DeepSeek-V3 放回 DeepSeek 谱系：哪些是 V3 新东西，哪些不是？
 
 论文 Introduction 非常刻意地先划清边界。
@@ -619,6 +613,11 @@ $$
 
 如果 MLA 主要在解决推理缓存，那么 DeepSeekMoE 解决的是另一个维度：
 
+![教学解释图：Token Model Flow](../../../figures/explainers/B009/01-token-model-flow.svg)
+
+*教学解释图｜Token Model Flow。*
+
+
 > **怎样让模型拥有更大的参数容量，而不让每个 token 都支付同等规模的 FFN 计算。**
 
 ### 4.1 先看 dense FFN
@@ -941,6 +940,11 @@ batch-wise balance 则允许：
 
 标准 causal LM 在每个位置：
 
+![教学解释图：MTP Training Signal](../../../figures/explainers/B009/03-mtp-training-signal.svg)
+
+*教学解释图｜MTP Training Signal。*
+
+
 $$
 h_i
 \rightarrow
@@ -1205,6 +1209,11 @@ $$
 
 原论文 Figure 4：
 
+![教学解释图：Routing DualPipe](../../../figures/explainers/B009/02-routing-dualpipe.svg)
+
+*教学解释图｜Routing DualPipe。*
+
+
 ![DeepSeek-V3 原论文 Figure 4：单对 forward/backward chunk 的计算通信重叠](../../../figures/B001/fig4-overlap.svg)
 
 *这张图真正应该看“上下两行时间是否并行推进”。上方是 MLP/Attention compute，下方是 dispatch/combine/PP communication。DualPipe 的思想不是让 all-to-all 消失，而是重新切 chunk、拆 backward-for-input / backward-for-weight，并让通信尽量和另一部分计算同时发生。*
@@ -1288,6 +1297,11 @@ Backward
 ## 8. FP8：低精度训练绝不是“把 BF16 改成 8 bit”
 
 如果只是：
+
+![教学解释图：FP8 Mixed Precision](../../../figures/explainers/B009/04-fp8-mixed-precision.svg)
+
+*教学解释图｜FP8 Mixed Precision。*
+
 
 ~~~text
 BF16 tensor
@@ -1745,6 +1759,11 @@ $$
 ## 11. 推理部署：Prefill 和 Decode 不是同一种工作负载，所以 V3 干脆分开部署
 
 这是 V3 报告里很值得系统学习的一段。
+
+![教学解释图：Prefill Decode Deployment](../../../figures/explainers/B009/05-prefill-decode-deployment.svg)
+
+*教学解释图｜Prefill Decode Deployment。*
+
 
 ### 11.1 Prefill
 

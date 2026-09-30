@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <marker id="r" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c43d3d"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .bad{fill:#fff1f0;stroke:#c43d3d;stroke-width:2}.good{fill:#edf9f0;stroke:#2e8b57;stroke-width:2}.node{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}
+  .flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#b)}.flip{stroke:#c43d3d;stroke-width:4;fill:none;marker-end:url(#r)}.formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Router 数值稳定性：为什么离散 Expert Path 对精度敏感</text>
+<text x="800" y="101" text-anchor="middle" class="sub">Switch 使用 selective precision：大部分模型保持 BF16，只把 routing 的敏感小路径提升到 FP32</text>
+
+<rect x="55" y="150" width="720" height="735" rx="22" class="panel"/>
+<text x="415" y="195" text-anchor="middle" class="h">Top-1 的离散放大效应</text>
+<rect x="105" y="260" width="250" height="150" rx="16" class="node"/>
+<text x="230" y="305" text-anchor="middle" class="b">真实 logits</text>
+<text x="230" y="350" text-anchor="middle" class="h">z₁ = 1.0001</text>
+<text x="230" y="385" text-anchor="middle" class="h">z₂ = 1.0000</text>
+<path d="M355 335 H430" class="flow"/>
+<rect x="445" y="260" width="265" height="150" rx="16" class="bad"/>
+<text x="577" y="305" text-anchor="middle" class="b">低精度 rounding</text>
+<text x="577" y="350" text-anchor="middle" class="h">ẑ₁ ≈ ẑ₂</text>
+<text x="577" y="385" text-anchor="middle" class="s">tie / rank order 可翻转</text>
+<path d="M577 410 V480" class="flip"/>
+<rect x="255" y="500" width="320" height="120" rx="16" class="bad"/>
+<text x="415" y="545" text-anchor="middle" class="h">argmax path 发生离散切换</text>
+<text x="415" y="584" text-anchor="middle" class="b">Expert 1 ↔ Expert 2</text>
+<text x="415" y="690" text-anchor="middle" class="b">这不是“输出有一点误差”，而是：</text>
+<text x="415" y="730" text-anchor="middle" class="s">token 被发送到另一组权重、另一台设备、另一条通信路径。</text>
+<text x="415" y="775" text-anchor="middle" class="s">routing decision 对 logit 排序尤其敏感。</text>
+
+<rect x="825" y="150" width="720" height="735" rx="22" class="panel"/>
+<text x="1185" y="195" text-anchor="middle" class="h">Selective precision：只保护敏感控制路径</text>
+<rect x="875" y="260" width="190" height="100" rx="15" class="node"/>
+<text x="970" y="302" text-anchor="middle" class="h">hidden x</text><text x="970" y="337" text-anchor="middle" class="s">BF16</text>
+<path d="M1065 310 H1120" class="flow"/>
+<rect x="1135" y="240" width="220" height="140" rx="16" class="good"/>
+<text x="1245" y="283" text-anchor="middle" class="h">Router FP32</text>
+<text x="1245" y="322" text-anchor="middle" class="b">W_r x → softmax</text>
+<text x="1245" y="354" text-anchor="middle" class="s">stable ranking</text>
+<path d="M1355 310 H1410" class="flow"/>
+<rect x="1420" y="260" width="85" height="100" rx="13" class="node"/>
+<text x="1462" y="302" text-anchor="middle" class="b">id</text><text x="1462" y="335" text-anchor="middle" class="s">Top-1</text>
+
+<rect x="900" y="470" width="570" height="190" rx="16" class="formula"/>
+<text x="1185" y="512" text-anchor="middle" class="h">另一个问题：logit scale 可能无约束变大</text>
+<text x="1185" y="554" text-anchor="middle" class="b">softmax(z + c·1) = softmax(z)</text>
+<text x="1185" y="600" text-anchor="middle" class="b">z-loss ∝ [ log Σ_i exp(z_i) ]²</text>
+<text x="1185" y="638" text-anchor="middle" class="s">后续 Switch training recipes 用于压住过大 log-partition</text>
+<text x="1185" y="735" text-anchor="middle" class="b">不要混淆：</text>
+<text x="1185" y="775" text-anchor="middle" class="s">balancing loss 管 expert collapse；stability / z-loss 管数值幅度。</text>
+
+<rect x="125" y="935" width="1350" height="105" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="975" text-anchor="middle" class="b">工程设计原则：不是“全模型都用 FP32”，而是识别控制流敏感点——Router 的数值误差会被 argmax 放大成不同 dispatch path，因此值得局部提升精度。</text>
+<text x="800" y="1014" text-anchor="middle" class="s">边界：selective FP32 是 Switch 论文的重要稳定性设计；router z-loss 应按具体后续 recipe / 实现版本核实。</text>
+</svg>

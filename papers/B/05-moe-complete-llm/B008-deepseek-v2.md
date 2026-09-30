@@ -63,12 +63,6 @@ RoPE 插入位置相关矩阵后，吸收失效
 ~~~
 
 
-## 总结架构图
-
-![教学总结图：B008-deepseek-v2](../../../figures/explainers/B008-deepseek-v2-summary.svg)
-
-> **教学总结图**：以 MLA 为主线展示低秩 latent、weight absorption 与 decoupled RoPE 如何共同降低 Decode KV Cache 成本。
-
 ## 1. Figure 1 先告诉我们：V2 想把“训练贵”和“推理贵”拆开解决
 
 ![DeepSeek-V2 原论文 Figure 1：效率比较](../../../figures/B002/fig1-efficiency.svg)
@@ -134,6 +128,11 @@ MLA + KV 量化 + FP8 权重 + kernel + 更大 batch
 
 ![DeepSeek-V2 原论文 Figure 2：整体架构](../../../figures/B002/fig2-deepseek-v2-architecture.svg)
 
+![教学解释图：Transformer Cost Split](../../../figures/explainers/B008/01-transformer-cost-split.svg)
+
+*教学解释图｜Transformer Cost Split。*
+
+
 *左侧仍是 pre-norm Transformer block；右下展开 MLA；右上展开 DeepSeekMoE。斜线阴影对应 inference 时需要保留的状态。*
 
 V2 主模型：
@@ -197,6 +196,11 @@ Next-token logits
 ## 3. 从 MHA 开始：KV Cache 为什么会变成 Decode 瓶颈？
 
 第 $t$ 个 token 的 hidden state：
+
+![教学解释图：Cache State Comparison](../../../figures/explainers/B008/02-cache-state-comparison.svg)
+
+*教学解释图｜Cache State Comparison。*
+
 
 $$
 \mathbf h_t\in\mathbb R^d.
@@ -400,6 +404,11 @@ K 和 V 共享同一个 latent，因此不是分别压缩 K、V，而是：
 ### 6.1 Key up-projection 可以吸收到 Query 路径
 
 历史 content key：
+
+![教学解释图：Weight Absorption Decode](../../../figures/explainers/B008/03-weight-absorption-decode.svg)
+
+*教学解释图｜Weight Absorption Decode。*
+
 
 $$
 k_j^C
@@ -656,6 +665,11 @@ $$
 ## 8. Decoupled RoPE：把内容与位置拆成两条子空间
 
 DeepSeek 没有放弃 RoPE，而是重新问：
+
+![教学解释图：Decoupled RoPE Subspaces](../../../figures/explainers/B008/04-decoupled-rope-subspaces.svg)
+
+*教学解释图｜Decoupled RoPE Subspaces。*
+
 
 > RoPE 是否必须作用于全部 content features？
 
@@ -971,6 +985,11 @@ DeepSeekMoE 的两个核心思想来自独立原始方法论文：
 ### 11.1 Device-limited routing：Router 已经被硬件拓扑约束
 
 如果 Top-K experts 分散在很多 GPU 上：
+
+![教学解释图：Device Limited Routing Overlap](../../../figures/explainers/B008/05-device-limited-routing-overlap.svg)
+
+*教学解释图｜Device Limited Routing Overlap。*
+
 
 > 一个 token activation 就要跨设备发送很多次。
 

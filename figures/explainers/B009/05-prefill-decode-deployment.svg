@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<desc>DeepSeek-V3 prefill and decode deployment topologies with expert parallelism and redundancy.</desc>
+<defs>
+  <marker id="arrowB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#0B4F9C"/></marker>
+  <marker id="arrowO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#F59E0B"/></marker>
+  <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#16A34A"/></marker>
+  <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#DC2626"/></marker>
+  <style>
+    .t{font:700 44px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#10243e}
+    .sub{font:400 23px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#52647a}
+    .h{font:700 30px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#15385f}
+    .n{font:700 24px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#15385f}
+    .b{font:400 21px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#26384d}
+    .m{font:600 20px 'Inter','Noto Sans SC','Microsoft YaHei',sans-serif;fill:#42556d}
+    .mono{font:600 21px 'JetBrains Mono','Consolas',monospace;fill:#18334f}
+    .blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}
+    .gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}
+    .green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}
+    .flow{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#arrowB)}.comm{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#arrowO)}
+    .opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#arrowG)}.bad{fill:none;stroke:#DC2626;stroke-width:4;stroke-dasharray:9 8;marker-end:url(#arrowR)}
+    .thin{fill:none;stroke:#64748B;stroke-width:2.2;marker-end:url(#arrowB)}.divider{stroke:#D9E2EC;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#FFFFFF"/>
+<text x="70" y="72" class="t">DeepSeek‑V3 · 为什么 Prefill 与 Decode 要用不同的集群拓扑？</text>
+<text x="70" y="110" class="sub">对应 §11｜回答：同一个模型在两种 workload 下，瓶颈、parallelism 与 expert redundancy 为什么不同</text>
+
+<text x="70" y="165" class="h">Prefill：长 prompt 一次性并行处理 → 大 GEMM / 大 expert batch / compute-oriented</text>
+<rect x="70" y="205" width="300" height="165" rx="18" class="blue"/><text x="88" y="239" class="n">Prompt tokens</text><text x="88" y="275" class="b">一次进入大量 token；batch 大</text><text x="88" y="304" class="b">更容易吃满 Tensor Core</text>
+<path d="M370 285 H470" class="flow"/>
+<rect x="470" y="185" width="360" height="205" rx="18" class="cyan"/><text x="488" y="219" class="n">Attention placement</text><text x="488" y="255" class="b">4 nodes / 32 GPUs；TP4 + SP</text><text x="488" y="284" class="b">DP8；throughput 优先</text>
+<path d="M830 285 H930" class="comm"/>
+<rect x="930" y="185" width="360" height="205" rx="18" class="orange"/><text x="948" y="219" class="n">MoE placement</text><text x="948" y="255" class="b">EP32；32 redundant experts</text><text x="948" y="284" class="b">热点 expert 可复制 / 重排</text>
+<path d="M1290 285 H1390" class="opt"/>
+<rect x="1390" y="220" width="140" height="130" rx="18" class="green"/><text x="1408" y="254" class="n">目标</text><text x="1408" y="290" class="b">高吞吐</text><text x="1408" y="319" class="b">高利用率</text>
+<line x1="70" y1="445" x2="1530" y2="445" class="divider"/>
+<text x="70" y="505" class="h">Decode：每步每序列只新增 1 token → 小 expert batch / 长历史读取 / latency-oriented</text>
+<rect x="70" y="545" width="300" height="175" rx="18" class="gray"/><text x="88" y="579" class="n">New token</text><text x="88" y="615" class="b">每步 token 少；历史 context 增长</text><text x="88" y="644" class="b">KV / memory read 更突出</text>
+<path d="M370 630 H470" class="flow"/>
+<rect x="470" y="525" width="360" height="215" rx="18" class="cyan"/><text x="488" y="559" class="n">Attention placement</text><text x="488" y="595" class="b">40 nodes / 320 GPUs；TP4 + SP</text><text x="488" y="624" class="b">DP80；latency 优先</text>
+<path d="M830 630 H930" class="comm"/>
+<rect x="930" y="525" width="360" height="215" rx="18" class="orange"/><text x="948" y="559" class="n">MoE placement</text><text x="948" y="595" class="b">EP320；≈1 expert / GPU</text><text x="948" y="624" class="b">64 GPUs red./shared · batch≤256</text>
+<path d="M1290 630 H1390" class="opt"/>
+<rect x="1390" y="565" width="140" height="135" rx="18" class="green"/><text x="1408" y="599" class="n">目标</text><text x="1408" y="635" class="b">SLO</text><text x="1408" y="664" class="b">tail latency</text>
+<text x="70" y="810" class="h">同一模型的 serving placement 不是训练 placement 的缩小版</text>
+<rect x="90" y="855" width="420" height="135" rx="18" class="red"/><text x="120" y="900" class="n">训练直觉：expert 只存一份</text><text x="120" y="937" class="b">节省参数显存，但热点可能形成排队</text>
+<path d="M510 922 H650" class="bad"/>
+<rect x="650" y="835" width="530" height="175" rx="18" class="green"/><text x="685" y="880" class="n">在线服务：复制热点 expert</text><text x="685" y="920" class="b">额外显存 → 更多副本 → 降低 tail latency</text><text x="685" y="958" class="m">training-optimal ≠ serving-optimal</text>
+<path d="M1180 922 H1290" class="opt"/>
+<rect x="1290" y="865" width="240" height="120" rx="18" class="blue"/><text x="1330" y="910" class="n">Workload-aware</text><text x="1330" y="945" class="b">parallel topology</text>
+
+</svg>

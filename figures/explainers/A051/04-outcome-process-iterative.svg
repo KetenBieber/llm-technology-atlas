@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>GRPO outcome versus process supervision and iterative reward-model refresh.</desc>
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 44px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 23px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 30px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 21px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 21px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.d{stroke:#D9E2EC;stroke-width:2}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">GRPO · Outcome / Process / Iterative：credit 与分布漂移怎么处理？</text><text x="65" y="108" class="s">对应 §9–§11 / §19｜更细 reward 提高 credit resolution；iterative RL 刷新变化中的数据分布</text>
+<text x="65" y="165" class="h">Outcome supervision：整条 response 一个 reward</text>
+<rect x="70" y="210" width="240" height="100" rx="18" class="gray"/><text x="95" y="250" class="n">Reasoning response</text><text x="95" y="285" class="x">step₁ → … → answer</text>
+<path d="M310 260 H405" class="f"/>
+<rect x="405" y="200" width="300" height="120" rx="18" class="orange"/><text x="430" y="240" class="n">Outcome reward r</text><text x="430" y="280" class="x">只看最终结果 / verifier</text>
+<path d="M705 260 H800" class="f"/>
+<rect x="800" y="190" width="400" height="140" rx="18" class="blue"/><text x="825" y="230" class="n">Broadcast credit</text><text x="825" y="270" class="x">step₁ / step₂ / step₃ 的 token 共享同一 Â</text><text x="825" y="305" class="x">低成本，但不知道中间哪一步真正贡献最大</text>
+<rect x="1280" y="200" width="255" height="120" rx="18" class="red"/><text x="1305" y="240" class="n">Credit resolution</text><text x="1305" y="280" class="x">coarse</text>
+<line x1="65" y1="385" x2="1535" y2="385" class="d"/>
+<text x="65" y="445" class="h">Process supervision：每个 reasoning step 都有 reward，再向前形成 token credit</text>
+<g><rect x="85" y="500" width="205" height="90" rx="15" class="cyan"/><text x="115" y="545" class="n">step₁ · r₁</text><rect x="330" y="500" width="205" height="90" rx="15" class="cyan"/><text x="360" y="545" class="n">step₂ · r₂</text><rect x="575" y="500" width="205" height="90" rx="15" class="cyan"/><text x="605" y="545" class="n">step₃ · r₃</text><rect x="820" y="500" width="205" height="90" rx="15" class="green"/><text x="850" y="545" class="n">answer · r₄</text></g>
+<path d="M1025 545 H1120" class="opt"/>
+<rect x="1120" y="475" width="390" height="140" rx="18" class="green"/><text x="1145" y="515" class="n">Future-step accumulation</text><text x="1145" y="555" class="mono">Â(step k) ∝ Σ_{j≥k} r_j</text><text x="1145" y="590" class="x">credit 更细，但 reward 标注 / 模型成本更高</text>
+<line x1="65" y1="675" x2="1535" y2="675" class="d"/>
+<text x="65" y="735" class="h">Iterative GRPO：Policy 在变，Reward Model / replay data 不能永远冻结在第一轮分布</text>
+<rect x="90" y="805" width="250" height="110" rx="18" class="blue"/><text x="115" y="845" class="n">Policy πᵏ</text><text x="115" y="880" class="x">生成新 rollouts</text>
+<path d="M340 860 H455" class="f"/>
+<rect x="455" y="795" width="310" height="130" rx="18" class="cyan"/><text x="480" y="835" class="n">New response distribution</text><text x="480" y="875" class="x">旧 RM 开始遇到 distribution shift</text>
+<path d="M765 860 H880" class="cost"/>
+<rect x="880" y="790" width="315" height="140" rx="18" class="orange"/><text x="905" y="830" class="n">Refresh reward / replay</text><text x="905" y="870" class="x">加入新样本，更新 reward signal</text><text x="905" y="905" class="x">保留旧数据缓冲灾难性遗忘</text>
+<path d="M1195 860 H1310" class="opt"/>
+<rect x="1310" y="805" width="225" height="110" rx="18" class="green"/><text x="1335" y="845" class="n">Policy πᵏ⁺¹</text><text x="1335" y="880" class="x">继续下一轮</text>
+<path d="M1420 915 C1420 1010 210 1020 210 915" class="opt"/>
+</svg>

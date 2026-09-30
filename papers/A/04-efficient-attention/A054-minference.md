@@ -81,12 +81,6 @@ MInference
 ---
 
 
-## 总结架构图
-
-![教学总结图：A054-minference](../../../figures/explainers/A054-minference-summary.svg)
-
-> **教学总结图**：从 dense prefill 瓶颈，经 per-head pattern search 与动态 sparse indices，到 GPU-friendly sparse kernel，展示 MInference 端到端路径。
-
 # 一、先区分 Prefill 与 Decode：这是理解 MInference 的起点
 
 ## 1. 一次 LLM 请求其实有两个完全不同的阶段
@@ -132,6 +126,11 @@ $$
 ## 2. Prefill 的 Attention Shape
 
 一层 self-attention 中：
+
+![教学解释图：Dense Prefill Bottleneck](../../../figures/explainers/A054/01-dense-prefill-bottleneck.svg)
+
+*教学解释图｜Dense Prefill Bottleneck。*
+
 
 $$
 Q\in\mathbb R^{L\times d},
@@ -384,6 +383,11 @@ $$
 
 标准 attention 输出：
 
+![教学解释图：Dense → Structured Sparsity](../../../figures/explainers/A054/01-dense-to-structured-sparsity.svg)
+
+*教学解释图｜Dense → Structured Sparsity。*
+
+
 $$
 o_i
 =
@@ -615,6 +619,11 @@ $$
 
 论文把长上下文 attention head 归纳成：
 
+![教学解释图：per Head Pattern](../../../figures/explainers/A054/02-per-head-pattern.svg)
+
+*教学解释图｜per Head Pattern。*
+
+
 1. A-shape；
 2. Vertical-Slash；
 3. Block-Sparse。
@@ -627,9 +636,6 @@ $$
 
 教学化总结：
 
-![MInference 三种 Sparse Pattern](../../../figures/explainers/A054-three-sparse-patterns.svg)
-
-*教学解释图。A-shape 是静态 global+local；Vertical-Slash 是动态列与动态对角线；Block-Sparse 是动态空间块。MInference 不是要求所有 head 都套同一个 mask。*
 
 ---
 
@@ -1219,7 +1225,10 @@ Layer 1 Head 2
 
 ## 32. 整个 Offline / Online 分离
 
-![MInference Offline / Online Pipeline](../../../figures/explainers/A054-offline-online-pipeline.svg)
+![教学解释图：Offline Online Head Policy](../../../figures/explainers/A054/02-offline-online-head-policy.svg)
+
+*教学解释图｜Offline Online Head Policy。*
+
 
 *教学解释图。Offline 决定 head 用什么结构以及预算；Online 对当前 prompt 只预测具体动态 indices。MInference 的关键不是把 sparse mask 固定，而是把“结构稳定性”与“索引动态性”拆开。*
 
@@ -1272,6 +1281,11 @@ $$
 ## 34. Vertical-Slash 用最后一小段 Query 做 Probe
 
 论文默认：
+
+![教学解释图：Vertical Slash Probe](../../../figures/explainers/A054/03-vertical-slash-probe.svg)
+
+*教学解释图｜Vertical Slash Probe。*
+
 
 $$
 \text{last\_q}=64.
@@ -1635,6 +1649,11 @@ sparse kernel
 ## 42. 目标
 
 如果某个 head offline 被判为 Block-Sparse：
+
+![教学解释图：Block Sparse Coarse Index](../../../figures/explainers/A054/04-block-sparse-coarse-index.svg)
+
+*教学解释图｜Block Sparse Coarse Index。*
+
 
 > 当前 prompt 下到底哪些 64×64 blocks 值得计算？
 
@@ -2399,6 +2418,11 @@ $$
 ## 61. Block-Sparse FlashAttention
 
 标准 FlashAttention 对 Q block：
+
+![教学解释图：Sparse Kernel Runtime](../../../figures/explainers/A054/03-sparse-kernel-runtime.svg)
+
+*教学解释图｜Sparse Kernel Runtime。*
+
 
 $$
 Q_i

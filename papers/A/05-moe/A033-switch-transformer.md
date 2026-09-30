@@ -42,12 +42,6 @@ Conditional Computation
 Switch 的贡献不能只写成“把 k=2 改成 k=1”。真正问题是：**如果只选一个 expert，模型还能保持质量吗？如果可以，就能删掉大量跨 expert combine 与通信复杂性。**
 
 
-## 总结架构图
-
-![教学总结图：A033-switch-transformer](../../../figures/explainers/A033-switch-transformer-summary.svg)
-
-> **教学总结图**：用 Top-1 routing、expert capacity、load balancing 与 router 数值稳定性概括 Switch Transformer 的极简 MoE 设计。
-
 # 输入、输出与任务
 
 输入 token：
@@ -156,6 +150,11 @@ token → expert A
 
 Top-k expert compute：
 
+![教学解释图：Top-1 vs. Top-2 Dispatch](../../../figures/explainers/A033/01-top1-vs-top2-dispatch.svg)
+
+*教学解释图｜Top-1 vs. Top-2 Dispatch。*
+
+
 $$
 F_{\rm expert}
 \propto k.
@@ -217,6 +216,11 @@ $$
 ## 3. Capacity Factor 完整推导
 
 总 token 数：
+
+![教学解释图：Capacity Overflow](../../../figures/explainers/A033/02-capacity-overflow.svg)
+
+*教学解释图｜Capacity Overflow。*
+
 
 $$
 N.
@@ -322,6 +326,11 @@ $$
 
 定义 batch 中 expert `i` 实际 token fraction：
 
+![教学解释图：Hard Soft Balancing Loss](../../../figures/explainers/A033/03-hard-soft-balancing-loss.svg)
+
+*教学解释图｜Hard Soft Balancing Loss。*
+
+
 $$
 f_i
 =
@@ -407,6 +416,11 @@ $$
 ## 6. 为什么 bfloat16 训练 Router 可能不稳定
 
 Expert FFN 的大矩阵乘适合 BF16。
+
+![教学解释图：Router Numerical Stability](../../../figures/explainers/A033/04-router-numerical-stability.svg)
+
+*教学解释图｜Router Numerical Stability。*
+
 
 但 router 需要：
 

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.data{fill:none;stroke:#178d98;stroke-width:5;marker-end:url(#arrowCyan)}.ctrl{fill:none;stroke:#607d8b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#arrowGray)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:10 8;marker-end:url(#arrowOrange)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowCyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#178d98"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">FlashAttention-3：Hopper 为什么要求把 Attention 映射到多种硬件引擎？</text>
+<text x="70" y="112" class="subtitle">A057 · TMA 负责搬运，WGMMA 占用 Tensor Core，softmax 走 CUDA/SFU；性能来自并发而非单一单元更快</text>
+
+<text x="70" y="178" class="section">一个 CTA 内的真实数据路径</text>
+<rect x="70" y="215" width="1460" height="510" rx="24" class="box"/>
+
+<rect x="105" y="315" width="190" height="170" rx="18" class="gray"/>
+<text x="150" y="365" class="node">HBM / GMEM</text>
+<text x="135" y="405" class="body">Qᵢ, Kⱼ, Vⱼ tiles</text>
+<text x="137" y="447" class="small">高延迟全局存储</text>
+
+<rect x="365" y="275" width="220" height="250" rx="18" class="cyan"/>
+<text x="430" y="325" class="node">TMA</text>
+<text x="395" y="366" class="body">Tensor Memory</text>
+<text x="423" y="398" class="body">Accelerator</text>
+<text x="396" y="444" class="small">异步 tile copy</text>
+<text x="396" y="478" class="small">地址计算/搬运卸载</text>
+<path d="M295 400 H360" class="data"/>
+
+<rect x="655" y="255" width="255" height="290" rx="18" class="cyan"/>
+<text x="700" y="303" class="node">Circular SMEM</text>
+<rect x="690" y="335" width="185" height="48" rx="8" class="blue"/><text x="715" y="367" class="small">stage 0 · ready</text>
+<rect x="690" y="397" width="185" height="48" rx="8" class="green"/><text x="715" y="429" class="small">stage 1 · consumed</text>
+<rect x="690" y="459" width="185" height="48" rx="8" class="gray"/><text x="715" y="491" class="small">stage 2 · free</text>
+<path d="M585 400 H650" class="data"/>
+
+<rect x="985" y="235" width="235" height="170" rx="18" class="blue"/>
+<text x="1035" y="282" class="node">WGMMA</text>
+<text x="1015" y="321" class="body">Tensor Core path</text>
+<text x="1013" y="359" class="math">QKᵀ / PV</text>
+<path d="M910 340 H980" class="flow"/>
+
+<rect x="985" y="455" width="235" height="170" rx="18" class="orange"/>
+<text x="1028" y="502" class="node">CUDA / SFU</text>
+<text x="1016" y="541" class="body">max · exp · sum</text>
+<text x="1012" y="578" class="body">online softmax</text>
+<path d="M1100 405 V450" class="comm"/>
+
+<rect x="1295" y="315" width="195" height="170" rx="18" class="green"/>
+<text x="1333" y="365" class="node">Registers</text>
+<text x="1320" y="404" class="body">S / P / O accum.</text>
+<text x="1322" y="444" class="small">consumer-heavy state</text>
+<path d="M1220 320 H1290" class="good"/><path d="M1220 545 C1260 545 1260 435 1290 435" class="good"/>
+
+<path d="M1392 490 V630 H265 V505" class="ctrl"/>
+<text x="520" y="663" class="small">per-stage barrier / dependency：只在数据真正 ready / consumed 时等待</text>
+
+<text x="70" y="790" class="section">Warp specialization 同时改变“代码职责”和“资源归属”</text>
+<rect x="70" y="825" width="685" height="190" rx="20" class="cyan"/>
+<text x="105" y="870" class="node">Producer warpgroup</text>
+<text x="105" y="910" class="body">TMA load · buffer index · barrier signal</text>
+<text x="105" y="952" class="small">低 register 需求 → setmaxnreg 释放 quota</text>
+
+<rect x="845" y="825" width="685" height="190" rx="20" class="green"/>
+<text x="880" y="870" class="node">Consumer warpgroup</text>
+<text x="880" y="910" class="body">WGMMA · softmax · output accumulator</text>
+<text x="880" y="952" class="small">高 register 需求 → 接收更多 register quota</text>
+<path d="M755 922 H840" class="good"/><text x="762" y="895" class="small">setmaxnreg</text>
+
+<rect x="70" y="1040" width="1460" height="45" rx="12" class="box"/>
+<text x="100" y="1070" class="small">核心认知：FA3 不把 Hopper 当“更快的 A100”；它显式把数据搬运、矩阵乘与标量/SFU 操作映射到不同引擎，并用细粒度依赖让它们重叠。</text>
+</svg>

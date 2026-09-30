@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.grid{stroke:#d9e2e8;stroke-width:1.2}.curve{fill:none;stroke:#246b9b;stroke-width:5}.curve2{fill:none;stroke:#178d98;stroke-width:5}.curve3{fill:none;stroke:#d47a20;stroke-width:5}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style><defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Kaplan Scaling Laws：幂律如何变成训练规划工具？</text><text x="70" y="112" class="subtitle">A009 · 受控训练 run → bottleneck isolation → log-log 拟合 → 资源外推</text>
+<text x="70" y="175" class="section">1  Baseline：只说“模型越大越好”，无法处理耦合资源</text>
+<rect x="70" y="210" width="360" height="180" rx="22" class="red"/>
+<text x="100" y="255" class="node">一次训练 run</text>
+<text x="100" y="300" class="math">(N, D, B, S) → L</text>
+<text x="100" y="342" class="body">改变 N 会同时改变每 token 成本、</text>
+<text x="100" y="374" class="body">可处理 token 数与训练时长。</text>
+
+<path d="M430 300 H520" class="flow"/>
+<rect x="520" y="205" width="420" height="190" rx="22" class="blue"/>
+<text x="550" y="250" class="node">控制主瓶颈</text>
+<text x="550" y="294" class="body">测 L(N)：让数据与训练量足够</text>
+<text x="550" y="330" class="body">测 L(D)：让模型容量足够</text>
+<text x="550" y="366" class="body">测 L(C)：联合优化 N / batch / steps</text>
+
+<path d="M940 300 H1030" class="flow"/>
+<rect x="1030" y="205" width="500" height="190" rx="22" class="green"/>
+<text x="1060" y="250" class="node">经验性能模型</text>
+<text x="1060" y="295" class="math">log L = const − α log X</text>
+<text x="1060" y="335" class="body">log-log 近似直线 ⇒ power law</text>
+<text x="1060" y="370" class="small">它是 fitted empirical law，不是 Transformer 定理</text>
+
+<text x="70" y="455" class="section">2  三个单资源幂律：只有“其他资源不先卡住”时才可比较</text>
+<rect x="70" y="490" width="455" height="340" rx="22" class="box"/>
+<text x="100" y="530" class="node">模型容量受限 · X=N</text>
+<line x1="135" y1="765" x2="455" y2="765" class="axis"/><line x1="135" y1="765" x2="135" y2="590" class="axis"/>
+<path d="M155 620 C245 655 330 690 445 735" class="curve"/>
+<text x="175" y="610" class="small">log L</text><text x="390" y="797" class="small">log N</text>
+<text x="100" y="565" class="math">L(N) ∝ N⁻⁰·⁰⁷⁶</text>
+<text x="100" y="812" class="small">数据 / 训练不足会把曲线提前“顶住”</text>
+
+<rect x="570" y="490" width="455" height="340" rx="22" class="box"/>
+<text x="600" y="530" class="node">数据受限 · X=D</text>
+<line x1="635" y1="765" x2="955" y2="765" class="axis"/><line x1="635" y1="765" x2="635" y2="590" class="axis"/>
+<path d="M655 615 C740 650 835 695 945 738" class="curve2"/>
+<text x="675" y="605" class="small">log L</text><text x="890" y="797" class="small">log D</text>
+<text x="600" y="565" class="math">L(D) ∝ D⁻⁰·⁰⁹⁵</text>
+<text x="600" y="812" class="small">模型太小会先碰到 capacity floor</text>
+
+<rect x="1070" y="490" width="460" height="340" rx="22" class="box"/>
+<text x="1100" y="530" class="node">Compute 受限 · X=Cₘᵢₙ</text>
+<line x1="1135" y1="765" x2="1455" y2="765" class="axis"/><line x1="1135" y1="765" x2="1135" y2="590" class="axis"/>
+<path d="M1155 625 C1240 660 1330 700 1445 738" class="curve3"/>
+<text x="1175" y="615" class="small">log L</text><text x="1360" y="797" class="small">log Cₘᵢₙ</text>
+<text x="1100" y="565" class="math">L(Cₘᵢₙ) ∝ Cₘᵢₙ⁻⁰·⁰⁵⁰</text>
+<text x="1100" y="812" class="small">batch inefficiency 需先归一化</text>
+
+<rect x="70" y="865" width="1460" height="165" rx="22" class="cyan"/>
+<text x="100" y="910" class="node">工程闭环：把“训练配置”映射成可预测坐标</text>
+<text x="100" y="953" class="math">C ≈ 6 N D_processed     ;     (N,D,B,S,C) → L → fit α → extrapolate</text>
+<path d="M100 985 H1380" class="flow"/>
+<text x="1090" y="1018" class="small">预测必须在相同 regime 内持续重新校准</text>
+</svg>

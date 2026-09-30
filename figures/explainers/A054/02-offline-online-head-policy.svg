@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>MInference：Offline Head Policy × Online Dynamic Indices</title><desc>离线决定每个 layer/head 的 pattern family 与预算，在线只估计当前 prompt 的具体稀疏位置。</desc><defs>
+  <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+  <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+  <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+  <style>
+  text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}
+  .title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}
+  .n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}
+  .panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}
+  .cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}
+  .green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}
+  .gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}
+  .comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}
+  .good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}
+  </style>
+</defs><rect width="1600" height="1100" fill="#FFFFFF"/><text x="70" y="72" class="title">MInference：Offline Head Policy × Online Dynamic Indices</text>
+<text x="70" y="112" class="sub">认知问题：如何避免“为了找 sparse mask 先算一遍 Dense Attention”的悖论？</text>
+<rect x="70" y="155" width="700" height="835" rx="24" class="panel"/><text x="105" y="202" class="h">Offline · 一次性 model configuration</text>
+<rect x="110" y="250" width="250" height="105" rx="18" class="gray"/><text x="235" y="291" text-anchor="middle" class="n">Reference Q,K,V</text><text x="235" y="326" text-anchor="middle" class="small">代表性长序列样本</text>
+<path d="M360 302H445" class="flow"/>
+<rect x="455" y="235" width="255" height="135" rx="18" class="blue"/><text x="582" y="279" text-anchor="middle" class="n">Dense reference</text><text x="582" y="315" text-anchor="middle" class="mono">Y_dense = Attn(Q,K,V)</text>
+<text x="108" y="435" class="h">候选 pattern 逐 head 比较</text>
+<rect x="110" y="475" width="175" height="82" rx="14" class="green"/><text x="197" y="526" text-anchor="middle" class="n">A-shape ρ₁</text>
+<rect x="315" y="475" width="195" height="82" rx="14" class="cyan"/><text x="412" y="526" text-anchor="middle" class="n">V–S ρ₂</text>
+<rect x="540" y="475" width="170" height="82" rx="14" class="blue"/><text x="625" y="526" text-anchor="middle" class="n">Block ρ₃</text>
+<path d="M197 557V635" class="flow"/><path d="M412 557V635" class="flow"/><path d="M625 557V635" class="flow"/>
+<rect x="135" y="640" width="550" height="125" rx="18" class="orange"/><text x="410" y="684" text-anchor="middle" class="n">同一真实 kernel compute budget 下比较输出误差</text><text x="410" y="726" text-anchor="middle" class="mono">ρ* = arg min D(Yρ, Y_dense)</text>
+<path d="M410 765V820" class="good"/>
+<rect x="190" y="825" width="440" height="105" rx="18" class="green"/><text x="410" y="865" text-anchor="middle" class="n">保存 per-layer × per-head policy</text><text x="410" y="900" text-anchor="middle" class="small">family + budget；不保存 prompt-specific indices</text>
+
+<rect x="825" y="155" width="710" height="835" rx="24" class="panel"/><text x="860" y="202" class="h">Online · 每个新 Prompt</text>
+<rect x="875" y="250" width="260" height="100" rx="18" class="gray"/><text x="1005" y="290" text-anchor="middle" class="n">当前 Prompt Q,K,V</text><text x="1005" y="324" text-anchor="middle" class="small">indices 尚未知</text>
+<path d="M1135 300H1220" class="flow"/>
+<rect x="1230" y="240" width="250" height="120" rx="18" class="cyan"/><text x="1355" y="283" text-anchor="middle" class="n">读取 head policy</text><text x="1355" y="320" text-anchor="middle" class="small">A / V–S / Block</text>
+<path d="M1355 360V438" class="flow"/>
+<g>
+ <rect x="875" y="455" width="190" height="110" rx="16" class="green"/><text x="970" y="498" text-anchor="middle" class="n">A-shape</text><text x="970" y="535" text-anchor="middle" class="small">静态 mask</text>
+ <rect x="1090" y="455" width="190" height="110" rx="16" class="cyan"/><text x="1185" y="498" text-anchor="middle" class="n">V–S probe</text><text x="1185" y="535" text-anchor="middle" class="small">64×L</text>
+ <rect x="1305" y="455" width="190" height="110" rx="16" class="blue"/><text x="1400" y="498" text-anchor="middle" class="n">Block coarse</text><text x="1400" y="535" text-anchor="middle" class="small">(L/B)²</text>
+</g>
+<path d="M970 565V655" class="flow"/><path d="M1185 565V655" class="flow"/><path d="M1400 565V655" class="flow"/>
+<rect x="930" y="665" width="510" height="112" rx="18" class="orange"/><text x="1185" y="708" text-anchor="middle" class="n">GPU-friendly sparse representation</text><text x="1185" y="744" text-anchor="middle" class="small">columns / slash ranges / block tiles</text>
+<path d="M1185 777V835" class="good"/>
+<rect x="965" y="842" width="440" height="105" rx="18" class="green"/><text x="1185" y="884" text-anchor="middle" class="n">Sparse Attention Kernel</text><text x="1185" y="919" text-anchor="middle" class="small">只计算被选择的 QK tiles</text>
+<path d="M770 580H825" class="comm"/><text x="798" y="552" text-anchor="middle" class="small">policy</text>
+</svg>

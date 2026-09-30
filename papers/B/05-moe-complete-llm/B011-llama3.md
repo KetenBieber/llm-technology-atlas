@@ -69,15 +69,14 @@ data + scale + stability + post-training + inference
 ---
 
 
-## 总结架构图
-
-![教学总结图：B011-llama3](../../../figures/explainers/B011-llama3-summary.svg)
-
-> **教学总结图**：把 tokenizer、数据飞轮、scaling law、4D 并行、长上下文与后训练串成 Llama 3 的完整研发系统。
-
 ## 1. 先定性：Llama 3 不是一篇“新架构论文”
 
 论文在架构章节直接说明：Llama 3 使用标准的 dense Transformer architecture，并没有在模型结构上显著偏离 Llama / Llama 2；性能提升主要来自数据质量、多样性与更大的训练规模。
+
+![教学解释图：Overview](../../../figures/explainers/B011/01-overview.svg)
+
+*教学解释图｜Overview。*
+
 
 这个定位非常重要。
 
@@ -127,6 +126,11 @@ data pipeline
 ## 2. 先看完整系统：真正的数据流不是 token → Transformer → token
 
 原论文 Figure 1 从网络结构上看非常朴素：
+
+![教学解释图：Data Pipeline](../../../figures/explainers/B011/02-data-pipeline.svg)
+
+*教学解释图｜Data Pipeline。*
+
 
 ![Llama 3 原论文 Figure 1：语言模型整体结构](../../../figures/B011/fig1-language-architecture.svg)
 
@@ -554,6 +558,11 @@ data mix 本身就是模型设计。
 
 Llama 3 很值得学习的一部分，是 Meta 真正把 scaling law 当作工程决策工具。这里直接承接 [Kaplan Scaling Laws](../../A/02-text-representation/A009-kaplan-scaling-laws.md) → [Chinchilla](../../A/02-text-representation/A010-chinchilla-compute-optimal.md) 的方法谱系：不机械沿用旧系数，而是重新训练小模型、重新做 IsoFLOP 拟合，再外推到自己的旗舰配置。
 
+![教学解释图：Scaling Law Design](../../../figures/explainers/B011/02-scaling-law-design.svg)
+
+*教学解释图｜Scaling Law Design。*
+
+
 团队训练了大量小规模实验：
 
 - 模型从 40M 到 16B；
@@ -739,6 +748,11 @@ Deployment-optimal 问的是：
 
 Llama 3 405B 的 recipe 分成三个主阶段：
 
+![教学解释图：Training Stack](../../../figures/explainers/B011/03-training-stack.svg)
+
+*教学解释图｜Training Stack。*
+
+
 ~~~{mermaid}
 flowchart LR
     A["Initial / main pre-training<br/>4K → 8K"] --> B["Long-context continued pre-training<br/>8K → 128K"]
@@ -786,6 +800,11 @@ batch 也会随训练阶段变化。
 ## 15. 128K context：不是改一个 RoPE 参数，而是一次能力迁移
 
 Llama 3 主训练阶段主要使用：
+
+![教学解释图：Long Context 128K](../../../figures/explainers/B011/03-long-context-128k.svg)
+
+*教学解释图｜Long Context 128K。*
+
 
 $$
 L=8K.
@@ -1059,6 +1078,11 @@ Llama 3 有一个很具体的 trade-off：forward 后不立即 reshard model par
 ## 20. 三个真实配置，把 4D parallelism 看懂
 
 论文给出的 405B 训练配置很有教学价值。
+
+![教学解释图：4D Parallel Topology](../../../figures/explainers/B011/04-4d-parallel-topology.svg)
+
+*教学解释图｜4D Parallel Topology。*
+
 
 8K context / 8192 GPUs：
 
@@ -1460,6 +1484,11 @@ rollout
 
 每个 prompt 要生成：
 
+![教学解释图：Posttraining RS PagedAttention](../../../figures/explainers/B011/05-posttraining-rs-pagedattention.svg)
+
+*教学解释图｜Posttraining RS PagedAttention。*
+
+
 $$
 K=10\sim30
 $$
@@ -1551,6 +1580,11 @@ $$
 ## 30. 六轮迭代：Post-training 不是一次 SFT + 一次 DPO
 
 论文共进行六轮迭代式后训练。
+
+![教学解释图：Data Flywheel](../../../figures/explainers/B011/01-data-flywheel.svg)
+
+*教学解释图｜Data Flywheel。*
+
 
 ~~~{mermaid}
 flowchart LR
@@ -1676,6 +1710,11 @@ generate reasoning rollouts
 ## 33. 长上下文后训练：预训练学会 128K，不代表 SFT 后还保得住
 
 论文有一个很重要的观察。
+
+![教学解释图：Distributed Long Context](../../../figures/explainers/B011/04-distributed-long-context.svg)
+
+*教学解释图｜Distributed Long Context。*
+
 
 模型已经在 pre-training 阶段扩展到 128K。
 
@@ -1864,6 +1903,11 @@ $$
 ## 38. FP8 inference：为什么不是所有矩阵直接 cast 成 FP8？
 
 Llama 3 405B 在 H100 上探索 FP8 inference。
+
+![教学解释图：405B Inference FP8](../../../figures/explainers/B011/06-405b-inference-fp8.svg)
+
+*教学解释图｜405B Inference FP8。*
+
 
 它并没有粗暴地把全模型都量化。
 

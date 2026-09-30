@@ -145,12 +145,6 @@ Bottleneck → ResNet-50/101/152
 BatchNorm、ReLU、SGD 都是本文 **ADOPTS** 的技术，不是本文提出。
 
 
-## 总结架构图
-
-![教学总结图：A005-resnet](../../../figures/explainers/A005-resnet-summary.svg)
-
-> **教学总结图**：Residual block 通过 identity shortcut 将主路目标从完整映射改写为残差映射。
-
 # 输入、输出与任务
 
 ## 1. ImageNet 输入输出
@@ -225,6 +219,11 @@ $$
 ## 3. 维度变化时为什么需要特殊 shortcut？
 
 假设 stage 切换：
+
+![教学解释图：Shape Projection Bottleneck](../../../figures/explainers/A005/03-shape-projection-bottleneck.svg)
+
+*教学解释图｜Shape Projection Bottleneck。*
+
 
 $$
 x:
@@ -358,6 +357,11 @@ $1\times1$ 并不是“提取空间局部特征”的主力，它主要在这里
 ## 1. Figure 1：degradation problem 的第一张证据图
 
 ![原论文 Figure 1：CIFAR-10 plain networks 中更深网络训练误差更高](../../../figures/A005/fig1-cifar-degradation.svg)
+
+![教学解释图：Degradation Identity Argument](../../../figures/explainers/A005/01-degradation-identity-argument.svg)
+
+*教学解释图｜Degradation Identity Argument。*
+
 
 *原论文 Figure 1，源文件 `eps/cifar.pdf`。左侧 training error，右侧 test error；比较 20-layer 与 56-layer plain networks。*
 
@@ -654,6 +658,11 @@ $$
 ## 3. 梯度为什么多了一条 identity 路径？
 
 先忽略最终 ReLU：
+
+![教学解释图：Residual Gradient Highway](../../../figures/explainers/A005/02-residual-gradient-highway.svg)
+
+*教学解释图｜Residual Gradient Highway。*
+
 
 $$
 z

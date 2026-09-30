@@ -83,12 +83,6 @@ $$
 ---
 
 
-## 总结架构图
-
-![教学总结图：A056-flashattention2](../../../figures/explainers/A056-flashattention2-summary.svg)
-
-> **教学总结图**：从 non-matmul FLOPs、sequence-level block parallelism 与 split-Q 三个方向总结 FlashAttention-2 的 work partition 优化。
-
 # 一、从 FA1 的“成功”开始：为什么 30–50% Peak 仍然不够？
 
 ## 1. FA1 已经完成了最关键的算法重构
@@ -148,9 +142,6 @@ $$
 
 ## 2. 教学总图：瓶颈已经迁移
 
-![教学解释图：FA1 到 FA2 的瓶颈迁移](../../../figures/explainers/A056-fa1-to-fa2.svg)
-
-*教学解释图。FA1 主要解决 HBM↔SRAM IO；FA2 则继续处理 non-matmul overhead、thread-block occupancy 和 warp communication。两者优化的是不同层。*
 
 这张图建立一个很重要的系统观：
 
@@ -711,6 +702,11 @@ $$
 
 对于 query $i$：
 
+![教学解释图：Sequence Row Block Parallelism](../../../figures/explainers/A056/01-sequence-row-block-parallelism.svg)
+
+*教学解释图｜Sequence Row Block Parallelism。*
+
+
 $$
 O_i
 =
@@ -818,6 +814,11 @@ $$
 # 九、原论文 Forward/Backward Parallelism 图
 
 ![FlashAttention-2 原论文 sequence parallelism](../../../figures/A056/fig1-sequence-parallelism.png)
+
+![教学解释图：Forward Backward Ownership](../../../figures/explainers/A056/02-forward-backward-ownership.svg)
+
+*教学解释图｜Forward Backward Ownership。*
+
 
 *原论文 Figure。Forward 左图按 attention matrix 的 row blocks 分 worker；Backward 右图按 column blocks 分 worker。关键不是颜色，而是 FA2 把 sequence dimension 本身变成 GPU thread-block parallelism 的来源。*
 
@@ -963,6 +964,11 @@ FA2 实验说明：
 
 例如：
 
+![教学解释图：Warp Partition](../../../figures/explainers/A056/03-warp-partition.svg)
+
+*教学解释图｜Warp Partition。*
+
+
 $$
 4
 $$
@@ -1068,6 +1074,11 @@ FA1 已经努力减少 HBM IO，但这里：
 
 不要把 key columns 分给不同 warps。
 
+![教学解释图：Split Q](../../../figures/explainers/A056/02-split-q.svg)
+
+*教学解释图｜Split Q。*
+
+
 改成：
 
 > 把 query rows 分给不同 warps。
@@ -1134,6 +1145,11 @@ $$
 ## FA1：Split-K
 
 ![FlashAttention-1 warp partition](../../../figures/A056/fig2-fa1-split-k.png)
+
+![教学解释图：Split-K vs. Split-Q Warps](../../../figures/explainers/A056/03-splitk-vs-splitq-warps.svg)
+
+*教学解释图｜Split-K vs. Split-Q Warps。*
+
 
 *原论文示意。多个 warps 分 K/V 方向，同一 query output 被拆成多个 partial results，所以必须跨 warp reduction。*
 
@@ -1940,6 +1956,11 @@ $$
 ## 52. FA1
 
 目标：
+
+![教学解释图：FA1 vs. FA2](../../../figures/explainers/A056/01-fa1-vs-fa2.svg)
+
+*教学解释图｜FA1 vs. FA2。*
+
 
 $$
 \text{HBM traffic}.

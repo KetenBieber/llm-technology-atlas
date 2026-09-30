@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <marker id="o" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d97706"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .token{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}.expert{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}.active{fill:#edf9f0;stroke:#2e8b57;stroke-width:3}
+  .flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#b)}.comm{stroke:#d97706;stroke-width:4;fill:none;marker-end:url(#o)}.formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Switch Top-1：减少 Expert FLOPs、Dispatch 与 Combine</text>
+<text x="800" y="101" text-anchor="middle" class="sub">它不是单纯把 k 改成 1，而是用“一个 token 只拥有一个 expert destination”换取更简单的稀疏系统执行</text>
+
+<rect x="55" y="150" width="720" height="735" rx="22" class="panel"/>
+<text x="415" y="195" text-anchor="middle" class="h">Top-2 MoE</text>
+<rect x="105" y="255" width="150" height="86" rx="14" class="token"/><text x="180" y="307" text-anchor="middle" class="b">token x</text>
+<rect x="330" y="235" width="190" height="125" rx="15" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+<text x="425" y="278" text-anchor="middle" class="h">Router</text><text x="425" y="318" text-anchor="middle" class="b">Top-2</text>
+<path d="M255 298 H320" class="flow"/>
+<rect x="600" y="210" width="130" height="90" rx="14" class="active"/><text x="665" y="264" text-anchor="middle" class="b">Expert A</text>
+<rect x="600" y="350" width="130" height="90" rx="14" class="active"/><text x="665" y="404" text-anchor="middle" class="b">Expert B</text>
+<path d="M520 285 C560 260 575 255 592 255" class="comm"/>
+<path d="M520 310 C560 350 575 390 592 395" class="comm"/>
+<rect x="330" y="525" width="270" height="105" rx="15" class="formula"/>
+<text x="465" y="567" text-anchor="middle" class="b">y = g_A E_A(x)</text><text x="465" y="602" text-anchor="middle" class="b">+ g_B E_B(x)</text>
+<path d="M665 300 C650 470 560 500 510 520" class="flow"/><path d="M665 440 C650 485 590 510 545 525" class="flow"/>
+<text x="415" y="715" text-anchor="middle" class="b">dispatch volume ∝ 2Nd</text>
+<text x="415" y="754" text-anchor="middle" class="b">expert active FLOPs ∝ 2</text>
+<text x="415" y="793" text-anchor="middle" class="s">需要两个 expert outputs 再 weighted combine</text>
+
+<rect x="825" y="150" width="720" height="735" rx="22" class="panel"/>
+<text x="1185" y="195" text-anchor="middle" class="h">Switch Top-1</text>
+<rect x="875" y="255" width="150" height="86" rx="14" class="token"/><text x="950" y="307" text-anchor="middle" class="b">token x</text>
+<rect x="1100" y="235" width="190" height="125" rx="15" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+<text x="1195" y="278" text-anchor="middle" class="h">Router</text><text x="1195" y="318" text-anchor="middle" class="b">argmax</text>
+<path d="M1025 298 H1090" class="flow"/>
+<rect x="1370" y="280" width="130" height="100" rx="14" class="active"/><text x="1435" y="338" text-anchor="middle" class="b">Expert A</text>
+<path d="M1290 298 C1325 305 1340 325 1362 330" class="comm"/>
+<rect x="1090" y="525" width="300" height="105" rx="15" class="formula"/>
+<text x="1240" y="568" text-anchor="middle" class="b">e* = argmax_i p_i</text><text x="1240" y="604" text-anchor="middle" class="b">y = p_e*(x) E_e*(x)</text>
+<path d="M1435 380 C1410 470 1350 500 1315 520" class="flow"/>
+<text x="1185" y="715" text-anchor="middle" class="b">dispatch volume ∝ Nd</text>
+<text x="1185" y="754" text-anchor="middle" class="b">expert active FLOPs ∝ 1</text>
+<text x="1185" y="793" text-anchor="middle" class="s">不再需要多 expert 输出 combine</text>
+
+<rect x="130" y="935" width="1340" height="110" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="974" text-anchor="middle" class="b">从 Top-2 到 Top-1：V_dispatch,Top1 / V_dispatch,Top2 = 1/2；同时总 expert 参数 E·P_e 仍可继续扩展。</text>
+<text x="800" y="1014" text-anchor="middle" class="s">系统收益最直接发生在 expert-parallel dispatch 与 active FFN；它并不意味着总模型参数减半，也不保证所有硬件场景 wall-clock 恰好减半。</text>
+</svg>

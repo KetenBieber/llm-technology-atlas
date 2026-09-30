@@ -96,17 +96,16 @@ $$
 ---
 
 
-## 总结架构图
-
-![教学总结图：A055-flashattention](../../../figures/explainers/A055-flashattention-summary.svg)
-
-> **教学总结图**：将 HBM/SRAM tiling、online softmax、输出累积与 backward recomputation 组织成 FlashAttention 的 IO-aware 总体架构。
-
 # 一、先把一个常见误区拆掉：GPU 快，不代表“算术”是最贵的
 
 ## 1. 现代 GPU 至少有两类我们必须区分的资源
 
 为了理解 FlashAttention，先暂时不谈 Transformer。
+
+![教学解释图：Memory Hierarchy](../../../figures/explainers/A055/01-memory-hierarchy.svg)
+
+*教学解释图｜Memory Hierarchy。*
+
 
 只看一个 GPU。
 
@@ -413,14 +412,6 @@ $$
 
 ---
 
-## 8. 教学图：FlashAttention 究竟消掉什么？
-
-![教学解释图：Standard Attention 与 FlashAttention 的 HBM 路径](../../../figures/explainers/A055-hbm-vs-tiling.svg)
-
-*教学解释图。Standard Attention 会把完整 $S$ 与 $P$ materialize 到 HBM；FlashAttention 则让 score/probability tile 只在 SRAM 中短暂存在。它改变的是数据流，不是 Attention 数学定义。*
-
----
-
 # 三、为什么“把三个 Kernel Fuse 起来”还不是完整答案？
 
 ## 9. 最直觉方案
@@ -486,6 +477,11 @@ $$
 ## 11. 从稳定 Softmax 开始
 
 给：
+
+![教学解释图：Online Softmax](../../../figures/explainers/A055/03-online-softmax.svg)
+
+*教学解释图｜Online Softmax。*
+
 
 $$
 x=(x_1,\dots,x_n).
@@ -800,7 +796,10 @@ $$
 
 ## 18. 教学图：Online Softmax State
 
-![教学解释图：Online Softmax 怎样合并 block](../../../figures/explainers/A055-online-softmax.svg)
+![教学解释图：Online Softmax State Merge](../../../figures/explainers/A055/02-online-softmax-state-merge.svg)
+
+*教学解释图｜Online Softmax State Merge。*
+
 
 *教学解释图。真正必须跨 block 保存的不是完整 logits，而是 running max $m$、running denominator $\ell$ 与当前 normalized output $O$。新 block 加入时统一重标定旧状态，最终结果与全局 softmax 一致。*
 
@@ -875,6 +874,16 @@ MInference 可以把自己选中的 sparse tiles 用 FlashAttention-style online
 $$
 Q\rightarrow Q_1,\dots,Q_{T_r}.
 $$
+
+![教学解释图：HBM SRAM Tiled Dataflow](../../../figures/explainers/A055/01-hbm-sram-tiled-dataflow.svg)
+
+*教学解释图｜HBM SRAM Tiled Dataflow。*
+
+
+![教学解释图：Tiling Dataflow](../../../figures/explainers/A055/02-tiling-dataflow.svg)
+
+*教学解释图｜Tiling Dataflow。*
+
 
 每块：
 
@@ -1275,6 +1284,11 @@ $$
 
 不保存：
 
+![教学解释图：Backward Recompute](../../../figures/explainers/A055/04-backward-recompute.svg)
+
+*教学解释图｜Backward Recompute。*
+
+
 $$
 S,P.
 $$
@@ -1336,6 +1350,11 @@ P 变成：
 → FLOPs↑
 → speed↓
 ~~~
+
+![教学解释图：Backward Recompute Tradeoff](../../../figures/explainers/A055/03-backward-recompute-tradeoff.svg)
+
+*教学解释图｜Backward Recompute Tradeoff。*
+
 
 FlashAttention 则是：
 

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2e8b57"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:28px;font-weight:700}.b{font-size:22px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .bad{fill:#fff1f0;stroke:#c43d3d;stroke-width:2}.content{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}.pos{fill:#fff7ed;stroke:#d97706;stroke-width:2}
+  .cache{fill:#edf9f0;stroke:#2e8b57;stroke-width:3}.flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#b)}.good{stroke:#2e8b57;stroke-width:3;fill:none;marker-end:url(#g)}
+  .formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Decoupled RoPE：隔离 Position Path，保住 Weight Absorption</text>
+<text x="800" y="101" text-anchor="middle" class="sub">Content 子空间保留可吸收的固定线性链；Position 子空间只保留很小的 shared RoPE key</text>
+
+<rect x="55" y="150" width="600" height="735" rx="22" class="panel"/>
+<text x="355" y="195" text-anchor="middle" class="h">直接把 RoPE 插到 content key：固定吸收失效</text>
+<rect x="105" y="280" width="180" height="90" rx="14" class="bad"/><text x="195" y="333" text-anchor="middle" class="b">q_t^rope = R_t W^Q h_t</text>
+<rect x="425" y="280" width="180" height="90" rx="14" class="bad"/><text x="515" y="333" text-anchor="middle" class="b">k_j^rope = R_j W^UK c_j</text>
+<rect x="115" y="445" width="480" height="155" rx="16" class="formula"/>
+<text x="355" y="493" text-anchor="middle" class="b">score = h_tᵀ (W^Q)ᵀ R_tᵀ R_j W^UK c_j</text>
+<text x="355" y="542" text-anchor="middle" class="h">R_tᵀ R_j depends on (t,j)</text>
+<text x="355" y="580" text-anchor="middle" class="s">不能预先折叠成与位置无关的固定权重</text>
+<text x="355" y="700" text-anchor="middle" class="b" fill="#c43d3d">问题不是“RoPE 不能算”</text>
+<text x="355" y="740" text-anchor="middle" class="s">而是它切断了前一张图最关键的 inference-time absorption。</text>
+
+<rect x="690" y="150" width="855" height="735" rx="22" class="panel"/>
+<text x="1117" y="195" text-anchor="middle" class="h">Decoupled RoPE：两条 score 子空间相加</text>
+
+<text x="760" y="255" class="b">current query t</text>
+<rect x="745" y="285" width="180" height="90" rx="14" class="content"/><text x="835" y="338" text-anchor="middle" class="b">c_t^Q [1536]</text>
+<path d="M925 330 H995" class="flow"/>
+<rect x="1010" y="265" width="195" height="130" rx="16" class="content"/>
+<text x="1107" y="306" text-anchor="middle" class="b">q_t^C</text><text x="1107" y="344" text-anchor="middle" class="s">no RoPE</text><text x="1107" y="377" text-anchor="middle" class="s">absorbable</text>
+<path d="M835 375 C835 430 910 455 995 455" class="flow"/>
+<rect x="1010" y="415" width="195" height="115" rx="16" class="pos"/>
+<text x="1107" y="457" text-anchor="middle" class="b">q_t^R</text><text x="1107" y="495" text-anchor="middle" class="s">RoPE(position t)</text>
+
+<text x="1310" y="255" class="b">history token j</text>
+<rect x="1280" y="285" width="195" height="90" rx="14" class="cache"/><text x="1377" y="325" text-anchor="middle" class="b">c_j^KV [512]</text><text x="1377" y="357" text-anchor="middle" class="s">cached</text>
+<rect x="1280" y="430" width="195" height="90" rx="14" class="cache"/><text x="1377" y="470" text-anchor="middle" class="b">k_j^R [64]</text><text x="1377" y="502" text-anchor="middle" class="s">shared + cached</text>
+
+<path d="M1205 330 H1270" class="good"/><path d="M1205 475 H1270" class="good"/>
+<rect x="825" y="610" width="615" height="150" rx="16" class="formula"/>
+<text x="1132" y="655" text-anchor="middle" class="b">q_iᵀ k_i = (q_i^C)ᵀ k_i^C + (q_i^R)ᵀ k^R</text>
+<text x="1132" y="700" text-anchor="middle" class="h">content score + positional score</text>
+<text x="1132" y="742" text-anchor="middle" class="s">最终 cache/token/layer = d_c + d_h^R = 512 + 64 = 576</text>
+
+<rect x="130" y="935" width="1340" height="105" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="974" text-anchor="middle" class="b">设计本质：不是“给 MLA 再加一个位置编码 trick”，而是为了保住 latent decode 的 absorption，把 position 依赖隔离到一条很小的共享路径。</text>
+<text x="800" y="1014" text-anchor="middle" class="s">这也解释为什么 V2 的长上下文扩展（YaRN）只需要作用于 positional path，而 content latent 本身不承担 RoPE。</text>
+</svg>

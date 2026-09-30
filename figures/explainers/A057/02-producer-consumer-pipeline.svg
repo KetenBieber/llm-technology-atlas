@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.data{fill:none;stroke:#178d98;stroke-width:5;marker-end:url(#arrowCyan)}.ctrl{fill:none;stroke:#d47a20;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowCyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#178d98"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">Warp Specialization：Producer 与 Consumer 怎样用 Circular SMEM 隐藏加载延迟？</text>
+<text x="70" y="112" class="subtitle">A057 · “异步”不是取消依赖，而是把 ready / consumed 变成每个 buffer stage 的细粒度状态机</text>
+
+<text x="70" y="176" class="section">三阶段 Circular Buffer：同一时刻装载下一块、计算当前块、回收上一块</text>
+<rect x="70" y="210" width="1460" height="440" rx="24" class="box"/>
+
+<rect x="105" y="280" width="235" height="270" rx="18" class="cyan"/>
+<text x="150" y="326" class="node">Producer</text>
+<text x="137" y="365" class="body">TMA(Kⱼ₊₁,Vⱼ₊₁)</text>
+<text x="137" y="404" class="body">选择 free stage</text>
+<text x="137" y="443" class="body">写 ready barrier</text>
+<text x="137" y="496" class="small">不持有大 accumulator</text>
+
+<g>
+<rect x="475" y="255" width="300" height="100" rx="15" class="blue"/><text x="510" y="296" class="node">stage 0 · READY</text><text x="510" y="332" class="small">tile j：consumer 可读</text>
+<rect x="475" y="390" width="300" height="100" rx="15" class="green"/><text x="510" y="431" class="node">stage 1 · CONSUMED</text><text x="510" y="467" class="small">tile j−1：可覆盖</text>
+<rect x="475" y="525" width="300" height="100" rx="15" class="gray"/><text x="510" y="566" class="node">stage 2 · FREE</text><text x="510" y="602" class="small">tile j+1：producer 目标</text>
+</g>
+<path d="M340 410 C395 410 395 575 470 575" class="data"/>
+<path d="M775 305 H885" class="flow"/>
+
+<rect x="885" y="280" width="260" height="270" rx="18" class="green"/>
+<text x="945" y="326" class="node">Consumer</text>
+<text x="920" y="365" class="body">wait READY(stage)</text>
+<text x="920" y="404" class="body">WGMMA + softmax</text>
+<text x="920" y="443" class="body">mark CONSUMED</text>
+<text x="920" y="496" class="small">持有 score/output accum.</text>
+<path d="M1015 550 C1015 610 620 680 620 495" class="ctrl"/>
+
+<rect x="1260" y="280" width="230" height="270" rx="18" class="orange"/>
+<text x="1303" y="326" class="node">Barrier state</text>
+<text x="1295" y="370" class="body">free → loading</text>
+<text x="1295" y="409" class="body">loading → ready</text>
+<text x="1295" y="448" class="body">ready → consumed</text>
+<text x="1295" y="487" class="body">consumed → free</text>
+<path d="M1145 415 H1255" class="ctrl"/>
+
+<text x="70" y="725" class="section">Timeline：load latency 没消失，只是藏到 consumer compute 后面</text>
+<rect x="70" y="760" width="1460" height="240" rx="22" class="box"/>
+<text x="100" y="817" class="node">Producer / TMA</text>
+<text x="100" y="915" class="node">Consumer / WGMMA+softmax</text>
+<line x1="320" y1="795" x2="1480" y2="795" stroke="#b9c9d3" stroke-width="2"/>
+<line x1="320" y1="895" x2="1480" y2="895" stroke="#b9c9d3" stroke-width="2"/>
+<g>
+<rect x="350" y="825" width="230" height="48" class="cyan"/><text x="420" y="857" class="small">load tile 1</text>
+<rect x="600" y="825" width="230" height="48" class="cyan"/><text x="670" y="857" class="small">load tile 2</text>
+<rect x="850" y="825" width="230" height="48" class="cyan"/><text x="920" y="857" class="small">load tile 3</text>
+<rect x="1100" y="825" width="230" height="48" class="cyan"/><text x="1170" y="857" class="small">load tile 4</text>
+<rect x="475" y="925" width="300" height="48" class="green"/><text x="556" y="957" class="small">compute tile 1</text>
+<rect x="725" y="925" width="300" height="48" class="green"/><text x="806" y="957" class="small">compute tile 2</text>
+<rect x="975" y="925" width="300" height="48" class="green"/><text x="1056" y="957" class="small">compute tile 3</text>
+</g>
+<text x="100" y="1045" class="math">理想 steady state：Ttile ≈ max(Tload, Tcompute)，而不是 Tload + Tcompute</text>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.grid{stroke:#c9d6de;stroke-width:1.3}.mask{fill:#c64a4a;opacity:.18}.ok{fill:#2b6f9f;opacity:.18}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">Transformer 原始 Encoder–Decoder：信息到底怎样流？</text><text x="70" y="112" class="subtitle">A013 · 2017 原始 Post-LN 架构；源序列先形成 Memory，目标序列再通过 Cross-Attention 读取</text>
+<text x="70" y="175" class="section">Encoder：源 token → self-attention</text>
+<rect x="70" y="215" width="650" height="720" rx="24" class="blue"/>
+<rect x="105" y="260" width="575" height="85" rx="16" class="gray"/><text x="135" y="312" class="node">源 Embedding + sinusoidal PE  [B,S,512]</text>
+<path d="M392 345 V405" class="flow"/>
+<rect x="125" y="405" width="535" height="110" rx="18" class="cyan"/>
+<text x="155" y="448" class="node">Self-MHA</text><text x="155" y="488" class="small">Q,K,V 都来自源序列；所有 S 个位置互见</text>
+<path d="M392 515 V565" class="flow"/>
+<rect x="125" y="565" width="535" height="95" rx="18" class="box"/>
+<text x="155" y="605" class="node">Add &amp; LayerNorm</text><text x="155" y="642" class="small">原论文：Post-LN = LN(x + Sublayer(x))</text>
+<path d="M392 660 V710" class="flow"/>
+<rect x="125" y="710" width="535" height="95" rx="18" class="green"/>
+<text x="155" y="750" class="node">Position-wise FFN</text><text x="155" y="787" class="small">512 → 2048 → 512；每个 token 独立</text>
+<path d="M392 805 V850" class="flow"/>
+<rect x="175" y="850" width="435" height="62" rx="14" class="box"/><text x="205" y="891" class="node">Add &amp; LayerNorm × 6 layers</text>
+
+<text x="845" y="175" class="section">Decoder：causal self-attn + Cross-Attn</text>
+<rect x="810" y="215" width="720" height="720" rx="24" class="green"/>
+<rect x="845" y="260" width="650" height="85" rx="16" class="gray"/><text x="875" y="312" class="node">右移目标 Embedding + PE  [B,T,512]</text>
+<path d="M1170 345 V395" class="flow"/>
+<rect x="865" y="395" width="610" height="92" rx="18" class="cyan"/>
+<text x="895" y="435" class="node">Masked Self-MHA  [B,8,T,T]</text><text x="895" y="470" class="small">只能读取 y≤t；未来位置被 causal mask</text>
+<path d="M1170 487 V535" class="flow"/>
+<rect x="865" y="535" width="610" height="105" rx="18" class="orange"/>
+<text x="895" y="578" class="node">Cross-MHA  [B,8,T,S]</text>
+<text x="895" y="617" class="small">Q 来自 Decoder；K/V 来自 Encoder Memory</text>
+<path d="M720 765 C770 765 790 590 865 590" class="comm"/>
+<text x="710" y="735" class="small">Memory [B,S,512]</text>
+<path d="M1170 640 V690" class="flow"/>
+<rect x="865" y="690" width="610" height="88" rx="18" class="blue"/><text x="895" y="744" class="node">FFN + Post-LN residual × 6 layers</text>
+<path d="M1170 778 V830" class="flow"/>
+<rect x="930" y="830" width="480" height="75" rx="16" class="green"/><text x="960" y="878" class="node">Linear + Softmax → [B,T,Vₜ]</text>
+
+<rect x="70" y="970" width="1460" height="70" rx="16" class="box"/>
+<text x="100" y="1015" class="body">关键依赖：Encoder Memory 被每一层 Decoder 的 Cross-Attention 读取；如果删除 Cross-Attention，翻译会退化成不看源句的目标语言模型。</text>
+</svg>

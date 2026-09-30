@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200">
+<defs>
+  <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1d4ed8"/></marker>
+  <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16a34a"/></marker>
+  <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#ea580c"/></marker>
+  <style>
+    text{font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;fill:#0f172a}
+    .title{font-size:48px;font-weight:700}.sub{font-size:22px;fill:#475569}.sec{font-size:28px;font-weight:700}
+    .lab{font-size:23px;font-weight:700}.body{font-size:20px;fill:#334155}.small{font-size:20px;fill:#475569}.num{font-size:26px;font-weight:700}
+    .box{rx:18;ry:18;stroke-width:2.2}.flow{stroke:#1d4ed8;stroke-width:4;fill:none;marker-end:url(#b)}
+    .good{stroke:#16a34a;stroke-width:4;fill:none;marker-end:url(#g)}.cost{stroke:#ea580c;stroke-width:3.5;fill:none;marker-end:url(#o)}
+    .dash{stroke:#ea580c;stroke-width:3;stroke-dasharray:10 8;fill:none;marker-end:url(#o)}
+  </style>
+</defs>
+<rect width="1800" height="1200" fill="#fff"/>
+<text x="80" y="78" class="title">Llama 3 数据工程：15.6T token 之前发生了什么？</text>
+<text x="80" y="116" class="sub">核心问题：raw web frequency 不是训练分布；去重、教师模型过滤、领域混合与 tokenizer 一起决定 p_train(x)。</text>
+
+<!-- sources -->
+<text x="80" y="170" class="sec" fill="#475569">原始来源</text>
+<ellipse cx="185" cy="245" rx="105" ry="54" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.2"/><text x="185" y="253" text-anchor="middle" class="lab">Web</text>
+<ellipse cx="185" cy="355" rx="105" ry="54" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.2"/><text x="185" y="363" text-anchor="middle" class="lab">Code</text>
+<ellipse cx="185" cy="465" rx="105" ry="54" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.2"/><text x="185" y="473" text-anchor="middle" class="lab">Math / STEM</text>
+<ellipse cx="185" cy="575" rx="105" ry="54" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.2"/><text x="185" y="583" text-anchor="middle" class="lab">Multilingual</text>
+<path d="M290 245H355M290 355H355M290 465H355M290 575H355" class="flow"/>
+
+<!-- cleaning pipeline -->
+<text x="390" y="170" class="sec" fill="#1d4ed8">结构化清洗管线</text>
+<rect x="370" y="210" width="245" height="85" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="492" y="244" text-anchor="middle" class="lab">PII / safety filter</text><text x="492" y="273" text-anchor="middle" class="body">先移除高风险域</text>
+<rect x="370" y="325" width="245" height="85" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="492" y="359" text-anchor="middle" class="lab">HTML extraction</text><text x="492" y="388" text-anchor="middle" class="body">保留正文 signal</text>
+<rect x="370" y="440" width="245" height="85" class="box" fill="#ecfeff" stroke="#0891b2"/><text x="492" y="474" text-anchor="middle" class="lab">URL dedup</text><text x="492" y="503" text-anchor="middle" class="body">同一网页重复抓取</text>
+<rect x="370" y="555" width="245" height="85" class="box" fill="#ecfeff" stroke="#0891b2"/><text x="492" y="589" text-anchor="middle" class="lab">MinHash doc dedup</text><text x="492" y="618" text-anchor="middle" class="body">near-duplicate documents</text>
+<rect x="370" y="670" width="245" height="85" class="box" fill="#ecfeff" stroke="#0891b2"/><text x="492" y="704" text-anchor="middle" class="lab">Line-level dedup</text><text x="492" y="733" text-anchor="middle" class="body">boilerplate / 模板 / 日志</text>
+<path d="M492 295V315M492 410V430M492 525V545M492 640V660" class="flow"/>
+
+<!-- teacher distillation loop -->
+<text x="700" y="170" class="sec" fill="#ea580c">强模型进入下一代数据基础设施</text>
+<rect x="700" y="220" width="220" height="95" class="box" fill="#fff7ed" stroke="#ea580c"/><text x="810" y="257" text-anchor="middle" class="lab">Llama 2 teacher</text><text x="810" y="288" text-anchor="middle" class="body">给清洗样本做质量标注</text>
+<rect x="995" y="220" width="250" height="95" class="box" fill="#fff7ed" stroke="#ea580c"/><text x="1120" y="257" text-anchor="middle" class="lab">DistilRoBERTa</text><text x="1120" y="288" text-anchor="middle" class="body">蒸馏成廉价 quality classifier</text>
+<rect x="995" y="365" width="250" height="95" class="box" fill="#ecfdf5" stroke="#16a34a"/><text x="1120" y="402" text-anchor="middle" class="lab">Massive-scale scan</text><text x="1120" y="433" text-anchor="middle" class="body">网页 + code/reasoning classifiers</text>
+<path d="M920 268H985" class="cost"/><path d="M1120 315V355" class="good"/>
+<path d="M615 712H655V268H690" class="dash"/>
+
+<!-- heuristic and quality -->
+<rect x="700" y="520" width="250" height="100" class="box" fill="#eff6ff" stroke="#1d4ed8"/><text x="825" y="557" text-anchor="middle" class="lab">Heuristic filters</text><text x="825" y="589" text-anchor="middle" class="body">规则剔除明显低质样本</text>
+<rect x="995" y="520" width="250" height="100" class="box" fill="#ecfdf5" stroke="#16a34a"/><text x="1120" y="557" text-anchor="middle" class="lab">Model-based quality</text><text x="1120" y="589" text-anchor="middle" class="body">teacher 能力规模化复用</text>
+<path d="M615 712H665V570H690" class="flow"/><path d="M950 570H985" class="good"/><path d="M1120 460V510" class="good"/>
+
+<!-- mix -->
+<text x="1310" y="170" class="sec" fill="#16a34a">训练分布重写</text>
+<rect x="1310" y="220" width="410" height="380" class="box" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="1340" y="260" class="lab">Final data mix（论文报告）</text>
+<rect x="1340" y="300" width="300" height="54" rx="12" fill="#eff6ff"/><rect x="1340" y="300" width="150" height="54" rx="12" fill="#bfdbfe"/>
+<text x="1660" y="335" class="num" text-anchor="end">50%</text><text x="1360" y="335" class="body">General knowledge</text>
+<rect x="1340" y="375" width="300" height="54" rx="12" fill="#ecfeff"/><rect x="1340" y="375" width="75" height="54" rx="12" fill="#a5f3fc"/>
+<text x="1660" y="410" class="num" text-anchor="end">25%</text><text x="1360" y="410" class="body">Math / reasoning</text>
+<rect x="1340" y="450" width="300" height="54" rx="12" fill="#ecfdf5"/><rect x="1340" y="450" width="51" height="54" rx="12" fill="#bbf7d0"/>
+<text x="1660" y="485" class="num" text-anchor="end">17%</text><text x="1360" y="485" class="body">Code</text>
+<rect x="1340" y="525" width="300" height="54" rx="12" fill="#f8fafc"/><rect x="1340" y="525" width="24" height="54" rx="12" fill="#cbd5e1"/>
+<text x="1660" y="560" class="num" text-anchor="end">8%</text><text x="1360" y="560" class="body">Multilingual</text>
+<path d="M1245 570H1298" class="good"/>
+
+<!-- tokenizer -->
+<rect x="700" y="690" width="545" height="185" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="730" y="733" class="lab">128K tokenizer = 计算预算分配器</text>
+<text x="730" y="775" class="body">英语样本压缩率：3.17 → 3.94 chars/token</text>
+<text x="730" y="815" class="body">同字符量 token 比例 ≈ 3.17 / 3.94 = 0.805</text>
+<text x="730" y="852" class="body">→ 语义文本被离散成更少模型步数（不等同 FLOPs 直接降 19.5%）</text>
+<path d="M1120 620V675" class="flow"/>
+
+<rect x="1310" y="680" width="410" height="195" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="1340" y="723" class="lab">输出：不是“互联网”，而是 p_train(x)</text>
+<text x="1340" y="768" class="body">cleaning × quality × domain mix × tokenizer</text>
+<text x="1340" y="810" class="body">共同定义 next-token objective 实际看见什么。</text>
+<text x="1340" y="850" class="lab" fill="#166534">≈15.6T training tokens</text>
+<path d="M1245 782H1298" class="good"/>
+
+<!-- principle -->
+<rect x="80" y="955" width="1640" height="150" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="115" y="998" class="lab" fill="#9a3412">关键机制：上一代模型不只提供 checkpoint，也提供下一代数据标签</text>
+<text x="115" y="1040" class="body">expensive teacher → cheap classifier → massive-scale filtering → better corpus → next-generation model</text>
+<path d="M140 1075H1650" class="cost"/>
+<text x="895" y="1098" text-anchor="middle" class="small">Modelₜ → Data Pipelineₜ₊₁ → Modelₜ₊₁</text>
+</svg>

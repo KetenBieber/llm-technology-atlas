@@ -45,12 +45,6 @@ Transformer
 所以 MHA、GQA、MQA 应看成一个连续家族，而不是三个互不相关机制。
 
 
-## 总结架构图
-
-![教学总结图：A020-gqa](../../../figures/explainers/A020-gqa-summary.svg)
-
-> **教学总结图**：从 MHA → GQA → MQA 的连续谱看 K/V 共享粒度，以及它对 KV Cache、HBM 带宽与质量的折中。
-
 # 输入、输出与任务
 
 设：
@@ -267,6 +261,11 @@ $$
 
 第 `h` 个 Query：
 
+![教学解释图：Head Sharing Topology](../../../figures/explainers/A020/01-head-sharing-topology.svg)
+
+*教学解释图｜Head Sharing Topology。*
+
+
 $$
 q_h=xW_h^Q.
 $$
@@ -405,6 +404,11 @@ $$
 
 MHA checkpoint 已经学会：
 
+![教学解释图：Uptraining Mean Pooling](../../../figures/explainers/A020/03-uptraining-mean-pooling.svg)
+
+*教学解释图｜Uptraining Mean Pooling。*
+
+
 - token semantics；
 - FFN；
 - attention query features；
@@ -529,6 +533,11 @@ GQA 正好处于中间。
 ## 6. 具体 KV 数字
 
 设：
+
+![教学解释图：KV Cache Decode Bandwidth](../../../figures/explainers/A020/02-kv-cache-decode-bandwidth.svg)
+
+*教学解释图｜KV Cache Decode Bandwidth。*
+
 
 $$
 L=32,\quad

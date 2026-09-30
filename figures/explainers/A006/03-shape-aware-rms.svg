@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.thin{fill:none;stroke:#6d8797;stroke-width:2}.grid{stroke:#c9d6de;stroke-width:1.4}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Scalable Muon：为什么不同矩阵 Shape 需要不同 update scale？</text><text x="70" y="112" class="subtitle">A006 · 正交更新的元素 RMS 由 max(A,B) 决定</text>
+<text x="70" y="178" class="section">精确满秩 Polar 更新的固定几何</text>
+<rect x="70" y="215" width="1460" height="150" rx="22" class="box"/>
+<text x="100" y="262" class="math">O ∈ Rᴬˣᴮ,  rank(O)=min(A,B),  σᵢ(O)=1</text>
+<text x="100" y="308" class="math">‖O‖F² = min(A,B)   ⇒   RMS(O)=‖O‖F / √(AB) = 1 / √max(A,B)</text>
+
+<text x="70" y="425" class="section">同一个 learning rate，对不同 Shape 的每元素更新并不等尺度</text>
+<rect x="70" y="465" width="430" height="360" rx="22" class="gray"/>
+<text x="100" y="510" class="node">Square  [128,128]</text>
+<rect x="115" y="555" width="210" height="210" fill="#dfe9ef" stroke="#607d8b" stroke-width="2"/>
+<line x1="115" y1="607" x2="325" y2="607" class="grid"/><line x1="115" y1="659" x2="325" y2="659" class="grid"/><line x1="115" y1="711" x2="325" y2="711" class="grid"/>
+<line x1="167" y1="555" x2="167" y2="765" class="grid"/><line x1="219" y1="555" x2="219" y2="765" class="grid"/><line x1="271" y1="555" x2="271" y2="765" class="grid"/>
+<text x="345" y="640" class="math">RMS≈0.088</text>
+
+<rect x="585" y="465" width="430" height="360" rx="22" class="red"/>
+<text x="615" y="510" class="node">Wide  [128,512]</text>
+<rect x="620" y="575" width="335" height="105" fill="#f4dede" stroke="#c64a4a" stroke-width="2"/>
+<line x1="704" y1="575" x2="704" y2="680" class="grid"/><line x1="788" y1="575" x2="788" y2="680" class="grid"/><line x1="872" y1="575" x2="872" y2="680" class="grid"/>
+<text x="650" y="735" class="math">RMS≈0.044</text>
+<text x="650" y="780" class="small">宽矩阵更新被天然压小约 2×</text>
+
+<rect x="1100" y="465" width="430" height="360" rx="22" class="cyan"/>
+<text x="1130" y="510" class="node">Tall  [512,128]</text>
+<rect x="1245" y="545" width="105" height="230" fill="#d8eeee" stroke="#178d98" stroke-width="2"/>
+<line x1="1245" y1="603" x2="1350" y2="603" class="grid"/><line x1="1245" y1="661" x2="1350" y2="661" class="grid"/><line x1="1245" y1="719" x2="1350" y2="719" class="grid"/>
+<text x="1380" y="640" class="math">RMS≈0.044</text>
+
+<path d="M800 825 V900" class="good"/>
+<rect x="250" y="900" width="1100" height="120" rx="22" class="green"/>
+<text x="285" y="945" class="node">Shape-aware correction</text>
+<text x="285" y="990" class="math">Ũ = 0.2 · √max(A,B) · O   ⇒   RMS(Ũ) ≈ 0.2</text>
+<text x="1000" y="990" class="small">0.2 是论文经验对齐尺度，不是几何定理</text>
+</svg>

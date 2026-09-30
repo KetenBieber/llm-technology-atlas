@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200"><defs><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#14213d}.title{font-size:48px;font-weight:700}.sub{font-size:24px;fill:#607086}.h{font-size:29px;font-weight:700}.n{font-size:24px;font-weight:650}.b{font-size:21px}.s{font-size:20px;fill:#607086}.formula{font-family:"STIX Two Math","Cambria Math",serif;font-size:23px}
+.box{fill:#f8fbff;stroke:#8fb6d9;stroke-width:2}.state{fill:#ecfbfc;stroke:#3ba9b3;stroke-width:2}.gray{fill:#f4f6f8;stroke:#aab6c3;stroke-width:2}.warn{fill:#fff2f1;stroke:#cf5c57;stroke-width:2}.good{fill:#eef9f2;stroke:#4ca267;stroke-width:2}.cost{fill:#fff7e9;stroke:#df942c;stroke-width:2}
+.blue{stroke:#246aa5;stroke-width:5;fill:none}.cyan{stroke:#2599a6;stroke-width:4;fill:none}.green{stroke:#3d995c;stroke-width:5;fill:none}.orange{stroke:#d9871c;stroke-width:4;fill:none}.red{stroke:#c8504b;stroke-width:5;fill:none}.dash{stroke-dasharray:12 10}
+</style><marker id="ab" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#246aa5"/></marker><marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2599a6"/></marker><marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3d995c"/></marker><marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d9871c"/></marker><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c8504b"/></marker></defs><rect width="1600" height="1200" fill="#fff"/><text x="70" y="75" class="title">A003 · Moment contamination：正则项如何污染 Adam 的统计</text><text x="72" y="115" class="sub">固定 Mₜ 已足以证明不等价；真实 Adam 还会让 λθ 进入一阶、二阶历史。</text>
+<text x="75" y="180" class="h">Coupled L2：先构造 g̃ₜ = gₜ + λ′θₜ₋₁</text>
+<rect x="70" y="235" width="1460" height="545" rx="28" class="warn"/>
+<rect x="110" y="345" width="190" height="110" rx="18" class="box"/><text x="205" y="390" text-anchor="middle" class="n">data gₜ</text><text x="205" y="425" text-anchor="middle" class="s">任务信号</text>
+<rect x="110" y="535" width="190" height="110" rx="18" class="cost"/><text x="205" y="580" text-anchor="middle" class="n">λ′θₜ₋₁</text><text x="205" y="615" text-anchor="middle" class="s">收缩信号</text>
+<circle cx="410" cy="495" r="48" fill="#fff" stroke="#c8504b" stroke-width="3"/><text x="410" y="504" text-anchor="middle" class="n">＋</text>
+<path d="M300 400 C350 415 375 445 390 458" class="blue" marker-end="url(#ab)"/><path d="M300 590 C350 565 380 535 392 528" class="red" marker-end="url(#ar)"/>
+<rect x="520" y="425" width="195" height="140" rx="20" class="warn"/><text x="618" y="470" text-anchor="middle" class="n">g̃ₜ</text><text x="618" y="510" text-anchor="middle" class="formula">g+λ′θ</text><text x="618" y="540" text-anchor="middle" class="s">两种语义已混合</text><path d="M458 495 H520" class="red" marker-end="url(#ar)"/>
+
+<rect x="810" y="300" width="260" height="160" rx="20" class="state"/><text x="940" y="345" text-anchor="middle" class="n">一阶 moment</text><text x="940" y="390" text-anchor="middle" class="formula">mₜ←EMA(g̃ₜ)</text><text x="940" y="425" text-anchor="middle" class="s">方向统计含 decay</text>
+<rect x="810" y="545" width="260" height="180" rx="20" class="state"/><text x="940" y="590" text-anchor="middle" class="n">二阶 moment</text><text x="940" y="635" text-anchor="middle" class="formula">vₜ←EMA(g̃ₜ²)</text><text x="940" y="682" text-anchor="middle" class="s">尺度统计也含 decay</text>
+<path d="M715 480 C760 410 780 380 810 380" class="red" marker-end="url(#ar)"/><path d="M715 510 C770 570 780 620 810 630" class="red" marker-end="url(#ar)"/>
+<rect x="1160" y="480" width="320" height="185" rx="20" class="cost"/><text x="1320" y="525" text-anchor="middle" class="n">平方后的交叉项</text><text x="1320" y="575" text-anchor="middle" class="formula">(g+λ′θ)² = g²</text><text x="1320" y="615" text-anchor="middle" class="formula">+ 2λ′(g⊙θ) + (λ′)²θ²</text><text x="1320" y="650" text-anchor="middle" class="s">“参数要收缩”改变了尺度估计</text>
+<path d="M1070 635 H1160" class="orange" marker-end="url(#ao)"/>
+
+<text x="75" y="850" class="h">AdamW：只让任务梯度定义 optimizer statistics</text>
+<rect x="70" y="895" width="1460" height="235" rx="28" class="good"/>
+<rect x="115" y="960" width="210" height="105" rx="18" class="box"/><text x="220" y="1005" text-anchor="middle" class="n">gₜ only</text><text x="220" y="1040" text-anchor="middle" class="formula">∇fₜ(θ)</text>
+<rect x="445" y="945" width="245" height="135" rx="20" class="state"/><text x="568" y="990" text-anchor="middle" class="n">mₜ,vₜ</text><text x="568" y="1025" text-anchor="middle" class="b">只记录 data gradient</text><text x="568" y="1055" text-anchor="middle" class="s">history</text><path d="M325 1012 H445" class="blue" marker-end="url(#ab)"/>
+<rect x="815" y="960" width="230" height="105" rx="18" class="cost"/><text x="930" y="1005" text-anchor="middle" class="n">θₜ₋₁</text><text x="930" y="1040" text-anchor="middle" class="formula">−αλwθ</text>
+<rect x="1190" y="945" width="275" height="135" rx="20" class="good"/><text x="1328" y="990" text-anchor="middle" class="n">最终合成</text><text x="1328" y="1030" text-anchor="middle" class="b">task step + decay step</text>
+<path d="M690 1012 H1190" class="green" marker-end="url(#ag)"/><path d="M1045 1012 H1190" class="orange" marker-end="url(#ao)"/>
+</svg>

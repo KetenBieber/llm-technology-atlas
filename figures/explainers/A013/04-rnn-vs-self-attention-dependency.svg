@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.grid{stroke:#c9d6de;stroke-width:1.3}.mask{fill:#c64a4a;opacity:.18}.ok{fill:#2b6f9f;opacity:.18}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">为什么 Self-Attention 能替代 RNN 的序列内递推？</text><text x="70" y="112" class="subtitle">A013 · 关键不是“Attention 更时髦”，而是依赖路径与并行结构改变</text>
+<text x="70" y="178" class="section">Baseline：RNN 的状态必须沿时间逐步传递</text>
+<rect x="70" y="220" width="650" height="530" rx="24" class="gray"/>
+<rect x="115" y="360" width="64" height="64" rx="12" class="gray"/><text x="134" y="402" class="node">h1</text><path d="M179 392 H203" class="bad"/><rect x="203" y="360" width="64" height="64" rx="12" class="gray"/><text x="222" y="402" class="node">h2</text><path d="M267 392 H291" class="bad"/><rect x="291" y="360" width="64" height="64" rx="12" class="gray"/><text x="310" y="402" class="node">h3</text><path d="M355 392 H379" class="bad"/><rect x="379" y="360" width="64" height="64" rx="12" class="gray"/><text x="398" y="402" class="node">h4</text><path d="M443 392 H467" class="bad"/><rect x="467" y="360" width="64" height="64" rx="12" class="gray"/><text x="486" y="402" class="node">h5</text><path d="M531 392 H555" class="bad"/><rect x="555" y="360" width="64" height="64" rx="12" class="gray"/><text x="574" y="402" class="node">h6</text>
+<text x="132" y="475" class="small">x1</text><path d="M147 452 V425" class="aux"/><text x="220" y="475" class="small">x2</text><path d="M235 452 V425" class="aux"/><text x="308" y="475" class="small">x3</text><path d="M323 452 V425" class="aux"/><text x="396" y="475" class="small">x4</text><path d="M411 452 V425" class="aux"/><text x="484" y="475" class="small">x5</text><path d="M499 452 V425" class="aux"/><text x="572" y="475" class="small">x6</text><path d="M587 452 V425" class="aux"/>
+<path d="M150 330 C300 265 510 265 590 330" class="bad"/>
+<text x="110" y="285" class="node">x₁ 的信息到 x₆：要穿过多次 recurrent transition</text>
+<text x="110" y="545" class="body">训练同一层时，hₜ 依赖 hₜ₋₁ → 时间轴串行</text>
+<rect x="110" y="595" width="560" height="105" rx="18" class="red"/>
+<text x="140" y="638" class="body">长程 dependency path：O(n)</text>
+<text x="140" y="675" class="body">sequential operations：O(n)</text>
+
+<text x="850" y="178" class="section">Transformer：一层内所有位置同时形成 Q/K/V</text>
+<rect x="810" y="220" width="720" height="530" rx="24" class="blue"/>
+<circle cx="875" cy="430" r="34" fill="#eaf4fb" stroke="#2b6f9f" stroke-width="3"/><text x="859" y="438" class="node">t1</text><circle cx="985" cy="430" r="34" fill="#eaf4fb" stroke="#2b6f9f" stroke-width="3"/><text x="969" y="438" class="node">t2</text><circle cx="1095" cy="430" r="34" fill="#eaf4fb" stroke="#2b6f9f" stroke-width="3"/><text x="1079" y="438" class="node">t3</text><circle cx="1205" cy="430" r="34" fill="#eaf4fb" stroke="#2b6f9f" stroke-width="3"/><text x="1189" y="438" class="node">t4</text><circle cx="1315" cy="430" r="34" fill="#eaf4fb" stroke="#2b6f9f" stroke-width="3"/><text x="1299" y="438" class="node">t5</text><circle cx="1425" cy="430" r="34" fill="#eaf4fb" stroke="#2b6f9f" stroke-width="3"/><text x="1409" y="438" class="node">t6</text>
+<path d="M875 395 Q930 270 985 395" class="flow"/><path d="M875 395 Q990 278 1095 395" class="flow"/><path d="M875 395 Q1050 286 1205 395" class="flow"/><path d="M875 395 Q1110 294 1315 395" class="flow"/><path d="M875 395 Q1170 302 1425 395" class="flow"/>
+<text x="850" y="285" class="node">Query t₁ 可在同一 Attention 层直接访问任意 Key</text>
+<text x="850" y="545" class="body">Q/K/V projection 对所有 token 是 batched matrix multiplication</text>
+<rect x="850" y="595" width="620" height="105" rx="18" class="green"/>
+<text x="880" y="638" class="body">最长 dependency path：O(1)</text>
+<text x="880" y="675" class="body">sequential operations：O(1)（单层内部）</text>
+
+<path d="M720 485 H810" class="good"/>
+<text x="725" y="452" class="small">结构改变</text>
+
+<rect x="70" y="800" width="1460" height="210" rx="22" class="orange"/>
+<text x="100" y="846" class="node">换来的代价：Dense self-attention 显式建立 n × n pairwise interaction</text>
+<text x="100" y="892" class="math">scores = QKᵀ  →  [B,h,n,n]</text>
+<text x="100" y="936" class="body">因此“减少串行依赖”不等于“长序列免费”：计算/中间矩阵随 n² 增长，后续 FlashAttention、稀疏 Attention 才继续处理系统成本。</text>
+<text x="100" y="978" class="small">自回归推理本身仍逐 token 生成；这里讨论的是每一层内部的序列表示更新。</text>
+</svg>

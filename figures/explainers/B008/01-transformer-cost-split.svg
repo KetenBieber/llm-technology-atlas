@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2e8b57"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .attn{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:3}.moe{fill:#edf9f0;stroke:#2e8b57;stroke-width:3}.node{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}
+  .cost{fill:#fff7ed;stroke:#d97706;stroke-width:2}.flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#b)}.good{stroke:#2e8b57;stroke-width:3;fill:none;marker-end:url(#g)}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">DeepSeek-V2：MLA 降状态成本，DeepSeekMoE 降 Active Compute</text>
+<text x="800" y="101" text-anchor="middle" class="sub">把训练贵与推理贵拆开看，才能理解 236B total / 21B active 这类 MoE 模型为什么同时需要两套机制</text>
+
+<rect x="55" y="150" width="1000" height="760" rx="22" class="panel"/>
+<text x="555" y="195" text-anchor="middle" class="h">一条 token / hidden state 经过 60 × Transformer blocks</text>
+<rect x="100" y="270" width="180" height="90" rx="14" class="node"/>
+<text x="190" y="324" text-anchor="middle" class="b">h_l [*,5120]</text>
+<path d="M280 315 H350" class="flow"/>
+<rect x="365" y="235" width="270" height="160" rx="17" class="attn"/>
+<text x="500" y="280" text-anchor="middle" class="h">MLA Attention</text>
+<text x="500" y="317" text-anchor="middle" class="b">latent KV</text>
+<text x="500" y="349" text-anchor="middle" class="s">+ decoupled RoPE</text>
+<text x="500" y="379" text-anchor="middle" class="s">减少跨 decode step 持久状态</text>
+<path d="M635 315 H705" class="flow"/>
+<rect x="720" y="265" width="165" height="100" rx="14" class="node"/>
+<text x="802" y="307" text-anchor="middle" class="b">residual</text><text x="802" y="340" text-anchor="middle" class="s">+ RMSNorm</text>
+<path d="M885 315 H940" class="flow"/>
+<rect x="955" y="225" width="70" height="180" rx="14" class="moe"/>
+<text x="990" y="272" text-anchor="middle" class="b">FFN</text>
+<text x="990" y="307" text-anchor="middle" class="b">/</text>
+<text x="990" y="342" text-anchor="middle" class="b">MoE</text>
+
+<rect x="370" y="505" width="560" height="290" rx="18" class="moe"/>
+<text x="650" y="550" text-anchor="middle" class="h">DeepSeekMoE（除第 1 层外）</text>
+<rect x="410" y="595" width="190" height="115" rx="15" fill="#e7fbfc" stroke="#0e8f9b" stroke-width="2"/>
+<text x="505" y="637" text-anchor="middle" class="b">2 shared experts</text><text x="505" y="677" text-anchor="middle" class="s">always active</text>
+<rect x="655" y="595" width="230" height="115" rx="15" fill="#edf9f0" stroke="#2e8b57" stroke-width="2"/>
+<text x="770" y="637" text-anchor="middle" class="b">160 routed experts</text><text x="770" y="677" text-anchor="middle" class="s">Top-6 / token</text>
+<text x="650" y="756" text-anchor="middle" class="b">总 expert 容量大，但每 token 只执行少量 routed experts</text>
+
+<rect x="1090" y="150" width="455" height="760" rx="22" class="panel"/>
+<text x="1317" y="195" text-anchor="middle" class="h">成本轴不要混淆</text>
+<rect x="1140" y="255" width="355" height="150" rx="16" class="attn"/>
+<text x="1317" y="301" text-anchor="middle" class="h">Attention state cost</text>
+<text x="1317" y="343" text-anchor="middle" class="b">MHA KV cache → MLA latent cache</text>
+<text x="1317" y="378" text-anchor="middle" class="s">显存容量 + 历史状态读带宽</text>
+<rect x="1140" y="455" width="355" height="150" rx="16" class="moe"/>
+<text x="1317" y="501" text-anchor="middle" class="h">FFN compute cost</text>
+<text x="1317" y="543" text-anchor="middle" class="b">dense FFN → sparse experts</text>
+<text x="1317" y="578" text-anchor="middle" class="s">每 token active parameters / FLOPs</text>
+<rect x="1140" y="655" width="355" height="180" rx="16" class="cost"/>
+<text x="1317" y="699" text-anchor="middle" class="h">完整 serving throughput</text>
+<text x="1317" y="740" text-anchor="middle" class="b">MLA + cache quantization + FP8</text>
+<text x="1317" y="775" text-anchor="middle" class="b">+ kernels + batch + scheduler</text>
+<text x="1317" y="812" text-anchor="middle" class="s">不是单个模块的单因果指标</text>
+
+<rect x="120" y="950" width="1360" height="100" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="988" text-anchor="middle" class="b">模型级读法：MLA 让历史状态更小；DeepSeekMoE 让当前 token 少算 expert；二者共同支撑“大总容量 + 较低 active cost”。</text>
+<text x="800" y="1026" text-anchor="middle" class="s">V2 配置：L=60，d=5120，128 attention heads；总参数 236B，约 21B active/token。</text>
+</svg>

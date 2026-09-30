@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2e8b57"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:28px;font-weight:700}.b{font-size:22px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .bad{fill:#fff1f0;stroke:#c43d3d;stroke-width:2}.latent{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}.curr{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}
+  .good{fill:#edf9f0;stroke:#2e8b57;stroke-width:2}.flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#b)}.reuse{stroke:#2e8b57;stroke-width:4;fill:none;marker-end:url(#g)}
+  .formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">MLA Weight Absorption：历史 Latent 直接参与 Decode</text>
+<text x="800" y="101" text-anchor="middle" class="sub">固定线性链可以换乘法顺序：把 K up-projection 吸收到 Query，把 V up-projection 吸收到 Output</text>
+
+<rect x="55" y="150" width="1490" height="250" rx="22" class="panel"/>
+<text x="800" y="195" text-anchor="middle" class="h">如果只是“压缩存储 → 每步解压”，Decode 仍要反复重建全部历史 K/V</text>
+<rect x="105" y="245" width="210" height="100" rx="15" class="latent"/><text x="210" y="286" text-anchor="middle" class="b">cached c_j^KV</text><text x="210" y="322" text-anchor="middle" class="s">j=1…t history</text>
+<path d="M315 295 H390" class="flow"/>
+<rect x="405" y="230" width="185" height="130" rx="16" class="bad"/><text x="497" y="276" text-anchor="middle" class="h">W^UK / W^UV</text><text x="497" y="316" text-anchor="middle" class="s">per history token</text>
+<path d="M590 295 H670" class="flow"/>
+<rect x="685" y="230" width="280" height="130" rx="16" class="bad"/><text x="825" y="276" text-anchor="middle" class="h">full K_j^C, V_j^C</text><text x="825" y="316" text-anchor="middle" class="s">[n_h·d_h] each</text>
+<text x="1235" y="295" text-anchor="middle" class="b" fill="#c43d3d">✕ 历史长度 T 再次进入 up-projection cost</text>
+
+<rect x="55" y="440" width="720" height="455" rx="22" class="panel"/>
+<text x="415" y="485" text-anchor="middle" class="h">Key absorption：Query → latent-compatible space</text>
+<rect x="95" y="555" width="175" height="90" rx="14" class="curr"/><text x="182" y="610" text-anchor="middle" class="b">q_t^C</text>
+<path d="M270 600 H335" class="reuse"/>
+<rect x="350" y="535" width="220" height="130" rx="16" class="good"/>
+<text x="460" y="580" text-anchor="middle" class="b">(W^UK)ᵀ</text><text x="460" y="620" text-anchor="middle" class="h">q̃_t [d_c]</text>
+<path d="M570 600 H635" class="reuse"/>
+<rect x="645" y="540" width="95" height="120" rx="14" class="latent"/>
+<text x="692" y="585" text-anchor="middle" class="b">c_j</text><text x="692" y="620" text-anchor="middle" class="s">cached</text>
+<rect x="105" y="710" width="620" height="120" rx="16" class="formula"/>
+<text x="415" y="754" text-anchor="middle" class="b">(q_t^C)ᵀ W^UK c_j = [(W^UK)ᵀ q_t^C]ᵀ c_j</text>
+<text x="415" y="800" text-anchor="middle" class="h">score 直接对 cached latent 做 dot product</text>
+
+<rect x="825" y="440" width="720" height="455" rx="22" class="panel"/>
+<text x="1185" y="485" text-anchor="middle" class="h">Value absorption：latent 加权后只投影一次</text>
+<g>
+<rect x="875" y="555" width="105" height="90" rx="13" class="latent"/><text x="927" y="610" text-anchor="middle" class="b">c₁</text>
+<rect x="995" y="555" width="105" height="90" rx="13" class="latent"/><text x="1047" y="610" text-anchor="middle" class="b">c₂</text>
+<rect x="1115" y="555" width="105" height="90" rx="13" class="latent"/><text x="1167" y="610" text-anchor="middle" class="b">…</text>
+</g>
+<text x="1045" y="685" text-anchor="middle" class="b">Σ_j a_tj c_j</text>
+<path d="M1225 600 H1300" class="reuse"/>
+<rect x="1315" y="535" width="185" height="130" rx="16" class="good"/>
+<text x="1407" y="580" text-anchor="middle" class="b">W^O W^UV</text><text x="1407" y="620" text-anchor="middle" class="s">fused once</text>
+<rect x="870" y="710" width="630" height="120" rx="16" class="formula"/>
+<text x="1185" y="754" text-anchor="middle" class="b">W^O Σ_j a_tj W^UV c_j = (W^O W^UV) Σ_j a_tj c_j</text>
+<text x="1185" y="800" text-anchor="middle" class="h">历史 Value 不再逐 token 上投影</text>
+
+<rect x="125" y="945" width="1350" height="100" rx="16" fill="#edf9f0" stroke="#2e8b57" stroke-width="2"/>
+<text x="800" y="982" text-anchor="middle" class="b">Decode 执行图被重新参数化：cache c_j^KV → latent score → latent weighted sum → fused output projection。</text>
+<text x="800" y="1020" text-anchor="middle" class="s">这一步才让“低维 cache”真正成为 Attention 的工作状态，而不是一个需要反复解压的存储格式。</text>
+</svg>

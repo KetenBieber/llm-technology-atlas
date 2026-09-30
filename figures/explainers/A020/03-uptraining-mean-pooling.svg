@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2e8b57"/></marker>
+  <style>
+    text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+    .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+    .old{fill:#eef2f6;stroke:#64748b;stroke-width:2}.new{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}.train{fill:#edf9f0;stroke:#2e8b57;stroke-width:2}
+    .flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#a)}.grad{stroke:#2e8b57;stroke-width:4;fill:none;marker-end:url(#g)}
+    .formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">GQA Uptraining：Mean-Pool K/V Heads，再用 Continued Pretraining 恢复质量</text>
+<text x="800" y="101" text-anchor="middle" class="sub">目标不是“从头学一个 GQA”，而是把已训练 MHA checkpoint 的大部分能力保留下来</text>
+
+<rect x="55" y="150" width="500" height="780" rx="22" class="panel"/>
+<text x="305" y="195" text-anchor="middle" class="h">① MHA：4 个 K heads → 1 个 group</text>
+<g>
+<rect x="105" y="255" width="145" height="82" rx="13" class="old"/><text x="177" y="305" text-anchor="middle" class="b">Wᴷ₀</text>
+<rect x="310" y="255" width="145" height="82" rx="13" class="old"/><text x="382" y="305" text-anchor="middle" class="b">Wᴷ₁</text>
+<rect x="105" y="375" width="145" height="82" rx="13" class="old"/><text x="177" y="425" text-anchor="middle" class="b">Wᴷ₂</text>
+<rect x="310" y="375" width="145" height="82" rx="13" class="old"/><text x="382" y="425" text-anchor="middle" class="b">Wᴷ₃</text>
+</g>
+<path d="M177 337 C177 505 290 515 305 565" class="flow"/><path d="M382 337 C382 505 320 515 305 565" class="flow"/>
+<path d="M177 457 C177 520 270 530 305 565" class="flow"/><path d="M382 457 C382 520 340 530 305 565" class="flow"/>
+<circle cx="305" cy="600" r="52" fill="#e9f2ff" stroke="#1557b0" stroke-width="3"/>
+<text x="305" y="609" text-anchor="middle" class="h">mean</text>
+<path d="M305 652 V700" class="flow"/>
+<rect x="170" y="715" width="270" height="100" rx="14" class="new"/>
+<text x="305" y="758" text-anchor="middle" class="h">Wᴷ_new</text>
+<text x="305" y="790" text-anchor="middle" class="s">V projection 同样处理</text>
+<text x="305" y="870" text-anchor="middle" class="s">不是“任选一个 head 保留”</text>
+
+<rect x="585" y="150" width="430" height="780" rx="22" class="panel"/>
+<text x="800" y="195" text-anchor="middle" class="h">② 为什么 mean 是自然初始化？</text>
+<rect x="630" y="255" width="340" height="240" rx="16" class="formula"/>
+<text x="800" y="306" text-anchor="middle" class="b">J(W)=Σ_h ‖W−W_h‖²_F</text>
+<text x="800" y="357" text-anchor="middle" class="b">∇J = 2Σ_h(W−W_h)</text>
+<text x="800" y="408" text-anchor="middle" class="b">∇J=0  ⇒  G·W=Σ_h W_h</text>
+<text x="800" y="459" text-anchor="middle" class="h">W* = (1/G) Σ_h W_h</text>
+<text x="800" y="555" text-anchor="middle" class="b">它最小化“新 projection 到组内旧 heads”</text>
+<text x="800" y="590" text-anchor="middle" class="b">的 Frobenius 平方距离。</text>
+<rect x="635" y="660" width="330" height="140" rx="15" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+<text x="800" y="704" text-anchor="middle" class="h">但功能不等价</text>
+<text x="800" y="744" text-anchor="middle" class="s">Attention 含 score / Softmax</text>
+<text x="800" y="776" text-anchor="middle" class="s">token 交互使功能不严格等价</text>
+
+<rect x="1045" y="150" width="500" height="780" rx="22" class="panel"/>
+<text x="1295" y="195" text-anchor="middle" class="h">③ Continued pretraining 修复扰动</text>
+<rect x="1105" y="255" width="380" height="105" rx="16" class="old"/>
+<text x="1295" y="298" text-anchor="middle" class="h">已训练 MHA</text><text x="1295" y="332" text-anchor="middle" class="s">语义 / FFN / Q / layer organization 已学会</text>
+<path d="M1295 360 V415" class="flow"/>
+<rect x="1105" y="430" width="380" height="112" rx="16" class="new"/>
+<text x="1295" y="474" text-anchor="middle" class="h">merge K/V heads</text><text x="1295" y="510" text-anchor="middle" class="s">主要扰动 W_K, W_V</text>
+<path d="M1295 542 V600" class="grad"/>
+<rect x="1105" y="615" width="380" height="125" rx="16" class="train"/>
+<text x="1295" y="661" text-anchor="middle" class="h">continued pretraining</text>
+<text x="1295" y="699" text-anchor="middle" class="b">≈ 原预训练 compute 的 5%</text>
+<text x="1295" y="732" text-anchor="middle" class="s">论文 recipe；不是普适固定成本</text>
+<path d="M1295 740 V790" class="grad"/>
+<rect x="1130" y="805" width="330" height="82" rx="14" class="train"/>
+<text x="1295" y="856" text-anchor="middle" class="h">GQA checkpoint</text>
+
+<rect x="100" y="970" width="1400" height="82" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="1004" text-anchor="middle" class="b">核心因果链：mean pooling 只负责“离旧参数尽量近”的起点；真正恢复质量的是后续梯度更新，而不是平均操作本身。</text>
+<text x="800" y="1036" text-anchor="middle" class="s">因此 uptraining = architecture conversion + continued pretraining，而不是 SFT / PEFT / Preference Learning。</text>
+</svg>

@@ -66,12 +66,6 @@ $$
 ---
 
 
-## 总结架构图
-
-![教学总结图：A057-flashattention3](../../../figures/explainers/A057-flashattention3-summary.svg)
-
-> **教学总结图**：把 Hopper 上的 TMA producer、WGMMA consumers、softmax overlap 与 FP8 accuracy path 合并成 FA3 的异步执行总图。
-
 # 一、先把三代 FlashAttention 的瓶颈迁移串起来
 
 理解 FA3 最容易犯的错误，是把它看成：
@@ -189,6 +183,11 @@ $$
 # 二、Hopper 的变化：GPU 不再只是“一群线程 + Tensor Core”
 
 FA3 论文真正关心的是：
+
+![教学解释图：Hopper Hardware](../../../figures/explainers/A057/01-hopper-hardware.svg)
+
+*教学解释图｜Hopper Hardware。*
+
 
 > **一个 SM 内已经存在多种 specialized execution engines。**
 
@@ -341,13 +340,16 @@ $$
 
 # 四、Warp Specialization：同一个 CTA 内也应该有“岗位分工”
 
-![教学解释图：Hopper producer-consumer pipeline](../../../figures/explainers/A057-hopper-pipeline.svg)
-
 FA3 把一个 CTA 内的 warps / warpgroups 分成角色。
 
 ## 8. Producer warpgroup
 
 Producer 主要负责：
+
+![教学解释图：Hopper Producer Consumer](../../../figures/explainers/A057/01-hopper-producer-consumer.svg)
+
+*教学解释图｜Hopper Producer Consumer。*
+
 
 - TMA load $Q_i$；
 - TMA load $K_j,V_j$；
@@ -416,6 +418,11 @@ warp specialization 不是只把代码分支写成不同角色。
 # 六、Circular SMEM Buffer：为什么 producer 不会踩坏 consumer 正在用的数据？
 
 假设 shared memory 中准备：
+
+![教学解释图：Producer Consumer Pipeline](../../../figures/explainers/A057/02-producer-consumer-pipeline.svg)
+
+*教学解释图｜Producer Consumer Pipeline。*
+
 
 $$
 s
@@ -752,6 +759,11 @@ $$
 
 ![FlashAttention-3 原论文：2-stage GEMM-softmax pipeline](../../../figures/A057/fig2-2stage-pipelining.png)
 
+![教学解释图：Two Level Async Pipeline](../../../figures/explainers/A057/02-two-level-async-pipeline.svg)
+
+*教学解释图｜Two Level Async Pipeline。*
+
+
 假设当前正在处理：
 
 $$
@@ -1007,8 +1019,6 @@ $$
 
 # 十七、把 FA3 的前半篇压成一张执行图
 
-![教学解释图：FA3 Hopper execution pipeline](../../../figures/explainers/A057-hopper-pipeline.svg)
-
 现在可以把一个 tile pipeline 理解成：
 
 ~~~text
@@ -1110,6 +1120,11 @@ FA3 必须同时解决。
 # 二十、FP8 的第一个工程问题：WGMMA layout 约束更严格
 
 设 GEMM：
+
+![教学解释图：FP8 Layout Permutation](../../../figures/explainers/A057/03-fp8-layout-permutation.svg)
+
+*教学解释图｜FP8 Layout Permutation。*
+
 
 $$
 A B^\top.
@@ -1507,6 +1522,11 @@ $$
 
 FA3 对：
 
+![教学解释图：FP8 Incoherent Processing](../../../figures/explainers/A057/04-fp8-incoherent-processing.svg)
+
+*教学解释图｜FP8 Incoherent Processing。*
+
+
 $$
 Q,\ K
 $$
@@ -1694,8 +1714,6 @@ $$
 
 # 三十三、教学图：为什么变换后 score 不变、量化却更容易？
 
-![教学解释图：FP8 incoherent processing](../../../figures/explainers/A057-incoherent-fp8.svg)
-
 这里要区分两个层次：
 
 ## 数学层
@@ -1765,6 +1783,11 @@ V 仍可以做 block quantization，但不是通过同样的 Q/K orthogonal inva
 # 三十五、Block Quantization 与 Incoherent Processing 不是同一件事
 
 可以把它们区分成：
+
+![教学解释图：FP8 Quantization Incoherent](../../../figures/explainers/A057/04-fp8-quantization-incoherent.svg)
+
+*教学解释图｜FP8 Quantization Incoherent。*
+
 
 ## Block quantization
 
@@ -2219,6 +2242,11 @@ $$
 
 - Tensor Core 与 CUDA/SFU concurrency；
 - 减少 softmax 暴露在 critical path 的时间。
+
+![教学解释图：GEMM Softmax Overlap](../../../figures/explainers/A057/03-gemm-softmax-overlap.svg)
+
+*教学解释图｜GEMM Softmax Overlap。*
+
 
 因此：
 

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+<defs><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#14213d}
+.title{font-size:48px;font-weight:700}.sub{font-size:24px;fill:#607086}.h{font-size:29px;font-weight:700}.n{font-size:24px;font-weight:650}.b{font-size:21px}.s{font-size:20px;fill:#607086}.formula{font-family:"STIX Two Math","Cambria Math",serif;font-size:23px}
+.box{fill:#f8fbff;stroke:#8fb6d9;stroke-width:2}.state{fill:#ecfbfc;stroke:#3ba9b3;stroke-width:2}.gray{fill:#f4f6f8;stroke:#aab6c3;stroke-width:2}.warn{fill:#fff2f1;stroke:#cf5c57;stroke-width:2}.good{fill:#eef9f2;stroke:#4ca267;stroke-width:2}.cost{fill:#fff7e9;stroke:#df942c;stroke-width:2}
+.blue{stroke:#246aa5;stroke-width:5;fill:none}.cyan{stroke:#2599a6;stroke-width:4;fill:none}.green{stroke:#3d995c;stroke-width:5;fill:none}.orange{stroke:#d9871c;stroke-width:4;fill:none}.red{stroke:#c8504b;stroke-width:4;fill:none}.dash{stroke-dasharray:12 10}
+</style>
+<marker id="ab" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#246aa5"/></marker>
+<marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2599a6"/></marker>
+<marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3d995c"/></marker>
+<marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d9871c"/></marker>
+<marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c8504b"/></marker></defs>
+<rect width="1600" height="1200" fill="#fff"/><text x="70" y="75" class="title">A002 · Adam：优化器状态沿时间流动</text><text x="72" y="115" class="sub">m 与 v 不是网络激活；它们与参数同形，并跨 optimizer step 持久保存。</text>
+<rect x="55" y="160" width="1490" height="760" rx="28" class="gray"/>
+<text x="90" y="210" class="h">第 t 步：从 minibatch 梯度到下一组参数</text>
+
+<rect x="90" y="300" width="210" height="120" rx="18" class="box"/><text x="195" y="345" text-anchor="middle" class="n">θₜ₋₁</text><text x="195" y="380" text-anchor="middle" class="b">[P]</text>
+<rect x="375" y="285" width="240" height="150" rx="18" class="box"/><text x="495" y="330" text-anchor="middle" class="n">forward + loss</text><text x="495" y="367" text-anchor="middle" class="formula">fₜ(θₜ₋₁)</text><text x="495" y="402" text-anchor="middle" class="s">第 t 个随机目标</text>
+<rect x="690" y="300" width="200" height="120" rx="18" class="cost"/><text x="790" y="345" text-anchor="middle" class="n">backward</text><text x="790" y="380" text-anchor="middle" class="formula">gₜ [P]</text>
+<path d="M300 360 H375" class="blue" marker-end="url(#ab)"/><path d="M615 360 H690" class="orange" marker-end="url(#ao)"/>
+
+<rect x="965" y="235" width="240" height="145" rx="20" class="state"/><text x="1085" y="280" text-anchor="middle" class="n">一阶状态 mₜ</text><text x="1085" y="320" text-anchor="middle" class="formula">β₁mₜ₋₁+(1−β₁)gₜ</text><text x="1085" y="350" text-anchor="middle" class="s">方向 / mean</text>
+<rect x="965" y="440" width="240" height="145" rx="20" class="state"/><text x="1085" y="485" text-anchor="middle" class="n">二阶状态 vₜ</text><text x="1085" y="525" text-anchor="middle" class="formula">β₂vₜ₋₁+(1−β₂)gₜ²</text><text x="1085" y="555" text-anchor="middle" class="s">尺度 / raw 2nd moment</text>
+<path d="M890 360 C925 320 940 310 965 310" class="cyan" marker-end="url(#ac)"/><path d="M890 360 C930 430 940 500 965 510" class="cyan" marker-end="url(#ac)"/>
+
+<rect x="1285" y="250" width="205" height="120" rx="18" class="box"/><text x="1388" y="295" text-anchor="middle" class="n">bias correct</text><text x="1388" y="332" text-anchor="middle" class="formula">m̂ₜ=mₜ/(1−β₁ᵗ)</text>
+<rect x="1285" y="455" width="205" height="120" rx="18" class="box"/><text x="1388" y="500" text-anchor="middle" class="n">bias correct</text><text x="1388" y="537" text-anchor="middle" class="formula">v̂ₜ=vₜ/(1−β₂ᵗ)</text>
+<path d="M1205 310 H1285" class="cyan" marker-end="url(#ac)"/><path d="M1205 510 H1285" class="cyan" marker-end="url(#ac)"/>
+
+<rect x="1050" y="680" width="440" height="135" rx="22" class="good"/><text x="1270" y="725" text-anchor="middle" class="n">逐坐标合成 update</text><text x="1270" y="765" text-anchor="middle" class="formula">θₜ=θₜ₋₁−α m̂ₜ/(√v̂ₜ+ε)</text>
+<path d="M1388 370 C1420 600 1360 640 1310 680" class="green" marker-end="url(#ag)"/><path d="M1388 575 C1390 625 1360 655 1330 680" class="green" marker-end="url(#ag)"/>
+<path d="M195 420 C230 750 700 820 1050 748" class="blue dash" marker-end="url(#ab)"/>
+
+<rect x="95" y="610" width="720" height="205" rx="22" class="cost"/>
+<text x="125" y="655" class="h">跨时间持久状态</text>
+<text x="135" y="705" class="formula">mₜ₋₁ ──→ mₜ ──→ mₜ₊₁</text><text x="135" y="755" class="formula">vₜ₋₁ ──→ vₜ ──→ vₜ₊₁</text>
+<text x="480" y="715" class="b">每个参数坐标都有自己的历史</text><text x="480" y="755" class="s">不是“每层一个标量统计”</text>
+
+<rect x="65" y="965" width="690" height="170" rx="22" class="warn"/><text x="95" y="1010" class="h">不要误读</text><text x="100" y="1060" class="b">vₜ 是 g² 的指数平均，不是 Hessian，也不是中心化 variance。</text><text x="100" y="1100" class="b">Adam 位于 backward 之后，不参与模型 forward。</text>
+<rect x="800" y="965" width="735" height="170" rx="22" class="good"/><text x="830" y="1010" class="h">状态成本</text><text x="835" y="1060" class="formula">m,v ∈ ℝᴾ  ⇒  O(P) state</text><text x="835" y="1100" class="b">若 m、v 均 FP32，仅两份 moment state 就是 8P bytes。</text>
+</svg>

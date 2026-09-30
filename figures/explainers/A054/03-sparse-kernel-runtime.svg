@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1f5f8b"/></marker>
+<marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d97706"/></marker>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16855b"/></marker>
+<style>.t{font-family:"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#15324b}.title{font-size:44px;font-weight:700}.sub{font-size:25px;font-weight:650}.b{font-size:22px}.s{font-size:20px}.muted{fill:#607487}.box{fill:#f7fafc;stroke:#94a7b6;stroke-width:2}.blue{fill:#eaf4fb;stroke:#2f77a8;stroke-width:2}.cyan{fill:#e9fbfb;stroke:#249ca0;stroke-width:2}.green{fill:#edf9f2;stroke:#269267;stroke-width:2}.orange{fill:#fff5e7;stroke:#d97706;stroke-width:2}.red{fill:#fff0f0;stroke:#c94a4a;stroke-width:2}.f{fill:none;stroke:#1f5f8b;stroke-width:4;marker-end:url(#a)}.fo{fill:none;stroke:#d97706;stroke-width:4;marker-end:url(#o)}.fg{fill:none;stroke:#16855b;stroke-width:4;marker-end:url(#g)}</style></defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text class="t title" x="62" y="72">MInference · Sparse Runtime：动态索引为什么仍能更快？</text>
+<text class="t b muted" x="64" y="112">核心问题：动态 sparse index 本身也要计算，为什么端到端仍能显著快于 dense FlashAttention？</text>
+
+<rect x="65" y="165" width="300" height="120" rx="18" class="blue"/>
+<text class="t sub" x="100" y="208">Q / K / V</text><text class="t b" x="98" y="252">prefill tensors · L×d</text>
+
+<rect x="445" y="145" width="390" height="165" rx="18" class="orange"/>
+<text class="t sub" x="475" y="188">Index estimator</text>
+<text class="t b" x="475" y="230">VS：last 64 Q probe → columns / diagonals</text>
+<text class="t b" x="475" y="270">BS：B=64 mean-pool → coarse Q̂K̂ᵀ</text>
+<path d="M365 225 L445 225" class="fo"/>
+
+<rect x="910" y="145" width="610" height="165" rx="18" class="cyan"/>
+<text class="t sub" x="940" y="188">GPU-friendly sparse representation</text>
+<text class="t b" x="940" y="230">A-shape：static global/local ranges</text>
+<text class="t b" x="940" y="270">VS：PIT columns + block ranges</text>
+<text class="t s muted" x="940" y="298">BS：64×64 selected blocks</text>
+<path d="M835 225 L910 225" class="fo"/>
+
+<text class="t sub" x="70" y="380">Selected geometry drives tile traversal—not every causal tile is visited</text>
+<g transform="translate(95,420)">
+<rect x="0" y="0" width="440" height="260" rx="18" class="blue"/>
+<text class="t sub" x="24" y="45">A-shape kernel</text>
+<text class="t b" x="24" y="92">first g tokens + local window w</text>
+<text class="t b" x="24" y="132">index cost ≈ 0</text>
+<text class="t b" x="24" y="172">attention ≈ O(L(g+w)d)</text>
+<path d="M40 215 H390" stroke="#249ca0" stroke-width="16"/><path d="M40 195 V245" stroke="#249ca0" stroke-width="28"/>
+</g>
+<g transform="translate(580,420)">
+<rect x="0" y="0" width="440" height="260" rx="18" class="cyan"/>
+<text class="t sub" x="24" y="45">Vertical-Slash kernel</text>
+<text class="t b" x="24" y="92">slash → contiguous block ranges</text>
+<text class="t b" x="24" y="132">vertical → PIT gather / reorder</text>
+<text class="t b" x="24" y="172">两条路径共享 online softmax state</text>
+<line x1="85" y1="205" x2="85" y2="245" stroke="#2f77a8" stroke-width="14"/><line x1="170" y1="245" x2="260" y2="205" stroke="#2f77a8" stroke-width="14"/>
+</g>
+<g transform="translate(1065,420)">
+<rect x="0" y="0" width="440" height="260" rx="18" class="green"/>
+<text class="t sub" x="24" y="45">Block-Sparse FA</text>
+<text class="t b" x="24" y="92">每个 Q block 只遍历 k_b 个 K/V blocks</text>
+<text class="t b" x="24" y="132">tile loop：O(N) → O(k_b)</text>
+<text class="t b" x="24" y="172">coarse scores：L²/B²；B=64 ⇒ 4096× 少</text>
+<rect x="50" y="205" width="34" height="34" fill="#55ad83"/><rect x="92" y="205" width="34" height="34" fill="#55ad83"/><rect x="176" y="225" width="34" height="34" fill="#55ad83"/><rect x="218" y="225" width="34" height="34" fill="#55ad83"/><rect x="302" y="205" width="34" height="34" fill="#55ad83"/>
+</g>
+
+<path d="M215 285 C215 345 310 345 310 420" class="f"/>
+<path d="M650 310 C650 355 800 355 800 420" class="fo"/>
+<path d="M1210 310 C1210 355 1285 355 1285 420" class="fo"/>
+
+<rect x="85" y="745" width="860" height="240" rx="20" class="box"/>
+<text class="t sub" x="115" y="790">Runtime accounting</text>
+<text class="t b" x="115" y="837">T_total = T_estimate + T_sparse-kernel + 其他模型算子</text>
+<text class="t b" x="115" y="882">长 prompt：index build 约占 sparse attention pipeline 的 5%–20%</text>
+<text class="t b" x="115" y="927">Block-Sparse kernel-level approximation：sₚ ≈ S / (2Bk_b)</text>
+<text class="t s muted" x="115" y="963">动态不是免费；收益来自 dense L² tile traversal 被大幅削减。</text>
+
+<rect x="1005" y="745" width="515" height="240" rx="20" class="green"/>
+<text class="t sub" x="1035" y="790">论文 measured evidence · single A100</text>
+<text class="t b" x="1035" y="837">100K 1.8×　·　300K 4.1×</text>
+<text class="t b" x="1035" y="878">500K 6.8×　·　1M 10×</text>
+<text class="t b" x="1035" y="919">1M：约 30 min → 3 min</text>
+<text class="t s muted" x="1035" y="960">特定模型/硬件/kernel 条件；不是普适常数。</text>
+</svg>

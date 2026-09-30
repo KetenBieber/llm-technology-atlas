@@ -95,12 +95,6 @@ YaRN 的价值就在于：
 ---
 
 
-## 总结架构图
-
-![教学总结图：A018-yarn](../../../figures/explainers/A018-yarn-summary.svg)
-
-> **教学总结图**：把 frequency-selective RoPE interpolation 与 attention magnitude scaling 合并到一张长上下文外推总览图中。
-
 ## 1. 先回到 RoPE：每个 head dimension 其实是一组不同频率的二维时钟
 
 设 attention head dimension：
@@ -239,6 +233,11 @@ $$
 ## 3. 那为什么“只依赖相对位置”还不能天然无限外推？
 
 这是长上下文最容易误解的一步。
+
+![教学解释图：RoPE Extrapolation Problem](../../../figures/explainers/A018/01-rope-extrapolation-problem.svg)
+
+*教学解释图｜RoPE Extrapolation Problem。*
+
 
 “公式只依赖相对位置”不意味着：
 
@@ -1165,6 +1164,11 @@ $$
 
 定义：
 
+![教学解释图：Frequency Selective Scaling](../../../figures/explainers/A018/02-frequency-selective-scaling.svg)
+
+*教学解释图｜Frequency Selective Scaling。*
+
+
 $$
 r(i)
 =
@@ -1217,9 +1221,6 @@ $$
 
 平滑混合。
 
-![YaRN 不同 RoPE 频段的处理规则](../../../figures/explainers/A018-frequency-bands.svg)
-
-*教学解释图。横轴不是普通神经元编号，而是用 (r(d)=L/\lambda_d) 表示“该频率在原训练窗口内转过多少圈”。低 (r) 的长波长维度完全插值，高 (r) 的短波长维度保留原频率，中间频段平滑混合。*
 
 ---
 
@@ -1628,6 +1629,11 @@ YaRN 论文经验观察到：
 ## 32. Temperature $t$ 怎样进入 Attention？
 
 YaRN 写：
+
+![教学解释图：Attention Temperature](../../../figures/explainers/A018/03-attention-temperature.svg)
+
+*教学解释图｜Attention Temperature。*
+
 
 $$
 \boxed{
@@ -2104,6 +2110,11 @@ $$
 ## 43. Dynamic Scaling 为什么会和 KV Cache 冲突？
 
 这是非常重要的工程细节。
+
+![教学解释图：Dynamic YaRN KV Cache](../../../figures/explainers/A018/04-dynamic-yarn-kv-cache.svg)
+
+*教学解释图｜Dynamic YaRN KV Cache。*
+
 
 普通 decode：
 

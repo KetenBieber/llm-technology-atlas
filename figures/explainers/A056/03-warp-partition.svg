@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:10 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">FA1 Split-K → FA2 Split-Q：为什么换一个 Warp 归属轴就少一次 Reduction？</text>
+<text x="70" y="112" class="subtitle">A056 · 关键不是“更多 warp”，而是让每个 warp 尽量拥有完整、互不重叠的 output rows</text>
+
+<text x="70" y="180" class="section">FA1：warps 分 K/V reduction axis → 同一 O rows 被拆成 partial outputs</text>
+<rect x="70" y="215" width="700" height="640" rx="22" class="red"/>
+<text x="105" y="260" class="node">同一个 Q tile 被 4 个 warps 共享</text>
+<rect x="110" y="300" width="160" height="120" rx="14" class="blue"/><text x="150" y="350" class="node">Q rows</text><text x="138" y="386" class="small">shared</text>
+<path d="M270 360 H350" class="flow"/>
+<g>
+<rect x="350" y="285" width="88" height="150" class="orange"/><rect x="438" y="285" width="88" height="150" class="cyan"/><rect x="526" y="285" width="88" height="150" class="green"/><rect x="614" y="285" width="88" height="150" class="gray"/>
+<text x="365" y="338" class="body">K/V₀</text><text x="453" y="338" class="body">K/V₁</text><text x="541" y="338" class="body">K/V₂</text><text x="629" y="338" class="body">K/V₃</text>
+<text x="361" y="390" class="small">warp0</text><text x="449" y="390" class="small">warp1</text><text x="537" y="390" class="small">warp2</text><text x="625" y="390" class="small">warp3</text>
+</g>
+<path d="M394 450 V520" class="bad"/><path d="M482 450 V520" class="bad"/><path d="M570 450 V520" class="bad"/><path d="M658 450 V520" class="bad"/>
+<g>
+<rect x="350" y="520" width="88" height="68" class="gray"/><rect x="438" y="520" width="88" height="68" class="gray"/><rect x="526" y="520" width="88" height="68" class="gray"/><rect x="614" y="520" width="88" height="68" class="gray"/>
+<text x="367" y="562" class="small">O⁽⁰⁾</text><text x="455" y="562" class="small">O⁽¹⁾</text><text x="543" y="562" class="small">O⁽²⁾</text><text x="631" y="562" class="small">O⁽³⁾</text>
+</g>
+<path d="M394 595 V655 H525" class="comm"/><path d="M482 595 V640 H525" class="comm"/><path d="M570 595 V640 H525" class="comm"/><path d="M658 595 V655 H525" class="comm"/>
+<rect x="305" y="665" width="395" height="105" rx="15" class="orange"/>
+<text x="335" y="707" class="node">SMEM 写入 + barrier + reduction</text>
+<text x="335" y="747" class="math">O = Σw O⁽ʷ⁾</text>
+<text x="105" y="818" class="small">瓶颈：warps 的 partial O 在 registers 中彼此不可见，必须跨 warp 合并</text>
+
+<text x="830" y="180" class="section">FA2：warps 分 Q rows → 每个 warp 直接得到完整 output slice</text>
+<rect x="830" y="215" width="700" height="640" rx="22" class="green"/>
+<text x="865" y="260" class="node">同一 K/V tile 放在 SMEM，4 个 warps 只分 Q row ownership</text>
+<rect x="915" y="300" width="530" height="90" rx="15" class="cyan"/>
+<text x="945" y="355" class="node">Shared K/V tile：所有 warps 读取同一份，不是从 HBM 复制 4 次</text>
+
+<g>
+<rect x="875" y="455" width="135" height="120" class="blue"/><rect x="1025" y="455" width="135" height="120" class="cyan"/><rect x="1175" y="455" width="135" height="120" class="green"/><rect x="1325" y="455" width="135" height="120" class="gray"/>
+<text x="901" y="498" class="node">Q rows₀</text><text x="1051" y="498" class="node">Q rows₁</text><text x="1201" y="498" class="node">Q rows₂</text><text x="1351" y="498" class="node">Q rows₃</text>
+<text x="908" y="542" class="small">warp0</text><text x="1058" y="542" class="small">warp1</text><text x="1208" y="542" class="small">warp2</text><text x="1358" y="542" class="small">warp3</text>
+</g>
+<path d="M942 590 V660" class="good"/><path d="M1092 590 V660" class="good"/><path d="M1242 590 V660" class="good"/><path d="M1392 590 V660" class="good"/>
+<g>
+<rect x="875" y="660" width="135" height="78" class="green"/><rect x="1025" y="660" width="135" height="78" class="green"/><rect x="1175" y="660" width="135" height="78" class="green"/><rect x="1325" y="660" width="135" height="78" class="green"/>
+<text x="914" y="708" class="body">O rows₀</text><text x="1064" y="708" class="body">O rows₁</text><text x="1214" y="708" class="body">O rows₂</text><text x="1364" y="708" class="body">O rows₃</text>
+</g>
+<text x="865" y="792" class="math">O = concat(O rows₀, O rows₁, O rows₂, O rows₃)</text>
+<text x="865" y="828" class="small">没有 partial-sum reduction：输出区间互不重叠，直接拼接即完整 O tile</text>
+
+<rect x="70" y="905" width="1460" height="150" rx="20" class="box"/>
+<text x="105" y="950" class="node">Work-partition 设计判据</text>
+<text x="105" y="993" class="body">沿 reduction axis 分工 → 通常产生 partial results，需要通信；沿 independent output axis 分工 → worker 可独占结果，通信显著减少。</text>
+<text x="105" y="1030" class="math">split-K: partial O + reduce　　vs.　　split-Q: disjoint O rows + concat</text>
+</svg>

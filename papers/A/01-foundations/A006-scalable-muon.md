@@ -31,12 +31,6 @@
 主要技术路径 `训练 → 参数优化 → 矩阵整体梯度变换 → 动量正交化 → Muon → Scalable Muon（本篇）`；分支路径 `分布式训练 → Optimizer State Sharding → ZeRO-1 → Distributed Muon`。不要把「正交化矩阵梯度」与 LoRA 的「低秩限制参数改变量」混同：前者操纵更新矩阵的奇异值尺度，后者约束可训练参数化的秩。
 
 
-## 总结架构图
-
-![教学总结图：A006-scalable-muon](../../../figures/explainers/A006-scalable-muon-summary.svg)
-
-> **教学总结图**：Muon 从矩阵梯度出发，经 momentum、Newton–Schulz 正交化与尺度校准形成结构化更新。
-
 # 输入、输出与任务
 
 ## Muon 处理的是**二维参数矩阵**，不是 token
@@ -95,6 +89,11 @@ flowchart TD
 
 最朴素的 SGD 把局部损失一阶 Taylor 展开：
 
+![教学解释图：Spectral Geometry](../../../figures/explainers/A006/01-spectral-geometry.svg)
+
+*教学解释图｜Spectral Geometry。*
+
+
 $$
 L(W+\Delta)\approx L(W)+\langle G,\Delta\rangle_F,\qquad
 \langle G,\Delta\rangle_F=\operatorname{tr}(G^\top\Delta).
@@ -138,6 +137,11 @@ $$
 ## 2. 矩阵极分解到底如何得到：从 SVD 到 Newton–Schulz
 
 理论上当 `M=U\Sigma V^\top` 为满行秩、`A\le B` 时，
+
+![教学解释图：Newton Schulz Dataflow](../../../figures/explainers/A006/02-newton-schulz-dataflow.svg)
+
+*教学解释图｜Newton Schulz Dataflow。*
+
 
 $$
 MM^\top=U\Sigma^2U^\top,\qquad
@@ -194,6 +198,11 @@ $$
 
 设 `O\in\mathbb R^{A\times B}` 是精确的、满秩的极分解更新（`r=\min(A,B)`），其非零奇异值全为 1。因此
 
+![教学解释图：Shape Aware RMS](../../../figures/explainers/A006/03-shape-aware-rms.svg)
+
+*教学解释图｜Shape Aware RMS。*
+
+
 $$
 \|O\|_F^2=\sum_{i=1}^{r}\sigma_i(O)^2=r.
 $$
@@ -229,6 +238,11 @@ $$
 ## 5. 分布式陷阱：为什么 ZeRO-1 对 AdamW 成立，不等于对 Muon 成立
 
 假设 `W\in\mathbb R^{4\times4}` 被切成前后两个行块 `W_1,W_2\in\mathbb R^{2\times4}`，数据并行两张卡各持一个分片。AdamW 对每个元素更新只需本地 `g,m,v,W`，因此在全局梯度已正确汇聚的前提下，每卡独立更新对应分片，再 all-gather 新权重即可。Muon 则要构建 `MM^\top`：
+
+![教学解释图：Distributed Muon](../../../figures/explainers/A006/04-distributed-muon.svg)
+
+*教学解释图｜Distributed Muon。*
+
 
 $$
 MM^\top=

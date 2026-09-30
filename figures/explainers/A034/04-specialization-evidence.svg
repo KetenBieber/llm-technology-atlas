@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2e8b57"/></marker>
+  <marker id="r" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c43d3d"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:28px;font-weight:700}.b{font-size:22px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .base{fill:#eef2f6;stroke:#64748b;stroke-width:2}.good{fill:#edf9f0;stroke:#2e8b57;stroke-width:2}.intervene{fill:#fff1f0;stroke:#c43d3d;stroke-width:2}
+  .arrow{stroke:#2e8b57;stroke-width:3;fill:none;marker-end:url(#g)}.drop{stroke:#c43d3d;stroke-width:4;fill:none;marker-end:url(#r)}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">DeepSeekMoE 证据链：同预算消融 + Expert 禁用干预</text>
+<text x="800" y="101" text-anchor="middle" class="sub">这比只看最终 benchmark 更接近机制证据，但仍不能推出“每个 expert 都有唯一可命名语义”</text>
+
+<rect x="55" y="150" width="760" height="735" rx="22" class="panel"/>
+<text x="435" y="195" text-anchor="middle" class="h">① Controlled ablation：total / activated parameters 对齐</text>
+<rect x="110" y="260" width="260" height="115" rx="16" class="base"/>
+<text x="240" y="302" text-anchor="middle" class="b">GShard-style</text><text x="240" y="340" text-anchor="middle" class="b">0 shared + 2/16 routed</text>
+<path d="M370 318 H450" class="arrow"/>
+<rect x="465" y="260" width="280" height="115" rx="16" class="good"/>
+<text x="605" y="302" text-anchor="middle" class="b">+ shared isolation</text><text x="605" y="340" text-anchor="middle" class="b">1 shared + 1/15 routed</text>
+
+<path d="M605 375 V445" class="arrow"/>
+<rect x="465" y="460" width="280" height="115" rx="16" class="good"/>
+<text x="605" y="502" text-anchor="middle" class="b">+ finer segmentation</text><text x="605" y="540" text-anchor="middle" class="b">1 shared + 3/31 routed</text>
+<path d="M465 518 H385" class="arrow"/>
+<rect x="110" y="460" width="260" height="115" rx="16" class="good"/>
+<text x="240" y="502" text-anchor="middle" class="b">even finer</text><text x="240" y="540" text-anchor="middle" class="b">1 shared + 7/63 routed</text>
+<text x="435" y="665" text-anchor="middle" class="b">论文报告趋势：加入 shared isolation 后改善；</text>
+<text x="435" y="702" text-anchor="middle" class="b">继续提高 segmentation granularity，整体表现继续改善。</text>
+<text x="435" y="760" text-anchor="middle" class="s">因为预算对齐，这些变化不容易被“只是更多参数 / 更多 active compute”解释掉。</text>
+
+<rect x="845" y="150" width="700" height="735" rx="22" class="panel"/>
+<text x="1195" y="195" text-anchor="middle" class="h">② Intervention：让模型失去“最重要”的 expert</text>
+<rect x="905" y="265" width="580" height="125" rx="16" class="intervene"/>
+<text x="1195" y="307" text-anchor="middle" class="b">逐渐禁用 top-ranked routed experts</text>
+<text x="1195" y="346" text-anchor="middle" class="s">若 experts 高度冗余，其他 experts 应更容易补位</text>
+<path d="M1195 390 V445" class="drop"/>
+<rect x="920" y="460" width="550" height="130" rx="16" class="base"/>
+<text x="1195" y="504" text-anchor="middle" class="b">DeepSeekMoE 对关键 routed expert 缺失更敏感</text>
+<text x="1195" y="545" text-anchor="middle" class="s">论文解释：可替代冗余更低，specialization 更强</text>
+
+<rect x="920" y="650" width="550" height="150" rx="16" class="intervene"/>
+<text x="1195" y="694" text-anchor="middle" class="b">禁用 shared expert，并额外启用 1 个 routed expert</text>
+<text x="1195" y="737" text-anchor="middle" class="h">Pile loss ≈ 1.808 → 2.414</text>
+<text x="1195" y="775" text-anchor="middle" class="s">保持 active compute 的干预下，shared 功能不能被无损替代</text>
+
+<rect x="130" y="935" width="1340" height="105" rx="16" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+<text x="800" y="973" text-anchor="middle" class="b">证据能支持：这套结构在论文设置下减少功能冗余、提高 specialization，并非只是扩大预算。</text>
+<text x="800" y="1013" text-anchor="middle" class="s">证据不能直接证明：每个小 expert 都对应一个单一、互斥、可命名的人类技能；intervention 提供的是功能性而不是语义标签证据。</text>
+</svg>

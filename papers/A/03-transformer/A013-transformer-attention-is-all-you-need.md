@@ -30,17 +30,16 @@ BERT Encoder / GPT Decoder-only / ViT / VLM / VLA 的后续技术谱系
 **为什么需要出现：** RNN 的隐藏状态 `h_t=f(h_{t-1},x_t)` 导致同一层的第 `t` 步必须等第 `t-1` 步结束，训练一个长句存在跨时间递推串行依赖。CNN 可并行但若局部卷积核宽有限，远距离信息要穿过多层或使用 dilation。Self-attention 在单层中允许任意两个位置建立直接数据依赖，使整条序列在一次批量矩阵计算中共同更新。代价是所有位置两两相关时计算与中间注意力矩阵随 `T^2` 增长，而不是「注意力完全消除了长序列成本」。[原文 `1–2 Table 1](https://ar5iv.labs.arxiv.org/html/1706.03762)
 
 
-## 总结架构图
-
-![教学总结图：A013-transformer-attention-is-all-you-need](../../../figures/explainers/A013-transformer-attention-is-all-you-need-summary.svg)
-
-> **教学总结图**：Transformer 用多头注意力、残差归一化和逐位置 FFN 取代循环序列建模。
-
 # 输入、输出与任务
 
 ## 首先区分翻译模型与今天的纯 Decoder 语言模型
 
 本文目标是给源序列 `x_{1:S}` 生成目标序列 `y_{1:T}`，训练仍使用教师强制的目标输入右移。定义批量大小 `B`，源长度 `S`，目标长度 `T`，模型宽 `d_{\rm model}=512`，Attention 头数 `h=8`，每头 `d_k=d_v=64`，前馈内层宽 `d_{\rm ff}=2048`，Encoder/Decoder 各 `L=6` 层。
+
+![教学解释图：Attention Mask Geometry](../../../figures/explainers/A013/03-attention-mask-geometry.svg)
+
+*教学解释图｜Attention Mask Geometry。*
+
 
 | 对象 | Shape | 所在位置 |
 |---|---|---|
@@ -81,6 +80,11 @@ flowchart TD
   More --> Head["线性投影 + Softmax → 目标词"]
 ~~~
 
+![教学解释图：Encoder Decoder Dataflow](../../../figures/explainers/A013/01-encoder-decoder-dataflow.svg)
+
+*教学解释图｜Encoder Decoder Dataflow。*
+
+
 **位置编码**先与 Token Embedding 相加，不是被当成另一条需要 softmax 归一化的词序列。Encoder 每层先 self-attention 再逐 token FFN；Decoder 每层多出一个 Encoder–Decoder Cross-Attention 子层。每个子层用 `\operatorname{LayerNorm}(x+\operatorname{Dropout}(\operatorname{Sublayer}(x)))`（原文 Post-LN）连接；本论文并非后来的 `x+\operatorname{Sublayer}(\operatorname{LayerNorm}(x))` Pre-LN 布局。
 
 ### 如果删去某个模块会怎样
@@ -94,6 +98,11 @@ flowchart TD
 ## 1. 从注意力的一般概率读取需求推导 Q/K/V
 
 给定某目标位置的查询向量 `q`，现有源或历史序列的 `S` 个被查询 Key `k_j` 及对应 Value `v_j`，最自然的加权读取是
+
+![教学解释图：Attention Tensor Flow](../../../figures/explainers/A013/02-attention-tensor-flow.svg)
+
+*教学解释图｜Attention Tensor Flow。*
+
 
 $$
 o=\sum_{j=1}^{S}\alpha_j v_j,\qquad
@@ -170,6 +179,11 @@ $$
 ## 4. 自注意力没有时间递推，为什么位置编码不能省
 
 设输入序列 `X=[x_1,\ldots,x_T]`，对任何位置置换矩阵 `P`，若只保留无 mask 的 self-attention 和逐位置 FFN，则 `Q'=PQ,K'=PK,V'=PV`。其相关矩阵
+
+![教学解释图：RNN vs. Self Attention Dependency](../../../figures/explainers/A013/04-rnn-vs-self-attention-dependency.svg)
+
+*教学解释图｜RNN vs. Self Attention Dependency。*
+
 
 $$
 Q'K'^\top=(PQ)(PK)^\top=P(QK^\top)P^\top.

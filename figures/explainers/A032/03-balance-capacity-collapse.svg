@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="r" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c43d3d"/></marker>
+  <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:28px;font-weight:700}.b{font-size:22px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .bad{fill:#fff1f0;stroke:#c43d3d;stroke-width:2}.metric{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}.cap{fill:#fff7ed;stroke:#d97706;stroke-width:2}
+  .red{stroke:#c43d3d;stroke-width:3;fill:none;marker-end:url(#r)}.flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#a)}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">MoE Balance：Importance、Load 与 Capacity 分别约束什么？</text>
+<text x="800" y="101" text-anchor="middle" class="sub">只看一个指标不足以阻止 routing collapse，也不足以保证 expert-parallel 系统不溢出</text>
+
+<rect x="55" y="145" width="455" height="760" rx="22" class="panel"/>
+<text x="282" y="190" text-anchor="middle" class="h">① Collapse 是一个正反馈环</text>
+<rect x="105" y="255" width="355" height="86" rx="15" class="bad"/><text x="282" y="307" text-anchor="middle" class="b">early: expert 7 略高分</text>
+<path d="M282 341 V395" class="red"/>
+<rect x="105" y="410" width="355" height="86" rx="15" class="bad"/><text x="282" y="462" text-anchor="middle" class="b">收到更多 token / 梯度</text>
+<path d="M282 496 V550" class="red"/>
+<rect x="105" y="565" width="355" height="86" rx="15" class="bad"/><text x="282" y="617" text-anchor="middle" class="b">学得更快、更稳定</text>
+<path d="M282 651 C470 690 470 245 300 245" class="red"/>
+<text x="282" y="750" text-anchor="middle" class="b">结果：少数 experts 过热</text>
+<text x="282" y="787" text-anchor="middle" class="s">其余 experts 几乎不训练；设备也会成为 straggler。</text>
+
+<rect x="540" y="145" width="520" height="760" rx="22" class="panel"/>
+<text x="800" y="190" text-anchor="middle" class="h">② Importance ≠ Load</text>
+<rect x="585" y="245" width="430" height="175" rx="16" class="metric"/>
+<text x="800" y="288" text-anchor="middle" class="b">Importance_i = Σ_x g_i(x)</text>
+<text x="800" y="329" text-anchor="middle" class="b">L_importance = λ · CV(Importance)²</text>
+<text x="800" y="372" text-anchor="middle" class="s">约束 soft gate mass 是否均匀</text>
+<rect x="585" y="465" width="430" height="185" rx="16" fill="#e7fbfc" stroke="#0e8f9b" stroke-width="2"/>
+<text x="800" y="507" text-anchor="middle" class="b">Load_i = hard routing 后 token count</text>
+<text x="800" y="549" text-anchor="middle" class="b">例：每个 token 都是 0.51 vs 0.49</text>
+<text x="800" y="590" text-anchor="middle" class="b">soft mass 看似接近，Top-1 load 却可 = (1000,0)</text>
+<text x="800" y="625" text-anchor="middle" class="s">所以“概率平均”不等于“实际 dispatch 平均”</text>
+<text x="800" y="735" text-anchor="middle" class="b">Balancing loss 的任务：</text>
+<text x="800" y="773" text-anchor="middle" class="s">在训练阶段把 router 偏好与实际 token ownership 拉回可扩展区域。</text>
+
+<rect x="1090" y="145" width="455" height="760" rx="22" class="panel"/>
+<text x="1317" y="190" text-anchor="middle" class="h">③ Capacity 是硬系统边界</text>
+<rect x="1140" y="245" width="355" height="140" rx="16" class="cap"/>
+<text x="1317" y="288" text-anchor="middle" class="b">C_e = c · N / E</text>
+<text x="1317" y="330" text-anchor="middle" class="s">预分配 expert token buffer</text>
+<g>
+<rect x="1160" y="445" width="48" height="180" fill="#edf9f0" stroke="#2e8b57"/><rect x="1215" y="445" width="48" height="180" fill="#edf9f0" stroke="#2e8b57"/>
+<rect x="1270" y="445" width="48" height="180" fill="#edf9f0" stroke="#2e8b57"/><rect x="1325" y="445" width="48" height="180" fill="#edf9f0" stroke="#2e8b57"/>
+<rect x="1380" y="445" width="48" height="180" fill="#fff1f0" stroke="#c43d3d"/><rect x="1435" y="445" width="48" height="180" fill="#fff1f0" stroke="#c43d3d"/>
+</g>
+<line x1="1145" y1="555" x2="1495" y2="555" stroke="#d97706" stroke-width="4" stroke-dasharray="10 6"/>
+<text x="1317" y="680" text-anchor="middle" class="b">n_e &gt; C_e ⇒ overflow</text>
+<text x="1317" y="721" text-anchor="middle" class="s">drop / reroute / residual bypass / increase c</text>
+<text x="1317" y="795" text-anchor="middle" class="s">c 太小：drop 多；c 太大：padding、memory、通信浪费。</text>
+
+<rect x="115" y="950" width="1370" height="100" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="988" text-anchor="middle" class="b">三层约束的逻辑：Importance 管“soft preference” → Load 管“hard token ownership” → Capacity 管“真实 buffer 是否装得下”。</text>
+<text x="800" y="1026" text-anchor="middle" class="s">MoE 的模型质量与系统效率在这里耦合：更好的 balancing 允许更小 capacity factor，也就减少 padding 和通信浪费。</text>
+</svg>

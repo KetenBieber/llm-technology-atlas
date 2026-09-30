@@ -53,12 +53,6 @@ DPO 的答案是：可以，而且在一组明确假设下，这不是经验技�
 ---
 
 
-## 总结架构图
-
-![教学总结图：A052-dpo](../../../figures/explainers/A052-dpo-summary.svg)
-
-> **教学总结图**：从 preference pair、policy/reference log-ratio 到 implicit reward margin 与 DPO logistic loss，展示 RLHF 消元链。
-
 ## 1. 从问题场景开始：Preference Learning 缺的究竟是什么？
 
 给定 prompt：
@@ -113,6 +107,11 @@ $$
 ## 2. 为什么只拿 preferred response 做 SFT 不够？
 
 最直接的想法：
+
+![教学解释图：RLHF Elimination Chain](../../../figures/explainers/A052/01-rlhf-elimination-chain.svg)
+
+*教学解释图｜RLHF Elimination Chain。*
+
 
 > 既然 $y_w$ 更好，那就只训练 $y_w$。
 
@@ -1765,6 +1764,11 @@ $$
 
 看：
 
+![教学解释图：Response Token Credit](../../../figures/explainers/A052/02-response-token-credit.svg)
+
+*教学解释图｜Response Token Credit。*
+
+
 $$
 \log\pi_\theta(y_w|x)
 =
@@ -2168,6 +2172,11 @@ DPO loss 里的乘法形式只是 reward reparameterization 后的结果。
 ## 35. DPO gradient：真正训练时到底在做什么？
 
 定义：
+
+![教学解释图：Dynamic Pair Gradient](../../../figures/explainers/A052/03-dynamic-pair-gradient.svg)
+
+*教学解释图｜Dynamic Pair Gradient。*
+
 
 $$
 z_\theta

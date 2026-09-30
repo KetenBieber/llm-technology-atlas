@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{stroke:#7c919f;stroke-width:2}.phase{fill:none;stroke:#2b6f9f;stroke-width:4}.phase2{fill:none;stroke:#178d98;stroke-width:4}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">RoPE：为什么两个“绝对旋转”会在点积里变成相对位移？</text><text x="70" y="112" class="subtitle">A014 · 相对位置不是后处理得到的，而是旋转群 R(a)ᵀR(b)=R(b−a) 的代数结果</text>
+<text x="70" y="180" class="section">位置 m：旋转 Query</text>
+<rect x="70" y="220" width="470" height="600" rx="24" class="blue"/>
+<line x1="300" y1="565" x2="300" y2="315" class="axis"/><line x1="145" y1="565" x2="465" y2="565" class="axis"/>
+<circle cx="300" cy="565" r="150" fill="none" stroke="#d7e4ec" stroke-width="2"/>
+<line x1="300" y1="565" x2="430" y2="500" class="aux"/>
+<text x="425" y="485" class="body">q</text>
+<line x1="300" y1="565" x2="350" y2="425" stroke="#2b6f9f" stroke-width="6" marker-end="url(#arrow)"/>
+<path d="M430 500 A150 150 0 0 0 350 425" class="phase"/>
+<text x="365" y="455" class="node">mθ</text>
+<text x="105" y="690" class="math">q′ₘ = R(mθ) q</text>
+<text x="105" y="745" class="body">旋转保范数：‖q′ₘ‖₂ = ‖q‖₂</text>
+
+<text x="610" y="180" class="section">位置 n：旋转 Key</text>
+<rect x="570" y="220" width="470" height="600" rx="24" class="cyan"/>
+<line x1="800" y1="565" x2="800" y2="315" class="axis"/><line x1="645" y1="565" x2="965" y2="565" class="axis"/>
+<circle cx="800" cy="565" r="150" fill="none" stroke="#d7e4ec" stroke-width="2"/>
+<line x1="800" y1="565" x2="915" y2="535" class="aux"/><text x="920" y="530" class="body">k</text>
+<line x1="800" y1="565" x2="735" y2="430" stroke="#178d98" stroke-width="6" marker-end="url(#arrowGreen)"/>
+<path d="M915 535 A150 150 0 0 0 735 430" class="phase2"/>
+<text x="825" y="445" class="node">nθ</text>
+<text x="605" y="690" class="math">k′ₙ = R(nθ) k</text>
+<text x="605" y="745" class="body">Q/K 必须使用同一 pairing 与频率</text>
+
+<path d="M1040 520 H1125" class="good"/>
+<text x="1055" y="490" class="small">dot product</text>
+
+<text x="1130" y="180" class="section">点积只看到 n−m</text>
+<rect x="1090" y="220" width="440" height="600" rx="24" class="green"/>
+<text x="1125" y="280" class="math">(q′ₘ)ᵀk′ₙ</text>
+<text x="1125" y="335" class="math">= qᵀR(mθ)ᵀR(nθ)k</text>
+<text x="1125" y="390" class="math">= qᵀR(−mθ)R(nθ)k</text>
+<rect x="1125" y="430" width="365" height="82" rx="14" class="green"/>
+<text x="1150" y="480" class="math">= qᵀR((n−m)θ)k</text>
+<line x1="1308" y1="560" x2="1308" y2="690" class="axis"/><line x1="1190" y1="625" x2="1425" y2="625" class="axis"/>
+<line x1="1308" y1="625" x2="1400" y2="590" stroke="#2b6f9f" stroke-width="5"/>
+<line x1="1308" y1="625" x2="1245" y2="545" stroke="#178d98" stroke-width="5"/>
+<path d="M1398 590 A100 100 0 0 0 1245 545" class="phase"/>
+<text x="1270" y="555" class="node">(n−m)θ</text>
+<text x="1125" y="760" class="small">共同平移 m,n → m+Δ,n+Δ 时相对相位不变</text>
+
+<rect x="70" y="865" width="1460" height="165" rx="22" class="box"/>
+<text x="100" y="910" class="node">关键边界</text>
+<text x="100" y="952" class="body">RoPE 保证 score 的位置项以相对差出现；它不保证“距离越远 score 单调越小”，也不自动保证训练窗口之外无限外推。</text>
+<text x="100" y="994" class="body">V 通常不旋转：RoPE 改的是 Q/K 的相对方向，从而改变 Attention score，而不是 Value 内容本身。</text>
+</svg>

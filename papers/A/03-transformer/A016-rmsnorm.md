@@ -42,12 +42,6 @@ Transformer
 论文判断是：在其测试模型上，LayerNorm 的 re-centering invariance 并非总是必要，而 re-scaling invariance 更关键；RMSNorm 用更简单计算获得接近性能。论文报告不同模型上运行时间可降低约 7%–64%，但这个比例是**特定模型和实现环境中的端到端结果**，不能直接套到现代 fused Transformer kernel。citeturn100152academia0
 
 
-## 总结架构图
-
-![教学总结图：A016-rmsnorm](../../../figures/explainers/A016-rmsnorm-summary.svg)
-
-> **教学总结图**：RMSNorm 保留尺度归一化、去掉均值中心化，与 LayerNorm 形成直接数据流对照。
-
 # 输入、输出与任务
 
 对单个 token hidden state：
@@ -109,6 +103,11 @@ Y[B,T,d]
 ## LayerNorm 与 RMSNorm 的数据流
 
 LayerNorm：
+
+![教学解释图：LayerNorm vs. RMSNorm Dataflow](../../../figures/explainers/A016/01-layernorm-vs-rmsnorm-dataflow.svg)
+
+*教学解释图｜LayerNorm vs. RMSNorm Dataflow。*
+
 
 ~~~text
 x
@@ -352,6 +351,11 @@ $$
 
 忽略 gain，定义：
 
+![教学解释图：Backward Hidden Coupling](../../../figures/explainers/A016/02-backward-hidden-coupling.svg)
+
+*教学解释图｜Backward Hidden Coupling。*
+
+
 $$
 r=
 \sqrt{\frac1d\sum_jx_j^2+\epsilon},
@@ -416,6 +420,11 @@ $$
 ## 5. 为什么少一个 mean reduction 可能更快
 
 LayerNorm 要获得中心和尺度，RMSNorm 只需要：
+
+![教学解释图：RMSNorm Kernel Reduction](../../../figures/explainers/A016/03-rmsnorm-kernel-reduction.svg)
+
+*教学解释图｜RMSNorm Kernel Reduction。*
+
 
 $$
 \sum_i x_i^2.

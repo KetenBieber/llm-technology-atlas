@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200"><defs><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#14213d}.title{font-size:48px;font-weight:700}.sub{font-size:24px;fill:#607086}.h{font-size:29px;font-weight:700}.n{font-size:24px;font-weight:650}.b{font-size:21px}.s{font-size:20px;fill:#607086}.formula{font-family:"STIX Two Math","Cambria Math",serif;font-size:23px}.box{fill:#f8fbff;stroke:#8fb6d9;stroke-width:2}.state{fill:#ecfbfc;stroke:#3ba9b3;stroke-width:2}.gray{fill:#f4f6f8;stroke:#aab6c3;stroke-width:2}.warn{fill:#fff2f1;stroke:#cf5c57;stroke-width:2}.good{fill:#eef9f2;stroke:#4ca267;stroke-width:2}.cost{fill:#fff7e9;stroke:#df942c;stroke-width:2}.blue{stroke:#246aa5;stroke-width:5;fill:none}.cyan{stroke:#2599a6;stroke-width:4;fill:none}.green{stroke:#3d995c;stroke-width:5;fill:none}.orange{stroke:#d9871c;stroke-width:4;fill:none}.red{stroke:#c8504b;stroke-width:4;fill:none}.dash{stroke-dasharray:12 10}</style><marker id="ab" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#246aa5"/></marker><marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2599a6"/></marker><marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3d995c"/></marker><marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d9871c"/></marker><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c8504b"/></marker></defs><rect width="1600" height="1200" fill="#fff"/><text x="70" y="75" class="title">A005 · Degradation：更深模型“有解”却不等于“找得到”</text><text x="72" y="115" class="sub">ResNet 的起点不是“层越多越过拟合”，而是更深 plain net 连 training error 都可能更高。</text>
+<rect x="60" y="170" width="710" height="760" rx="28" class="warn"/><text x="95" y="220" class="h">Observed problem · plain depth 增加后优化退化</text>
+<line x1="150" y1="710" x2="665" y2="710" stroke="#8e9aa8" stroke-width="3"/><line x1="150" y1="710" x2="150" y2="315" stroke="#8e9aa8" stroke-width="3"/>
+<text x="665" y="750" class="b">training steps</text><text x="90" y="315" class="b">error</text>
+<path d="M160 405 C270 500 410 610 650 650" class="blue"/><path d="M160 390 C260 470 390 540 650 590" class="red"/>
+<text x="505" y="690" class="n" fill="#246aa5">shallower plain</text><text x="525" y="565" class="n" fill="#c8504b">deeper plain</text>
+<rect x="120" y="790" width="585" height="100" rx="18" class="warn"/><text x="413" y="830" text-anchor="middle" class="b">论文 Figure 1 / 4：更深 plain net 的 training error 也更高</text><text x="413" y="865" text-anchor="middle" class="s">因此不是“只看 test error”的典型 overfitting 解释</text>
+
+<rect x="825" y="170" width="715" height="760" rx="28" class="good"/><text x="860" y="220" class="h">Constructed identity solution · 表达能力并没有变差</text>
+<rect x="885" y="310" width="220" height="110" rx="18" class="box"/><text x="995" y="355" text-anchor="middle" class="n">shallow net</text><text x="995" y="390" text-anchor="middle" class="formula">h(x)</text>
+<rect x="1210" y="290" width="250" height="150" rx="20" class="state"/><text x="1335" y="335" text-anchor="middle" class="n">added layers</text><text x="1335" y="380" text-anchor="middle" class="formula">g(z)=z</text><text x="1335" y="412" text-anchor="middle" class="s">identity mapping</text>
+<path d="M1105 365 H1210" class="green" marker-end="url(#ag)"/>
+<rect x="1030" y="545" width="300" height="135" rx="22" class="good"/><text x="1180" y="590" text-anchor="middle" class="n">deep constructed solution</text><text x="1180" y="635" text-anchor="middle" class="formula">g(h(x)) = h(x)</text>
+<path d="M1335 440 C1330 505 1260 525 1220 545" class="green" marker-end="url(#ag)"/>
+<text x="875" y="750" class="formula">minθdeep L(θdeep) ≤ L(θconstructed)=L(θshallow)</text>
+<text x="875" y="805" class="b">存在性只说明“深模型能复制浅模型”；</text><text x="875" y="845" class="b">并不保证 SGD 在有限预算内会找到这个点。</text>
+
+<rect x="150" y="975" width="1300" height="170" rx="24" class="cost"/><text x="185" y="1020" class="h">矛盾落点：parameterization / optimization</text>
+<text x="190" y="1070" class="formula">existence: L(θ*deep) ≤ L(θ*shallow)   but   trained: L(θ̂deep) &gt; L(θ̂shallow)</text>
+<text x="190" y="1110" class="b">Residual learning 的任务：不是扩张函数集合本身，而是让 near-identity 解更容易被优化器表达和到达。</text>
+</svg>

@@ -122,12 +122,6 @@ BN 的关键简化是：**不试图消掉不同 feature 之间的协方差，只
 BN 与 LayerNorm/RMSNorm 不能只说成“公式差不多”。最关键的分歧首先是**统计轴和样本间耦合**。
 
 
-## 总结架构图
-
-![教学总结图：A004-batch-normalization](../../../figures/explainers/A004-batch-normalization-summary.svg)
-
-> **教学总结图**：对照 BatchNorm 在训练期使用 batch statistics、推理期使用 running statistics 的两条路径。
-
 # 输入、输出与任务
 
 ## 1. 全连接场景：对哪个轴统计？
@@ -241,6 +235,11 @@ $$
 | $\gamma,\beta$ | 参与前向并可学习 | 使用训练后的固定参数 |
 | 是否需要 backward | 是 | 通常否 |
 | 是否可直接与前一线性层融合 | 不能一般融合 | 固定统计后可以 |
+
+![教学解释图：Training vs. Inference Statistics](../../../figures/explainers/A004/01-train-inference-statistics.svg)
+
+*教学解释图｜Training vs. Inference Statistics。*
+
 
 训练时，同一批中的其他样本改变，会改变本样本的 $\mu_{\mathcal B},\sigma_{\mathcal B}^2$，所以输出也会改变。这种**跨样本依赖**是 BN 的结构性质，不是实现 bug。
 
@@ -509,6 +508,11 @@ $$
 ## 4. 从链式法则完整推导 BN 的输入梯度
 
 对单个 feature 的 $m$ 个值，定义
+
+![教学解释图：Reduction Axes Backward Coupling](../../../figures/explainers/A004/02-reduction-axes-backward-coupling.svg)
+
+*教学解释图｜Reduction Axes Backward Coupling。*
+
 
 $$
 \mu
@@ -980,6 +984,11 @@ train()
 ## 1. 推理时为什么 Conv + BN 可以融合？
 
 推理统计固定后：
+
+![教学解释图：Conv BN Fusion](../../../figures/explainers/A004/03-conv-bn-fusion.svg)
+
+*教学解释图｜Conv BN Fusion。*
+
 
 $$
 \mathrm{BN}(x)

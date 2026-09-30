@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:28px;font-weight:700}.b{font-size:22px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .state{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}.head{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}.latent{fill:#edf9f0;stroke:#2e8b57;stroke-width:3}
+  .formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}.warn{fill:#fff7ed;stroke:#d97706;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">MHA / GQA / MQA / MLA：究竟压缩了哪一层状态？</text>
+<text x="800" y="101" text-anchor="middle" class="sub">比较的是每个历史 token、每层需要长期保存的 decode state，而不是当前 query 的临时计算</text>
+
+<g>
+<rect x="50" y="155" width="355" height="735" rx="22" class="panel"/>
+<text x="227" y="200" text-anchor="middle" class="h">MHA</text>
+<text x="227" y="238" text-anchor="middle" class="s">每个 head 独立 K/V</text>
+<g>
+<rect x="95" y="290" width="85" height="75" rx="11" class="state"/><text x="137" y="336" text-anchor="middle" class="b">K₁</text>
+<rect x="190" y="290" width="85" height="75" rx="11" class="state"/><text x="232" y="336" text-anchor="middle" class="b">V₁</text>
+<rect x="95" y="380" width="85" height="75" rx="11" class="state"/><text x="137" y="426" text-anchor="middle" class="b">K₂</text>
+<rect x="190" y="380" width="85" height="75" rx="11" class="state"/><text x="232" y="426" text-anchor="middle" class="b">V₂</text>
+<rect x="95" y="470" width="180" height="75" rx="11" class="state"/><text x="185" y="516" text-anchor="middle" class="b">… 128 heads</text>
+</g>
+<rect x="85" y="610" width="285" height="135" rx="15" class="formula"/>
+<text x="227" y="655" text-anchor="middle" class="b">cache/token/layer</text>
+<text x="227" y="704" text-anchor="middle" class="h">2 n_h d_h = 32768</text>
+<text x="227" y="805" text-anchor="middle" class="s">最大多头自由度，状态也最大</text>
+</g>
+
+<g>
+<rect x="430" y="155" width="355" height="735" rx="22" class="panel"/>
+<text x="607" y="200" text-anchor="middle" class="h">GQA</text>
+<text x="607" y="238" text-anchor="middle" class="s">多个 Query heads 共享 KV group</text>
+<g>
+<rect x="485" y="300" width="95" height="85" rx="12" class="state"/><text x="532" y="350" text-anchor="middle" class="b">KV_g1</text>
+<rect x="600" y="300" width="95" height="85" rx="12" class="state"/><text x="647" y="350" text-anchor="middle" class="b">KV_g2</text>
+<rect x="485" y="410" width="95" height="85" rx="12" class="state"/><text x="532" y="460" text-anchor="middle" class="b">…</text>
+<rect x="600" y="410" width="95" height="85" rx="12" class="state"/><text x="647" y="460" text-anchor="middle" class="b">KV_ng</text>
+</g>
+<rect x="465" y="610" width="285" height="135" rx="15" class="formula"/>
+<text x="607" y="655" text-anchor="middle" class="b">cache/token/layer</text>
+<text x="607" y="704" text-anchor="middle" class="h">2 n_g d_h</text>
+<text x="607" y="805" text-anchor="middle" class="s">压缩轴：最终 KV group 数</text>
+</g>
+
+<g>
+<rect x="810" y="155" width="355" height="735" rx="22" class="panel"/>
+<text x="987" y="200" text-anchor="middle" class="h">MQA</text>
+<text x="987" y="238" text-anchor="middle" class="s">所有 Query heads 共享 1 套 K/V</text>
+<rect x="900" y="330" width="175" height="120" rx="16" class="state"/>
+<text x="987" y="380" text-anchor="middle" class="h">K / V</text><text x="987" y="417" text-anchor="middle" class="s">one shared head</text>
+<rect x="845" y="610" width="285" height="135" rx="15" class="formula"/>
+<text x="987" y="655" text-anchor="middle" class="b">cache/token/layer</text>
+<text x="987" y="704" text-anchor="middle" class="h">2 d_h</text>
+<text x="987" y="805" text-anchor="middle" class="s">压缩最强，但共享约束也最强</text>
+</g>
+
+<g>
+<rect x="1190" y="155" width="355" height="735" rx="22" class="panel"/>
+<text x="1367" y="200" text-anchor="middle" class="h">MLA</text>
+<text x="1367" y="238" text-anchor="middle" class="s">缓存 latent，而不是最终多头 K/V</text>
+<rect x="1245" y="315" width="245" height="105" rx="16" class="latent"/>
+<text x="1367" y="360" text-anchor="middle" class="h">c_j^KV [512]</text><text x="1367" y="397" text-anchor="middle" class="s">content latent</text>
+<rect x="1280" y="455" width="175" height="90" rx="14" class="state"/>
+<text x="1367" y="497" text-anchor="middle" class="h">k_j^R [64]</text><text x="1367" y="530" text-anchor="middle" class="s">shared position</text>
+<rect x="1225" y="610" width="285" height="135" rx="15" class="formula"/>
+<text x="1367" y="655" text-anchor="middle" class="b">cache/token/layer</text>
+<text x="1367" y="704" text-anchor="middle" class="h">d_c + d_h^R = 576</text>
+<text x="1367" y="805" text-anchor="middle" class="s">多头 K/V 仍可由不同 projection 形成</text>
+</g>
+
+<rect x="150" y="935" width="1300" height="110" rx="16" class="warn"/>
+<text x="800" y="974" text-anchor="middle" class="b">V2 架构级原始元素比：32768 / 576 ≈ 56.9×；这只是 state 元素数量，不等于 throughput 也会 56.9×。</text>
+<text x="800" y="1014" text-anchor="middle" class="s">关键区别：MQA/GQA 直接减少最终 KV heads；MLA 让“缓存空间”和“最终 K/V 表示空间”不再是同一个空间。</text>
+</svg>

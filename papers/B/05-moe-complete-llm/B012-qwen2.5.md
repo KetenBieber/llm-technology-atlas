@@ -50,15 +50,14 @@ Qwen2.5 最值得研究的问题因此不是：
 ---
 
 
-## 总结架构图
-
-![教学总结图：B012-qwen2.5](../../../figures/explainers/B012-qwen2.5-summary.svg)
-
-> **教学总结图**：从 18T 数据与统一 tokenizer 到 Dense/MoE 家族、长上下文与 Offline DPO + Online GRPO，展示 Qwen2.5 的模型家族生产线。
-
 ## 1. 先看定位：Qwen2.5 不是一个模型，而是一个“产品曲线”
 
 Qwen2.5 open-weight dense 系列包含：
+
+![教学解释图：Qwen Family Map](../../../figures/explainers/B012/01-qwen-family-map.svg)
+
+*教学解释图｜Qwen Family Map。*
+
 
 - 0.5B；
 - 1.5B；
@@ -156,6 +155,11 @@ flowchart TD
 ## 3. Dense 骨干：没有换掉 Transformer，而是在成熟 recipe 上继续扩展
 
 Qwen2.5 open-weight dense 系列继承 Qwen2 的 decoder-only Transformer。
+
+![教学解释图：Architecture Stack](../../../figures/explainers/B012/02-architecture-stack.svg)
+
+*教学解释图｜Architecture Stack。*
+
 
 关键组件：
 
@@ -330,6 +334,11 @@ Qwen2.5 各尺寸使用统一 vocabulary。
 
 API 服务侧的：
 
+![教学解释图：Family Dense MoE](../../../figures/explainers/B012/01-family-dense-moe.svg)
+
+*教学解释图｜Family Dense MoE。*
+
+
 - Qwen2.5-Turbo；
 - Qwen2.5-Plus；
 
@@ -434,6 +443,11 @@ $$
 ## 9. 数据飞轮：Qwen2-Instruct 反过来筛选 Qwen2.5 的预训练数据
 
 Qwen2.5 使用 Qwen2-Instruct 作为 data quality filter，对样本做多维度分析与打分。
+
+![教学解释图：Data Specialist Flywheel](../../../figures/explainers/B012/02-data-specialist-flywheel.svg)
+
+*教学解释图｜Data Specialist Flywheel。*
+
 
 于是出现：
 
@@ -623,6 +637,11 @@ $$
 
 [Llama 3](B011-llama3.md) 的 scaling law 重点问的是 [Kaplan Scaling Laws](../../A/02-text-representation/A009-kaplan-scaling-laws.md) → [Chinchilla](../../A/02-text-representation/A010-chinchilla-compute-optimal.md) 这条经典问题的现代版本：
 
+![教学解释图：Scaling Law Recipe](../../../figures/explainers/B012/03-scaling-law-recipe.svg)
+
+*教学解释图｜Scaling Law Recipe。*
+
+
 > 给定 flagship compute budget，最优 model size 与 token budget 是什么？
 
 Qwen2.5 则特别强调另一类问题：
@@ -743,6 +762,11 @@ $$
 ## 17. 长上下文第一阶段：训练时先从 4K 扩到 32K
 
 除了 Qwen2.5-Turbo 之外，普通 Qwen2.5 模型采用两阶段 pre-training：
+
+![教学解释图：Long Context Stack](../../../figures/explainers/B012/04-long-context-stack.svg)
+
+*教学解释图｜Long Context Stack。*
+
 
 ### Phase 1
 
@@ -952,6 +976,11 @@ DCA + YaRN
 
 Qwen2.5 的后训练主线可以写成：
 
+![教学解释图：Training Pipeline](../../../figures/explainers/B012/03-training-pipeline.svg)
+
+*教学解释图｜Training Pipeline。*
+
+
 $$
 \text{SFT}
 \rightarrow
@@ -994,6 +1023,11 @@ GRPO
 ## 24. 为什么先 SFT，再 Offline DPO，再 Online GRPO？
 
 三个阶段处理的是三类不同难度的问题。
+
+![教学解释图：Staged Posttraining](../../../figures/explainers/B012/04-staged-posttraining.svg)
+
+*教学解释图｜Staged Posttraining。*
+
 
 ### SFT
 
@@ -1570,6 +1604,11 @@ $$
 
 论文写道：
 
+![教学解释图：Reward Variance Curriculum](../../../figures/explainers/B012/05-reward-variance-curriculum.svg)
+
+*教学解释图｜Reward Variance Curriculum。*
+
+
 > query 的训练顺序由不同 response reward score 的 variance 决定，高 variance query 优先。
 
 设一个 query $x$ 采样 8 个 response：
@@ -1796,6 +1835,11 @@ Turbo 的 RL 阶段只使用 short instructions。
 ## 46. 1M context 到底从哪里来？
 
 现在可以把 Turbo 的整条长上下文链写完整：
+
+![教学解释图：One Million Context](../../../figures/explainers/B012/06-one-million-context.svg)
+
+*教学解释图｜One Million Context。*
+
 
 ~~~text
 4K / short-context foundation

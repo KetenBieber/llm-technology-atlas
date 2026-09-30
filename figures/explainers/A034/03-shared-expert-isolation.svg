@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2e8b57"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .dup{fill:#fff1f0;stroke:#c43d3d;stroke-width:2}.shared{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:3}.route{fill:#edf9f0;stroke:#2e8b57;stroke-width:2}
+  .flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#b)}.good{stroke:#2e8b57;stroke-width:3;fill:none;marker-end:url(#g)}.formula{fill:#f7fafc;stroke:#9aa9b8;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Shared Expert Isolation：把一份 Active Budget 固定给公共能力</text>
+<text x="800" y="101" text-anchor="middle" class="sub">目标：common knowledge 不再被每个 routed expert 重复学习，让 routed capacity 更专注差异化知识</text>
+
+<rect x="55" y="150" width="700" height="735" rx="22" class="panel"/>
+<text x="405" y="195" text-anchor="middle" class="h">传统 routed experts：公共能力被重复存储</text>
+<g>
+<rect x="105" y="260" width="180" height="205" rx="16" class="dup"/>
+<text x="195" y="302" text-anchor="middle" class="h">Expert A</text><text x="195" y="343" text-anchor="middle" class="b">syntax</text><text x="195" y="380" text-anchor="middle" class="b">common facts</text><text x="195" y="417" text-anchor="middle" class="b">math</text>
+<rect x="315" y="260" width="180" height="205" rx="16" class="dup"/>
+<text x="405" y="302" text-anchor="middle" class="h">Expert B</text><text x="405" y="343" text-anchor="middle" class="b">syntax</text><text x="405" y="380" text-anchor="middle" class="b">common facts</text><text x="405" y="417" text-anchor="middle" class="b">code</text>
+<rect x="525" y="260" width="180" height="205" rx="16" class="dup"/>
+<text x="615" y="302" text-anchor="middle" class="h">Expert C</text><text x="615" y="343" text-anchor="middle" class="b">syntax</text><text x="615" y="380" text-anchor="middle" class="b">common facts</text><text x="615" y="417" text-anchor="middle" class="b">language</text>
+</g>
+<text x="405" y="545" text-anchor="middle" class="b">Knowledge Redundancy</text>
+<text x="405" y="584" text-anchor="middle" class="s">每个 routed expert 都被迫保留一份通用能力。</text>
+<text x="405" y="655" text-anchor="middle" class="b">Router 在“专业知识 + 公共知识”混合块之间竞争。</text>
+
+<rect x="805" y="150" width="740" height="735" rx="22" class="panel"/>
+<text x="1175" y="195" text-anchor="middle" class="h">Shared + Routed：公共路径与差异化路径职责分离</text>
+<rect x="865" y="255" width="620" height="135" rx="18" class="shared"/>
+<text x="1175" y="299" text-anchor="middle" class="h">Shared Expert：所有 token 都经过</text>
+<text x="1175" y="340" text-anchor="middle" class="b">syntax · common patterns · broadly useful transforms</text>
+<rect x="880" y="485" width="170" height="135" rx="16" class="route"/>
+<text x="965" y="532" text-anchor="middle" class="h">Routed A</text><text x="965" y="573" text-anchor="middle" class="b">math-like</text>
+<rect x="1090" y="485" width="170" height="135" rx="16" class="route"/>
+<text x="1175" y="532" text-anchor="middle" class="h">Routed B</text><text x="1175" y="573" text-anchor="middle" class="b">code-like</text>
+<rect x="1300" y="485" width="170" height="135" rx="16" class="route"/>
+<text x="1385" y="532" text-anchor="middle" class="h">Routed C</text><text x="1385" y="573" text-anchor="middle" class="b">language-like</text>
+<path d="M1175 390 V455" class="good"/>
+<text x="1175" y="675" text-anchor="middle" class="s">语义标签这里只是直觉示意，不声称真实 experts 一定可被人类这样命名。</text>
+
+<rect x="890" y="710" width="570" height="125" rx="16" class="formula"/>
+<text x="1175" y="752" text-anchor="middle" class="b">active slots 仍守恒：</text>
+<text x="1175" y="793" text-anchor="middle" class="h">K_s + (mK − K_s) = mK</text>
+<text x="1175" y="824" text-anchor="middle" class="s">shared 占掉的是原本一个 routed active slot</text>
+
+<rect x="130" y="935" width="1340" height="105" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="973" text-anchor="middle" class="b">Fine-Grained Segmentation 主要减少 Knowledge Hybridity；Shared Expert Isolation 主要减少 routed-expert Knowledge Redundancy。</text>
+<text x="800" y="1013" text-anchor="middle" class="s">这与 Load Balancing 是另一维问题：specialization 讨论“expert 学什么”，balancing 讨论“token 是否挤到少数 expert / device”。</text>
+</svg>

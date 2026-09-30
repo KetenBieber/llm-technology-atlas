@@ -113,12 +113,6 @@ $$
 ---
 
 
-## 总结架构图
-
-![教学总结图：A010-chinchilla-compute-optimal](../../../figures/explainers/A010-chinchilla-compute-optimal-summary.svg)
-
-> **教学总结图**：固定 FLOPs 后同时权衡模型规模 N 与训练 Token D，并展示三种估计路径如何导向 compute-optimal 配置。
-
 ## 1. 先把问题写对：Chinchilla 研究的不是“模型多大最好”
 
 如果没有约束，当然可以说：
@@ -243,6 +237,11 @@ Loss
 
 [Kaplan](A009-kaplan-scaling-laws.md) 已经研究 compute-efficient allocation。
 
+![教学解释图：Kaplan vs. Chinchilla](../../../figures/explainers/A010/03-kaplan-vs-chinchilla.svg)
+
+*教学解释图｜Kaplan vs. Chinchilla。*
+
+
 它得到：
 
 $$
@@ -293,6 +292,11 @@ Chinchilla 要问：
 ## 4. 原论文 Figure 1：三种方法都把最优点推向“小模型 + 更多 token”
 
 ![Chinchilla 原论文：三种方法与 Kaplan 预测叠加](../../../figures/A010/fig1-overlaid-predictions.svg)
+
+![教学解释图：Three Estimation Paths](../../../figures/explainers/A010/04-three-estimation-paths.svg)
+
+*教学解释图｜Three Estimation Paths。*
+
 
 *原论文 Figure 1 的核心证据。三种不同方法得到的 compute-optimal 前沿都明显偏向比 Kaplan 预测更小的模型、更多的训练 token。图中的价值不是某个单点，而是三种估计方法在趋势上互相支持。*
 
@@ -549,6 +553,11 @@ $$
 
 固定：
 
+![教学解释图：Isoflop Frontier](../../../figures/explainers/A010/02-isoflop-frontier.svg)
+
+*教学解释图｜Isoflop Frontier。*
+
+
 $$
 C=C_0.
 $$
@@ -574,6 +583,11 @@ $$
 $$
 N=10B,
 $$
+
+![教学解释图：Undertrained Model Problem](../../../figures/explainers/A010/01-undertrained-model-problem.svg)
+
+*教学解释图｜Undertrained Model Problem。*
+
 
 则 token 数约少 10×。
 

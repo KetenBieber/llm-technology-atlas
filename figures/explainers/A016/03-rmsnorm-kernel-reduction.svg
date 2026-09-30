@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">RMSNorm Kernel：为什么少一次 mean 路径会减少同步与内存操作？</text><text x="70" y="112" class="subtitle">A016 · 归一化通常是 reduction + bandwidth 问题；RMSNorm 只需要 sum(x²)</text>
+<text x="70" y="178" class="section">一个 token 的 fused RMSNorm execution</text>
+<rect x="70" y="220" width="1460" height="520" rx="24" class="blue"/>
+<rect x="105" y="310" width="180" height="110" rx="18" class="gray"/><text x="135" y="352" class="node">HBM load</text><text x="135" y="392" class="small">x[d]</text>
+<path d="M285 365 H365" class="flow"/>
+<rect x="365" y="290" width="220" height="150" rx="18" class="cyan"/><text x="395" y="334" class="node">elementwise</text><text x="395" y="376" class="math">xᵢ²</text><text x="395" y="414" class="small">vectorized lanes</text>
+<path d="M585 365 H670" class="flow"/>
+<rect x="670" y="275" width="250" height="180" rx="18" class="orange"/><text x="700" y="320" class="node">warp/block reduce</text><text x="700" y="363" class="math">Σᵢ xᵢ²</text><text x="700" y="405" class="small">跨 lane 同步点</text><text x="700" y="438" class="small">→ scalar m₂</text>
+<path d="M920 365 H1005" class="flow"/>
+<rect x="1005" y="290" width="220" height="150" rx="18" class="green"/><text x="1035" y="334" class="node">rsqrt</text><text x="1035" y="376" class="math">1/√(m₂/d+ε)</text><text x="1035" y="414" class="small">broadcast scalar</text>
+<path d="M1225 365 H1310" class="flow"/>
+<rect x="1310" y="290" width="185" height="150" rx="18" class="blue"/><text x="1340" y="334" class="node">scale</text><text x="1340" y="376" class="math">x·r⁻¹·γ</text><text x="1340" y="414" class="small">HBM store y</text>
+<path d="M190 420 V560 H1390 V440" class="aux"/>
+<text x="510" y="610" class="body">fused kernel 可让原始 x 在寄存器/shared memory 中复用，减少重复 HBM round-trip</text>
+<rect x="420" y="645" width="760" height="60" rx="12" class="green"/><text x="455" y="685" class="node">核心 reduction 只有：sum(x²)</text>
+
+<text x="70" y="810" class="section">与 LayerNorm 的额外依赖比较</text>
+<rect x="70" y="850" width="680" height="170" rx="22" class="red"/>
+<text x="105" y="895" class="node">LayerNorm</text>
+<text x="105" y="940" class="body">sum(x) → μ；center x−μ；再统计 centered variance</text>
+<text x="105" y="982" class="small">需要额外统计/数据依赖；具体 kernel 可融合但依赖仍存在</text>
+<rect x="850" y="850" width="680" height="170" rx="22" class="green"/>
+<text x="885" y="895" class="node">RMSNorm</text>
+<text x="885" y="940" class="body">sum(x²) → rsqrt → scale；没有 re-centering 数据流</text>
+<text x="885" y="982" class="small">收益大小依赖 hidden size、fusion、带宽与硬件，不能固定套论文百分比</text>
+</svg>

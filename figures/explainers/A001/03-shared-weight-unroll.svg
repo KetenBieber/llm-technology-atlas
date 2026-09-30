@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+  <defs>
+    <style>
+      text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#14213d}
+      .title{font-size:48px;font-weight:700}.sub{font-size:24px;fill:#607086}
+      .h{font-size:28px;font-weight:700}.n{font-size:24px;font-weight:650}.b{font-size:21px}.s{font-size:20px;fill:#607086}
+      .formula{font-family:"STIX Two Math","Cambria Math",serif;font-size:23px}
+      .box{fill:#f8fbff;stroke:#8fb6d9;stroke-width:2}.state{fill:#eefbfb;stroke:#47aeb7;stroke-width:2}
+      .gray{fill:#f4f6f8;stroke:#aeb8c3;stroke-width:2}.warn{fill:#fff3f2;stroke:#d86561;stroke-width:2}
+      .good{fill:#effaf3;stroke:#50a66b;stroke-width:2}.cost{fill:#fff7eb;stroke:#e39a36;stroke-width:2}
+      .blue{stroke:#246aa5;stroke-width:5;fill:none}.cyan{stroke:#279aa7;stroke-width:4;fill:none}
+      .green{stroke:#3b9859;stroke-width:5;fill:none}.orange{stroke:#db8a20;stroke-width:4;fill:none}
+      .red{stroke:#c94e49;stroke-width:4;fill:none}.dash{stroke-dasharray:12 10}
+    </style>
+    <marker id="ab" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#246aa5"/></marker>
+    <marker id="ac" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#279aa7"/></marker>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3b9859"/></marker>
+    <marker id="ao" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#db8a20"/></marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c94e49"/></marker>
+  </defs>
+  <rect width="1600" height="1200" fill="#ffffff"/>
+  <text x="70" y="75" class="title">A001 · 共享权重：展开图中的梯度回收</text>
+  <text x="72" y="115" class="sub">循环/迭代结构被展开后，为什么多个时间副本最终只更新一份参数？</text>
+  
+  <rect x="65" y="165" width="420" height="650" rx="26" class="gray"/>
+  <text x="95" y="215" class="h">原迭代结构 · 一份 W</text>
+  <rect x="135" y="330" width="260" height="130" rx="22" class="state"/><text x="265" y="380" text-anchor="middle" class="n">state hₜ</text><text x="265" y="420" text-anchor="middle" class="formula">hₜ₊₁=f(Whₜ)</text>
+  <path d="M390 360 C500 285 500 515 390 435" class="blue" marker-end="url(#ab)"/>
+  <text x="330" y="285" class="n">shared W</text>
+  <rect x="125" y="580" width="280" height="120" rx="20" class="cost"/><text x="265" y="625" text-anchor="middle" class="n">单一参数所有权</text><text x="265" y="665" text-anchor="middle" class="b">W 只存一份、更新一份</text>
+
+  <rect x="525" y="165" width="1010" height="650" rx="26" class="box"/>
+  <text x="555" y="215" class="h">展开 3 步 · 同一 W 的三个使用位置</text>
+  <rect x="565" y="335" width="180" height="110" rx="18" class="state"/><text x="655" y="380" text-anchor="middle" class="n">h₀</text>
+  <rect x="820" y="310" width="190" height="160" rx="18" class="box"/><text x="915" y="355" text-anchor="middle" class="n">step 1</text><text x="915" y="395" text-anchor="middle" class="formula">W</text><text x="915" y="435" text-anchor="middle" class="s">同一参数引用</text>
+  <rect x="1085" y="310" width="190" height="160" rx="18" class="box"/><text x="1180" y="355" text-anchor="middle" class="n">step 2</text><text x="1180" y="395" text-anchor="middle" class="formula">W</text><text x="1180" y="435" text-anchor="middle" class="s">同一参数引用</text>
+  <rect x="1350" y="310" width="145" height="160" rx="18" class="box"/><text x="1422" y="355" text-anchor="middle" class="n">step 3</text><text x="1422" y="395" text-anchor="middle" class="formula">W</text><text x="1422" y="435" text-anchor="middle" class="s">同一引用</text>
+  <path d="M745 390 H820" class="blue" marker-end="url(#ab)"/><path d="M1010 390 H1085" class="blue" marker-end="url(#ab)"/><path d="M1275 390 H1350" class="blue" marker-end="url(#ab)"/>
+  <text x="785" y="360" class="s">h₁</text><text x="1048" y="360" class="s">h₂</text><text x="1312" y="360" class="s">h₃</text>
+
+  <rect x="800" y="570" width="220" height="115" rx="18" class="cost"/><text x="910" y="615" text-anchor="middle" class="n">gradient copy 1</text><text x="910" y="650" text-anchor="middle" class="formula">gW⁽¹⁾</text>
+  <rect x="1070" y="570" width="220" height="115" rx="18" class="cost"/><text x="1180" y="615" text-anchor="middle" class="n">gradient copy 2</text><text x="1180" y="650" text-anchor="middle" class="formula">gW⁽²⁾</text>
+  <rect x="1330" y="570" width="190" height="115" rx="18" class="cost"/><text x="1425" y="615" text-anchor="middle" class="n">copy 3</text><text x="1425" y="650" text-anchor="middle" class="formula">gW⁽³⁾</text>
+  <path d="M915 470 V570" class="green" marker-end="url(#ag)"/><path d="M1180 470 V570" class="green" marker-end="url(#ag)"/><path d="M1422 470 V570" class="green" marker-end="url(#ag)"/>
+
+  <rect x="205" y="900" width="1190" height="220" rx="28" class="good"/>
+  <text x="235" y="950" class="h">回收到共享参数：不同时间位置产生贡献，但 optimizer 只看到总梯度</text>
+  <text x="800" y="1015" text-anchor="middle" class="formula">∂L/∂W = gW⁽¹⁾ + gW⁽²⁾ + gW⁽³⁾</text>
+  <path d="M910 685 C850 820 750 840 680 900" class="green" marker-end="url(#ag)"/><path d="M1180 685 C1100 820 950 840 880 900" class="green" marker-end="url(#ag)"/><path d="M1425 685 C1320 820 1150 850 1080 900" class="green" marker-end="url(#ag)"/>
+  <text x="800" y="1070" text-anchor="middle" class="b">展开改变的是计算图长度，不是参数所有权；若把三个 W 独立更新，就破坏了原迭代模型。</text>
+
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.grid{stroke:#d9e2e8;stroke-width:1.2}.curve{fill:none;stroke:#246b9b;stroke-width:5}.curve2{fill:none;stroke:#178d98;stroke-width:5}.curve3{fill:none;stroke:#d47a20;stroke-width:5}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style><defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">YaRN：RoPE 外推为何 OOD，而 PI 为什么又损失高频？</text><text x="70" y="112" class="subtitle">A018 · 位置范围、phase geometry 与频率分辨率是三个不同问题</text>
+<text x="70" y="175" class="section">1  Direct extrapolation：position 超出训练区间，进入未见 phase 组合</text>
+<rect x="70" y="215" width="1460" height="250" rx="22" class="red"/>
+<line x1="140" y1="340" x2="1450" y2="340" class="axis"/>
+<rect x="160" y="300" width="500" height="80" rx="14" fill="#e7eef2" stroke="#8795a1" stroke-width="2"/>
+<text x="315" y="330" class="node">训练区间 [0, L)</text>
+<text x="315" y="365" class="small">已观测 RoPE phase combinations</text>
+<rect x="660" y="300" width="700" height="80" rx="14" fill="#fff0f0" stroke="#c64a4a" stroke-width="2"/>
+<text x="880" y="330" class="node">m &gt; L：extrapolated phase</text>
+<text x="855" y="365" class="small">相对位置公式仍成立 ≠ 网络见过这些 phase pattern</text>
+<path d="M620 255 C800 210 1050 210 1280 255" class="bad"/>
+<text x="760" y="238" class="math">θ = m · ωᵢ  keeps growing</text>
+
+<text x="70" y="535" class="section">2  Position Interpolation：把新位置压回旧范围</text>
+<rect x="70" y="575" width="710" height="340" rx="22" class="green"/>
+<text x="105" y="620" class="math">m′ = m / s      ⇔      ωᵢ′ = ωᵢ / s</text>
+<text x="105" y="665" class="body">例：L=2048 → L′=32768，s=16</text>
+<text x="105" y="710" class="math">m=16000  →  m′=1000</text>
+<line x1="120" y1="785" x2="710" y2="785" class="axis"/>
+<rect x="145" y="755" width="500" height="60" rx="12" class="cyan"/>
+<text x="255" y="793" class="body">整个 [0, 32768) 映射回 [0, 2048)</text>
+<path d="M640 700 C700 735 720 745 690 770" class="good"/>
+<text x="105" y="862" class="small">优势：从 extrapolation 变成 interpolation，几何更受训练区间约束</text>
+
+<rect x="840" y="575" width="690" height="340" rx="22" class="orange"/>
+<text x="875" y="620" class="node">但 PI 对所有频率统一减速</text>
+<text x="875" y="665" class="math">∀ i :  ωᵢ → ωᵢ / s</text>
+<text x="875" y="710" class="body">低频 / 长 wavelength：需要强 interpolation</text>
+<text x="875" y="755" class="body">高频 / 短 wavelength：本来负责 local relative cues</text>
+<path d="M905 800 H1435" class="comm"/>
+<text x="925" y="840" class="body">统一压缩 ⇒ 高频 positional resolution 也被削弱</text>
+<rect x="950" y="862" width="470" height="48" rx="12" class="red"/>
+<text x="1025" y="895" class="node">这正是 YaRN 继续改 PI 的入口</text>
+
+<text x="70" y="995" class="small">认知锚点：RoPE“只依赖相对位置”并不保证任意长度 OOD phase 都可泛化；PI 修外推，但引入频率一刀切问题。</text>
+</svg>

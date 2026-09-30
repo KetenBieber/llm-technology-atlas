@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200">
+<defs>
+  <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1d4ed8"/></marker>
+  <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16a34a"/></marker>
+  <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#ea580c"/></marker>
+  <style>
+    text{font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;fill:#0f172a}
+    .title{font-size:48px;font-weight:700}.sub{font-size:22px;fill:#475569}.sec{font-size:28px;font-weight:700}
+    .lab{font-size:23px;font-weight:700}.body{font-size:20px;fill:#334155}.mono{font-size:20px;font-family:Consolas,monospace}.num{font-size:26px;font-weight:700}
+    .box{rx:18;ry:18;stroke-width:2.2}.flow{stroke:#1d4ed8;stroke-width:4;fill:none;marker-end:url(#b)}
+    .good{stroke:#16a34a;stroke-width:4;fill:none;marker-end:url(#g)}.cost{stroke:#ea580c;stroke-width:3.5;fill:none;marker-end:url(#o)}
+    .weak{stroke:#94a3b8;stroke-width:3;stroke-dasharray:9 8;fill:none}
+  </style>
+</defs>
+<rect width="1800" height="1200" fill="#fff"/>
+<text x="80" y="78" class="title">Llama 3 后训练：RM 不等于 Critic，采样本身就是训练基础设施</text>
+<text x="80" y="116" class="sub">核心问题：同一 prompt 的多候选生成如何被 RM 排序、RS 转成监督数据，再经 SFT + DPO 形成六轮数据飞轮？</text>
+
+<!-- not PPO baseline -->
+<rect x="80" y="160" width="390" height="150" class="box" fill="#f8fafc" stroke="#94a3b8"/>
+<text x="110" y="200" class="sec" fill="#64748b">不是主线：PPO Actor–Critic</text>
+<text x="110" y="242" class="body">RM → reward；Critic → Vψ(sₜ)；GAE → policy gradient</text>
+<line x1="110" y1="275" x2="430" y2="185" stroke="#dc2626" stroke-width="5"/>
+<text x="110" y="295" class="body" fill="#b91c1c">Llama 3 主更新不走这条路径</text>
+
+<!-- prompt/generation -->
+<text x="530" y="170" class="sec" fill="#1d4ed8">① Sampling / Ranking</text>
+<rect x="530" y="210" width="190" height="95" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="625" y="248" text-anchor="middle" class="lab">Prompt x</text><text x="625" y="278" text-anchor="middle" class="body">当前强 policy</text>
+<rect x="790" y="195" width="260" height="125" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="920" y="235" text-anchor="middle" class="lab">K = 10–30 generations</text>
+<text x="920" y="270" text-anchor="middle" class="body">y₁, y₂, …, yₖ</text>
+<text x="920" y="300" text-anchor="middle" class="body">同 prefix，多 continuation</text>
+<path d="M720 257H780" class="flow"/>
+
+<!-- fanout candidates -->
+<g fill="#f8fafc" stroke="#94a3b8" stroke-width="2">
+<rect x="1110" y="175" width="130" height="58" rx="12"/><rect x="1110" y="245" width="130" height="58" rx="12"/><rect x="1110" y="315" width="130" height="58" rx="12"/>
+</g>
+<text x="1175" y="211" text-anchor="middle" class="body">candidate 1</text><text x="1175" y="281" text-anchor="middle" class="body">candidate 2</text><text x="1175" y="351" text-anchor="middle" class="body">candidate …</text>
+<path d="M1050 245C1080 245 1080 204 1100 204M1050 255H1100M1050 270C1080 270 1080 344 1100 344" class="flow"/>
+
+<rect x="1320" y="210" width="210" height="115" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="1425" y="250" text-anchor="middle" class="lab">Reward Model</text><text x="1425" y="282" text-anchor="middle" class="body">rφ(x,yᵢ)</text>
+<path d="M1240 205H1290V257H1310M1240 274H1310M1240 344H1290V292H1310" class="cost"/>
+<rect x="1590" y="210" width="150" height="115" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="1665" y="247" text-anchor="middle" class="lab">RS</text><text x="1665" y="281" text-anchor="middle" class="body">y* = argmax</text><text x="1665" y="307" text-anchor="middle" class="body">rφ(x,yᵢ)</text>
+<path d="M1530 267H1580" class="good"/>
+
+<!-- paged attention memory -->
+<rect x="530" y="365" width="520" height="165" class="box" fill="#ecfeff" stroke="#0891b2"/>
+<text x="560" y="405" class="lab">PagedAttention：serving runtime → training infrastructure</text>
+<rect x="560" y="438" width="165" height="55" rx="12" fill="#cffafe" stroke="#0891b2"/><text x="642" y="472" text-anchor="middle" class="body">shared prompt KV</text>
+<rect x="775" y="428" width="90" height="45" rx="10" fill="#dbeafe"/><rect x="775" y="482" width="90" height="45" rx="10" fill="#dbeafe"/>
+<rect x="900" y="428" width="90" height="45" rx="10" fill="#dbeafe"/><rect x="900" y="482" width="90" height="45" rx="10" fill="#dbeafe"/>
+<text x="820" y="457" text-anchor="middle" class="body">cont.1</text><text x="820" y="511" text-anchor="middle" class="body">cont.2</text>
+<text x="945" y="457" text-anchor="middle" class="body">cont.3</text><text x="945" y="511" text-anchor="middle" class="body">…</text>
+<path d="M725 465H765M725 465C748 465 748 505 765 505M725 465C850 465 850 450 890 450M725 465C850 465 850 505 890 505" class="good"/>
+<path d="M920 320V355" class="good"/>
+<text x="1085" y="450" class="num" fill="#166534">论文报告：RS throughput &gt; 2×</text>
+
+<!-- stage 2 -->
+<text x="80" y="625" class="sec" fill="#16a34a">② Select → Supervise → Prefer</text>
+<rect x="80" y="670" width="255" height="120" class="box" fill="#ecfdf5" stroke="#16a34a"/>
+<text x="207" y="708" text-anchor="middle" class="lab">Selected SFT targets</text><text x="207" y="740" text-anchor="middle" class="body">RS + synthetic + human</text><text x="207" y="770" text-anchor="middle" class="body">prompt loss masked</text>
+<rect x="410" y="670" width="220" height="120" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="520" y="708" text-anchor="middle" class="lab">SFT</text><text x="520" y="742" text-anchor="middle" class="body">提高优质行为概率</text>
+<rect x="705" y="670" width="250" height="120" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="830" y="708" text-anchor="middle" class="lab">Preference pairs</text><text x="830" y="742" text-anchor="middle" class="body">(x, y_chosen, y_rejected)</text>
+<rect x="1030" y="650" width="330" height="160" class="box" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="1195" y="690" text-anchor="middle" class="lab">DPO update</text>
+<text x="1195" y="726" text-anchor="middle" class="body">mask shared formatting tokens</text>
+<text x="1195" y="760" text-anchor="middle" class="body">+ 0.2 · NLL(chosen)</text>
+<text x="1195" y="792" text-anchor="middle" class="body">relative preference + absolute stability</text>
+<rect x="1435" y="670" width="300" height="120" class="box" fill="#dbeafe" stroke="#1d4ed8"/>
+<text x="1585" y="708" text-anchor="middle" class="lab">Next-round model</text><text x="1585" y="742" text-anchor="middle" class="body">更强生成器 / 更难 prompts</text><text x="1585" y="772" text-anchor="middle" class="body">共 6 轮迭代</text>
+<path d="M1665 325V610H207V660" class="good"/>
+<path d="M335 730H400" class="good"/><path d="M630 730H695" class="flow"/><path d="M955 730H1020" class="cost"/><path d="M1360 730H1425" class="flow"/>
+
+<!-- human preference feeds -->
+<rect x="80" y="865" width="300" height="120" class="box" fill="#fff7ed" stroke="#ea580c"/>
+<text x="230" y="905" text-anchor="middle" class="lab">Human preference refresh</text><text x="230" y="938" text-anchor="middle" class="body">edited &gt; chosen &gt; rejected</text><text x="230" y="970" text-anchor="middle" class="body">训练 RM + 构造 pairs</text>
+<path d="M380 925H470V565H1425V335" class="cost"/>
+<path d="M380 955H830V800" class="cost"/>
+
+<!-- loop -->
+<path d="M1585 790V1010H520V800" class="good"/>
+<text x="1030" y="1040" text-anchor="middle" class="lab" fill="#166534">data flywheel：better model → better candidates → harder prompts → fresher preference data → better model</text>
+
+<rect x="80" y="1080" width="1655" height="75" class="box" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="110" y="1128" class="body">认知边界：RM 在这里主要做 ranking / selection；它不是 PPO 中估计 Vψ(sₜ) 的 Critic。RS 也不直接更新参数，而是把低概率优质行为转回训练数据。</text>
+</svg>

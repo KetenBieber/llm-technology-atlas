@@ -135,12 +135,6 @@ Adam ──逐坐标预条件─────────────────
 这里“后续广泛采用”是历史影响，不是本文实验本身。
 
 
-## 总结架构图
-
-![教学总结图：A003-adamw](../../../figures/explainers/A003-adamw-summary.svg)
-
-> **教学总结图**：对比 coupled L2 与 AdamW：后者把 weight decay 从 Adam 的 m/v 状态中解耦出来。
-
 # 输入、输出与任务
 
 ## 1. 一步 AdamW 的精确接口
@@ -305,6 +299,11 @@ $$
 
 ![原论文 Figure 2：Adam + L2 的超参数地形](../../../figures/A003/fig2-adam-l2.svg)
 
+![教学解释图：Coupled vs. Decoupled Update](../../../figures/explainers/A003/01-coupled-vs-decoupled.svg)
+
+*教学解释图｜Coupled vs. Decoupled Update。*
+
+
 *原论文 Figure 2 的 Adam 面板；图形资产来自 arXiv 源文件 `fig2_ADAM.pdf`。横轴是正则强度，纵轴是初始学习率，颜色表示 CIFAR-10 Top-1 test error。*
 
 读这张图不要先找“最蓝的点”，先看**低误差区域的走向**。Adam + $L_2$ 的优良区域呈明显倾斜：改变 learning rate 时，合适的 regularization strength 也跟着移动。
@@ -447,6 +446,11 @@ $$
 ## 2. Proposition 2：自适应预条件器为什么必然破坏一般等价？
 
 把一般自适应优化器写成
+
+![教学解释图：Preconditioner Geometry](../../../figures/explainers/A003/02-preconditioner-geometry.svg)
+
+*教学解释图｜Preconditioner Geometry。*
+
 
 $$
 \theta_{t+1}
@@ -614,6 +618,11 @@ $$
 ## 4. 真实 Adam 的耦合甚至更深：$v_t$ 也被污染
 
 上面的固定 $M$ 已足以证明不等价。真实 Adam 还会把 coupled $L_2$ 混入 moment statistics。
+
+![教学解释图：Moment Contamination](../../../figures/explainers/A003/03-moment-contamination.svg)
+
+*教学解释图｜Moment Contamination。*
+
 
 若
 

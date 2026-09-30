@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.fwd{fill:#dfeef8;stroke:#2b6f9f;stroke-width:2}.bwd{fill:#ddf3e5;stroke:#2f8a57;stroke-width:2}.bubble{fill:#f5dddd;stroke:#c64a4a;stroke-width:2}.p2p{fill:none;stroke:#d47a20;stroke-width:3;stroke-dasharray:8 6;marker-end:url(#arrowOrange)}.time{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}
+</style>
+<defs>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">Pipeline Parallelism：Microbatch 怎样把 Layer Depth 变成时间流水？</text>
+<text x="70" y="112" class="subtitle">C001 · PP 省的是 layer-stack memory，代价是 stage dependency；microbatch 只能缩 bubble，不能让 dependency 消失</text>
+
+<text x="70" y="178" class="section">4 stages × 8 microbatches：填充与排空阶段天然出现 bubble</text>
+<rect x="70" y="215" width="1460" height="520" rx="22" class="box"/>
+<path d="M300 235 H1450" class="time"/><text x="1360" y="225" class="small">time</text>
+<text x="105" y="285" class="node">Stage 0</text><text x="105" y="375" class="node">Stage 1</text><text x="105" y="465" class="node">Stage 2</text><text x="105" y="555" class="node">Stage 3</text>
+<line x1="260" y1="255" x2="1490" y2="255" stroke="#c9d6de" stroke-width="2"/>
+<line x1="260" y1="345" x2="1490" y2="345" stroke="#c9d6de" stroke-width="2"/>
+<line x1="260" y1="435" x2="1490" y2="435" stroke="#c9d6de" stroke-width="2"/>
+<line x1="260" y1="525" x2="1490" y2="525" stroke="#c9d6de" stroke-width="2"/>
+<g>
+<rect x="285" y="270" width="105" height="55" class="fwd"/><text x="320" y="305" class="small">F0</text>
+<rect x="400" y="270" width="105" height="55" class="fwd"/><text x="435" y="305" class="small">F1</text>
+<rect x="515" y="270" width="105" height="55" class="fwd"/><text x="550" y="305" class="small">F2</text>
+<rect x="630" y="270" width="105" height="55" class="fwd"/><text x="665" y="305" class="small">F3</text>
+<rect x="745" y="270" width="105" height="55" class="fwd"/><text x="780" y="305" class="small">F4</text>
+<rect x="860" y="270" width="105" height="55" class="fwd"/><text x="895" y="305" class="small">F5</text>
+<rect x="975" y="270" width="105" height="55" class="fwd"/><text x="1010" y="305" class="small">F6</text>
+<rect x="1090" y="270" width="105" height="55" class="fwd"/><text x="1125" y="305" class="small">F7</text>
+
+<rect x="285" y="360" width="105" height="55" class="bubble"/><rect x="400" y="360" width="105" height="55" class="fwd"/><text x="435" y="395" class="small">F0</text>
+<rect x="515" y="360" width="105" height="55" class="fwd"/><text x="550" y="395" class="small">F1</text>
+<rect x="630" y="360" width="105" height="55" class="fwd"/><text x="665" y="395" class="small">F2</text>
+<rect x="745" y="360" width="105" height="55" class="fwd"/><text x="780" y="395" class="small">F3</text>
+<rect x="860" y="360" width="105" height="55" class="fwd"/><text x="895" y="395" class="small">F4</text>
+<rect x="975" y="360" width="105" height="55" class="fwd"/><text x="1010" y="395" class="small">F5</text>
+<rect x="1090" y="360" width="105" height="55" class="fwd"/><text x="1125" y="395" class="small">F6</text>
+<rect x="1205" y="360" width="105" height="55" class="fwd"/><text x="1240" y="395" class="small">F7</text>
+
+<rect x="285" y="450" width="220" height="55" class="bubble"/><rect x="515" y="450" width="105" height="55" class="fwd"/><text x="550" y="485" class="small">F0</text>
+<rect x="630" y="450" width="105" height="55" class="fwd"/><text x="665" y="485" class="small">F1</text>
+<rect x="745" y="450" width="105" height="55" class="fwd"/><text x="780" y="485" class="small">F2</text>
+<rect x="860" y="450" width="105" height="55" class="fwd"/><text x="895" y="485" class="small">F3</text>
+<rect x="975" y="450" width="105" height="55" class="fwd"/><text x="1010" y="485" class="small">F4</text>
+<rect x="1090" y="450" width="105" height="55" class="fwd"/><text x="1125" y="485" class="small">F5</text>
+<rect x="1205" y="450" width="105" height="55" class="fwd"/><text x="1240" y="485" class="small">F6</text>
+<rect x="1320" y="450" width="105" height="55" class="fwd"/><text x="1355" y="485" class="small">F7</text>
+
+<rect x="285" y="540" width="335" height="55" class="bubble"/><rect x="630" y="540" width="105" height="55" class="fwd"/><text x="665" y="575" class="small">F0</text>
+<rect x="745" y="540" width="105" height="55" class="fwd"/><text x="780" y="575" class="small">F1</text>
+<rect x="860" y="540" width="105" height="55" class="fwd"/><text x="895" y="575" class="small">F2</text>
+<rect x="975" y="540" width="105" height="55" class="fwd"/><text x="1010" y="575" class="small">F3</text>
+<rect x="1090" y="540" width="105" height="55" class="fwd"/><text x="1125" y="575" class="small">F4</text>
+<rect x="1205" y="540" width="105" height="55" class="fwd"/><text x="1240" y="575" class="small">F5</text>
+<rect x="1320" y="540" width="105" height="55" class="fwd"/><text x="1355" y="575" class="small">F6</text>
+</g>
+<path d="M338 325 L452 360" class="p2p"/><path d="M452 415 L567 450" class="p2p"/><path d="M567 505 L682 540" class="p2p"/>
+<text x="760" y="620" class="small">同一 microbatch 的 activation 沿 stage boundary point-to-point 传递</text>
+<text x="290" y="640" class="small">红色 = pipeline fill bubble；结束时还会有对应 drain bubble</text>
+<text x="290" y="682" class="math">bubble overhead ≈ (p − 1) / m　→　m ≫ p 时才容易摊薄</text>
+
+<text x="70" y="800" class="section">1F1B 改变 activation lifetime：steady state 中 forward / backward 交错</text>
+<rect x="70" y="835" width="1460" height="185" rx="20" class="gray"/>
+<text x="110" y="888" class="node">GPipe</text>
+<rect x="260" y="858" width="130" height="48" class="fwd"/><rect x="400" y="858" width="130" height="48" class="fwd"/><rect x="540" y="858" width="130" height="48" class="fwd"/><rect x="680" y="858" width="130" height="48" class="fwd"/>
+<rect x="850" y="858" width="130" height="48" class="bwd"/><rect x="990" y="858" width="130" height="48" class="bwd"/><rect x="1130" y="858" width="130" height="48" class="bwd"/>
+<text x="110" y="970" class="node">1F1B</text>
+<rect x="260" y="940" width="120" height="48" class="fwd"/><rect x="390" y="940" width="120" height="48" class="bwd"/><rect x="520" y="940" width="120" height="48" class="fwd"/><rect x="650" y="940" width="120" height="48" class="bwd"/><rect x="780" y="940" width="120" height="48" class="fwd"/><rect x="910" y="940" width="120" height="48" class="bwd"/>
+<text x="1080" y="973" class="small">更少同时在途 activation</text>
+
+<rect x="70" y="1045" width="1460" height="42" rx="11" class="box"/>
+<text x="100" y="1073" class="small">PP 的 trade-off：microbatch 越多 bubble 越小，但 microbatch size 过小会让 GEMM 变瘦；interleaving 还能继续降 bubble，却会增加 stage-boundary 通信。</text>
+</svg>

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}
+.node{font-size:24px;font-weight:700}.body{font-size:21px}.small{font-size:19px;fill:#60758a}.math{font-size:22px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#9db7c8;stroke-width:2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#e9f9fa;stroke:#178d98;stroke-width:2.4}
+.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:4.5;marker-end:url(#a)}.goodflow{fill:none;stroke:#2f8a57;stroke-width:4.5;marker-end:url(#ag)}.cost{fill:none;stroke:#d47a20;stroke-width:4;marker-end:url(#ao)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">Kaplan：Critical Batch 为什么必须进入 compute-efficient scaling？</text>
+<text x="70" y="112" class="subtitle">A009 · C≈6NBS 只是预算恒等式；batch 偏离有效区会改变达到同一 optimization progress 的真实样本/step 成本</text>
+
+<text x="70" y="172" class="section">1  Batch 是 parallelism 与 gradient noise 的交换，不是“越大越好”</text>
+<rect x="70" y="205" width="950" height="330" rx="22" class="box"/>
+<line x1="135" y1="475" x2="930" y2="475" class="axis"/><line x1="135" y1="255" x2="135" y2="475" class="axis"/>
+<text x="890" y="510" class="small">batch B</text><text x="88" y="250" class="small">有效训练效率</text>
+<path d="M150 445 C250 390 360 320 480 285 C600 250 700 275 900 410" fill="none" stroke="#246b9b" stroke-width="6"/>
+<line x1="520" y1="260" x2="520" y2="475" class="dash"/>
+<circle cx="520" cy="278" r="12" fill="#2f8a57"/>
+<text x="545" y="282" class="node" fill="#2f8a57">B_crit(L)</text>
+<text x="175" y="420" class="body">B 太小：gradient noise 高</text><text x="175" y="449" class="small">serial updates 多，parallelism 未吃满</text>
+<text x="650" y="420" class="body">B 过大：边际样本信息下降</text><text x="650" y="449" class="small">为相同 progress 处理更多 token</text>
+
+<rect x="1060" y="205" width="470" height="330" rx="22" class="cyan"/>
+<text x="1095" y="250" class="node">B_crit 还随训练状态移动</text>
+<text x="1095" y="302" class="math">B_crit(L) = B* / L^(1/α_B)</text>
+<text x="1095" y="348" class="body">loss 下降（训练后期）</text>
+<path d="M1100 385 H1420" class="goodflow"/>
+<circle cx="1140" cy="385" r="9" fill="#178d98"/><circle cx="1360" cy="385" r="9" fill="#2f8a57"/>
+<text x="1095" y="430" class="body">⇒ 可有效利用的 batch 往往变大</text>
+<text x="1095" y="472" class="small">论文拟合 α_B≈0.21；这里表达的是经验 scaling，</text>
+<text x="1095" y="500" class="small">不是任意 optimizer / hardware 的 universal constant。</text>
+
+<text x="70" y="600" class="section">2  把 batch inefficiency 从 scaling trend 中剥离，得到 C_min</text>
+<rect x="70" y="640" width="260" height="135" rx="20" class="blue"/>
+<text x="100" y="680" class="node">Observed run</text>
+<text x="100" y="718" class="math">(N, B, S),  C≈6NBS</text>
+<text x="100" y="752" class="small">B 可能离 B_crit 很远</text>
+<path d="M330 707 H435" class="flow"/>
+<rect x="445" y="630" width="320" height="155" rx="20" class="orange"/>
+<text x="475" y="672" class="node">Batch-efficiency correction</text>
+<text x="475" y="712" class="body">同一训练进度下，估计更理想 B</text>
+<text x="475" y="748" class="small">去除 batch 选择造成的额外 compute</text>
+<path d="M765 707 H865" class="flow"/>
+<rect x="875" y="640" width="260" height="135" rx="20" class="green"/>
+<text x="905" y="682" class="node">C_min</text>
+<text x="905" y="720" class="body">归一化 compute coordinate</text>
+<text x="905" y="753" class="small">不是 wall-clock / 电表读数</text>
+<path d="M1135 707 H1235" class="flow"/>
+<rect x="1245" y="625" width="285" height="165" rx="20" class="blue"/>
+<text x="1275" y="665" class="node">Compute frontier</text>
+<text x="1275" y="705" class="math">L(C_min) ∝ C_min^-0.050</text>
+<text x="1275" y="746" class="small">在统一效率坐标上做外推</text>
+
+<text x="70" y="855" class="section">3  Kaplan 的资源分配读法：compute exponent 被 N / B / S 三个旋钮共同“花掉”</text>
+<rect x="70" y="890" width="1460" height="145" rx="22" class="gray"/>
+<rect x="105" y="925" width="760" height="42" rx="10" fill="#2b6f9f"/><rect x="865" y="925" width="250" height="42" rx="10" fill="#178d98"/><rect x="1115" y="925" width="70" height="42" rx="10" fill="#d47a20"/>
+<text x="125" y="955" font-size="21" fill="#fff">N_opt ∝ C_min^0.73  · 模型规模</text>
+<text x="885" y="955" font-size="20" fill="#fff">B_crit ∝ C_min^0.24</text>
+<text x="1195" y="954" class="body">S_min ∝ C_min^0.03</text>
+<text x="105" y="1005" class="body">0.73 + 0.24 + 0.03 ≈ 1  ⇒  论文当时的结论：新增 compute 主要投向 N，其次扩大有效 batch，serial steps 增长很慢。</text>
+</svg>

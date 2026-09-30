@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1f5f8b"/></marker>
+<marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d97706"/></marker>
+<marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c94a4a"/></marker>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#16855b"/></marker>
+<style>.t{font-family:"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#15324b}.title{font-size:44px;font-weight:700}.sub{font-size:25px;font-weight:650}.b{font-size:22px}.s{font-size:20px}.muted{fill:#607487}.box{fill:#f7fafc;stroke:#94a7b6;stroke-width:2}.blue{fill:#eaf4fb;stroke:#2f77a8;stroke-width:2}.cyan{fill:#e9fbfb;stroke:#249ca0;stroke-width:2}.green{fill:#edf9f2;stroke:#269267;stroke-width:2}.orange{fill:#fff5e7;stroke:#d97706;stroke-width:2}.red{fill:#fff0f0;stroke:#c94a4a;stroke-width:2}.f{fill:none;stroke:#1f5f8b;stroke-width:4;marker-end:url(#a)}.fo{fill:none;stroke:#d97706;stroke-width:4;marker-end:url(#o)}.fr{fill:none;stroke:#c94a4a;stroke-width:4;marker-end:url(#r)}.fg{fill:none;stroke:#16855b;stroke-width:4;marker-end:url(#g)}</style></defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text class="t title" x="62" y="72">FlashAttention · Tiling：K/V tile 的片上复用</text>
+<text class="t b muted" x="64" y="112">核心问题：loop order 怎样把 dense attention 变成 IO-aware schedule，同时不把 execution tile 误解成 sparse/local attention？</text>
+
+<text class="t sub" x="92" y="175">HBM tensors</text>
+<rect x="90" y="205" width="230" height="105" rx="16" class="blue"/><text class="t b" x="120" y="250">Q → Q₁ … QTr</text><text class="t s" x="120" y="282">Qᵢ : Bᵣ×d</text>
+<rect x="90" y="350" width="230" height="105" rx="16" class="cyan"/><text class="t b" x="120" y="395">K,V → Kⱼ,Vⱼ</text><text class="t s" x="120" y="427">B𝚌×d</text>
+
+<rect x="415" y="165" width="1060" height="610" rx="24" class="box"/>
+<text class="t sub" x="448" y="210">Outer loop：固定 Kⱼ,Vⱼ；Inner loop：遍历所有合法 Qᵢ</text>
+<rect x="470" y="245" width="210" height="90" rx="14" class="cyan"/><text class="t b" x="510" y="282">load Kⱼ,Vⱼ</text><text class="t s" x="520" y="312">HBM → SRAM</text>
+<path d="M320 402 C390 402 390 290 468 290" class="f"/>
+
+<rect x="470" y="400" width="185" height="115" rx="14" class="blue"/>
+<text class="t sub" x="495" y="440">Q1</text>
+<text class="t s" x="488" y="477">load → QᵢKⱼᵀ</text>
+<text class="t s" x="488" y="505">update state</text><rect x="705" y="400" width="185" height="115" rx="14" class="blue"/>
+<text class="t sub" x="730" y="440">Q2</text>
+<text class="t s" x="723" y="477">load → QᵢKⱼᵀ</text>
+<text class="t s" x="723" y="505">update state</text><rect x="940" y="400" width="185" height="115" rx="14" class="blue"/>
+<text class="t sub" x="965" y="440">Q3</text>
+<text class="t s" x="958" y="477">load → QᵢKⱼᵀ</text>
+<text class="t s" x="958" y="505">update state</text><rect x="1175" y="400" width="185" height="115" rx="14" class="blue"/>
+<text class="t sub" x="1200" y="440">Q4</text>
+<text class="t s" x="1193" y="477">load → QᵢKⱼᵀ</text>
+<text class="t s" x="1193" y="505">update state</text>
+<path d="M680 290 C680 360 560 360 560 398" class="f"/>
+<path d="M 655 458 L 703 458" class="f"/><path d="M 890 458 L 938 458" class="f"/><path d="M 1125 458 L 1173 458" class="f"/>
+
+<rect x="530" y="575" width="825" height="140" rx="18" class="green"/>
+<text class="t sub" x="560" y="618">每个 tile 内：Sᵢⱼ → rowmax / exp / rowsum → P̃ᵢⱼVⱼ → (mᵢ,ℓᵢ,Oᵢ)</text>
+<text class="t b" x="560" y="662">Sᵢⱼ 与 P̃ᵢⱼ 计算后立即丢弃；只有 Oᵢ 与 softmax statistics 持久化。</text>
+<text class="t s muted" x="560" y="697">所有合法 (i,j) tile 最终仍会访问：tiling 是 execution partition，不是 semantic sparsity。</text>
+
+<path d="M320 257 C365 257 365 455 468 455" class="f"/>
+
+<rect x="95" y="825" width="680" height="200" rx="20" class="orange"/>
+<text class="t sub" x="125" y="870">Block size 由 SRAM capacity M 约束</text>
+<text class="t b" x="125" y="915">B𝚌 ≈ ⌈M/(4d)⌉</text>
+<text class="t b" x="125" y="958">Bᵣ = min(⌈M/(4d)⌉, d)</text>
+<text class="t s muted" x="125" y="995">tile 越合适，片上复用越高；但仍需满足 occupancy / register 等实现约束。</text>
+
+<rect x="825" y="825" width="680" height="200" rx="20" class="cyan"/>
+<text class="t sub" x="855" y="870">IO complexity intuition</text>
+<text class="t b" x="855" y="915">Standard HBM access：Θ(Nd + N²)</text>
+<text class="t b" x="855" y="958">FlashAttention：Θ(N²d² / M)</text>
+<text class="t s muted" x="855" y="995">收益来自不写 S/P，并用有限 SRAM 交换更多 Q 重读与片上计算。</text>
+</svg>

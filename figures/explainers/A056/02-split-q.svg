@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}.grid{stroke:#b9c9d3;stroke-width:1.5}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="70" y="72" class="title">FA2 的 Sequence Parallelism：Forward 切行，Backward 为什么切列？</text>
+<text x="70" y="112" class="subtitle">A056 · 并行维不是随意选择，而是由“谁能独占最终输出 / 梯度”决定</text>
+
+<text x="70" y="174" class="section">Forward：每个 Q row block 可以独立完成自己的 Oᵢ</text>
+<rect x="70" y="210" width="705" height="475" rx="22" class="blue"/>
+<text x="100" y="255" class="math">Oᵢ = softmax(QᵢKᵀ)V</text>
+<rect x="110" y="300" width="350" height="280" fill="#fff" stroke="#2b6f9f" stroke-width="2.4"/>
+<g class="grid">
+<line x1="110" y1="370" x2="460" y2="370"/><line x1="110" y1="440" x2="460" y2="440"/><line x1="110" y1="510" x2="460" y2="510"/>
+<line x1="197" y1="300" x2="197" y2="580"/><line x1="285" y1="300" x2="285" y2="580"/><line x1="372" y1="300" x2="372" y2="580"/>
+</g>
+<rect x="110" y="300" width="350" height="70" fill="#d9edf8"/><rect x="110" y="370" width="350" height="70" fill="#e6f7f7"/><rect x="110" y="440" width="350" height="70" fill="#e9f6ed"/><rect x="110" y="510" width="350" height="70" fill="#eef1f3"/>
+<text x="130" y="343" class="body">worker 0 owns Q₀ rows → O₀</text><text x="130" y="413" class="body">worker 1 owns Q₁ rows → O₁</text><text x="130" y="483" class="body">worker 2 owns Q₂ rows → O₂</text><text x="130" y="553" class="body">…</text>
+<path d="M485 335 H595" class="flow"/><path d="M485 405 H595" class="flow"/><path d="M485 475 H595" class="flow"/>
+<rect x="595" y="300" width="145" height="245" rx="16" class="green"/>
+<text x="620" y="348" class="node">独立输出</text>
+<text x="620" y="390" class="body">O₀</text><text x="620" y="435" class="body">O₁</text><text x="620" y="480" class="body">O₂</text>
+<text x="100" y="630" class="small">所有 worker 共享 K/V，但 Oᵢ 互不依赖 → 不需要 thread-block 间同步</text>
+
+<text x="825" y="174" class="section">Backward：让 worker 独占 dKⱼ,dVⱼ，代价是 dQ 原子累加</text>
+<rect x="825" y="210" width="705" height="475" rx="22" class="cyan"/>
+<text x="855" y="255" class="math">dVⱼ = Σᵢ PᵢⱼᵀdOᵢ　 dKⱼ = Σᵢ dSᵢⱼᵀQᵢ</text>
+<rect x="865" y="300" width="350" height="280" fill="#fff" stroke="#178d98" stroke-width="2.4"/>
+<g class="grid">
+<line x1="865" y1="370" x2="1215" y2="370"/><line x1="865" y1="440" x2="1215" y2="440"/><line x1="865" y1="510" x2="1215" y2="510"/>
+<line x1="952" y1="300" x2="952" y2="580"/><line x1="1040" y1="300" x2="1040" y2="580"/><line x1="1127" y1="300" x2="1127" y2="580"/>
+</g>
+<rect x="865" y="300" width="87" height="280" fill="#fff0df"/><rect x="952" y="300" width="88" height="280" fill="#e6f7f7"/><rect x="1040" y="300" width="87" height="280" fill="#e9f6ed"/>
+<text x="874" y="610" class="small">worker 0</text><text x="960" y="610" class="small">worker 1</text><text x="1049" y="610" class="small">worker 2</text>
+<path d="M1240 335 H1390" class="good"/><path d="M1240 405 H1390" class="good"/>
+<text x="1260" y="320" class="small">local reduce</text>
+<rect x="1390" y="300" width="105" height="118" rx="14" class="green"/>
+<text x="1410" y="346" class="body">dKⱼ</text><text x="1410" y="388" class="body">dVⱼ</text>
+<path d="M1240 500 C1320 500 1320 555 1390 555" class="comm"/>
+<rect x="1390" y="505" width="105" height="95" rx="14" class="orange"/>
+<text x="1407" y="545" class="body">atomic</text><text x="1412" y="578" class="body">dQᵢ +=</text>
+<text x="855" y="650" class="small">列 worker 遍历所有 Q rows，能本地完成 dK/dV；但多个列都会贡献同一 dQ</text>
+
+<text x="70" y="750" class="section">并行度为什么随长序列反而增加？</text>
+<rect x="70" y="790" width="1460" height="205" rx="22" class="box"/>
+<text x="110" y="840" class="math">Tᵣ = ⌈N / Bᵣ⌉　→　Forward workers ≈ B × H × Tᵣ</text>
+<g>
+<rect x="110" y="885" width="90" height="42" class="blue"/><rect x="210" y="885" width="90" height="42" class="blue"/><rect x="310" y="885" width="90" height="42" class="blue"/><rect x="410" y="885" width="90" height="42" class="blue"/>
+<rect x="560" y="885" width="90" height="42" class="green"/><rect x="660" y="885" width="90" height="42" class="green"/><rect x="760" y="885" width="90" height="42" class="green"/><rect x="860" y="885" width="90" height="42" class="green"/><rect x="960" y="885" width="90" height="42" class="green"/><rect x="1060" y="885" width="90" height="42" class="green"/><rect x="1160" y="885" width="90" height="42" class="green"/><rect x="1260" y="885" width="90" height="42" class="green"/>
+</g>
+<text x="110" y="958" class="small">短序列：row blocks 少</text><text x="560" y="958" class="small">长序列：row blocks 多，即使 batch 下降也能提供更多独立 CTA work</text>
+<rect x="70" y="1025" width="1460" height="50" rx="12" class="box"/>
+<text x="100" y="1058" class="small">核心规则：优先沿“最终结果可被单个 worker 完整拥有”的维度切分；只有 unavoidable accumulation 才支付 atomic / collective 成本。</text>
+</svg>

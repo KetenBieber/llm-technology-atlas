@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{stroke:#7c919f;stroke-width:2}.phase{fill:none;stroke:#2b6f9f;stroke-width:4}.phase2{fill:none;stroke:#178d98;stroke-width:4}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">RoPE 多频率结构：一个 head 是怎样被切成 dₕ/2 个旋转平面？</text><text x="70" y="112" class="subtitle">A014 · Block-diagonal rotation 不需要真正构造 dₕ×dₕ 稠密矩阵</text>
+<text x="70" y="180" class="section">输入 tensor 与二维 pairing</text>
+<rect x="70" y="220" width="410" height="600" rx="24" class="gray"/>
+<text x="105" y="270" class="node">Q / K [B,h,T,dₕ]</text>
+<text x="105" y="320" class="body">以 dₕ=8 为例</text>
+<rect x="110" y="385" width="36" height="80" rx="8" fill="#dcecf7" stroke="#2b6f9f" stroke-width="2"/><text x="121" y="435" class="body">0</text><rect x="150" y="385" width="36" height="80" rx="8" fill="#dff3f3" stroke="#178d98" stroke-width="2"/><text x="161" y="435" class="body">1</text><rect x="190" y="385" width="36" height="80" rx="8" fill="#dcecf7" stroke="#2b6f9f" stroke-width="2"/><text x="201" y="435" class="body">2</text><rect x="230" y="385" width="36" height="80" rx="8" fill="#dff3f3" stroke="#178d98" stroke-width="2"/><text x="241" y="435" class="body">3</text><rect x="270" y="385" width="36" height="80" rx="8" fill="#dcecf7" stroke="#2b6f9f" stroke-width="2"/><text x="281" y="435" class="body">4</text><rect x="310" y="385" width="36" height="80" rx="8" fill="#dff3f3" stroke="#178d98" stroke-width="2"/><text x="321" y="435" class="body">5</text><rect x="350" y="385" width="36" height="80" rx="8" fill="#dcecf7" stroke="#2b6f9f" stroke-width="2"/><text x="361" y="435" class="body">6</text><rect x="390" y="385" width="36" height="80" rx="8" fill="#dff3f3" stroke="#178d98" stroke-width="2"/><text x="401" y="435" class="body">7</text>
+<path d="M128 480 V530 H168 V480" fill="none" stroke="#607d8b" stroke-width="3"/><text x="130" y="565" class="small">pair 0</text><path d="M208 480 V530 H248 V480" fill="none" stroke="#607d8b" stroke-width="3"/><text x="210" y="565" class="small">pair 1</text><path d="M288 480 V530 H328 V480" fill="none" stroke="#607d8b" stroke-width="3"/><text x="290" y="565" class="small">pair 2</text><path d="M368 480 V530 H408 V480" fill="none" stroke="#607d8b" stroke-width="3"/><text x="370" y="565" class="small">pair 3</text>
+<text x="105" y="640" class="math">q = [q⁽⁰⁾, q⁽¹⁾, q⁽²⁾, q⁽³⁾]</text>
+<text x="105" y="690" class="small">每个 q⁽ⁱ⁾ ∈ R²</text>
+<text x="105" y="750" class="body">canonical 实现可用偶奇交错或等价布局</text>
+
+<path d="M480 515 H565" class="flow"/>
+<text x="500" y="485" class="small">position m</text>
+
+<text x="600" y="180" class="section">每个二维平面使用不同频率 θᵢ</text>
+<rect x="565" y="220" width="470" height="600" rx="24" class="blue"/>
+<circle cx="680" cy="365" r="72" fill="#f7fbfd" stroke="#2b6f9f" stroke-width="3"/><line x1="680" y1="365" x2="740" y2="345" stroke="#2b6f9f" stroke-width="5"/><text x="620" y="465" class="small">θ0=10000⁻²ⁱ⁄ᵈʰ</text><circle cx="880" cy="365" r="72" fill="#f7fbfd" stroke="#2b6f9f" stroke-width="3"/><line x1="880" y1="365" x2="940" y2="337" stroke="#2b6f9f" stroke-width="5"/><text x="820" y="465" class="small">θ1=10000⁻²ⁱ⁄ᵈʰ</text><circle cx="680" cy="575" r="72" fill="#f7fbfd" stroke="#178d98" stroke-width="3"/><line x1="680" y1="575" x2="740" y2="539" stroke="#178d98" stroke-width="5"/><text x="620" y="675" class="small">θ2=10000⁻²ⁱ⁄ᵈʰ</text><circle cx="880" cy="575" r="72" fill="#f7fbfd" stroke="#178d98" stroke-width="3"/><line x1="880" y1="575" x2="940" y2="531" stroke="#178d98" stroke-width="5"/><text x="820" y="675" class="small">θ3=10000⁻²ⁱ⁄ᵈʰ</text>
+<text x="615" y="735" class="math">RΘ,m = diag(R(mθ₀), … , R(mθ₃))</text>
+<text x="615" y="780" class="small">不同频率提供不同空间尺度的相位变化</text>
+
+<path d="M1035 515 H1120" class="good"/>
+<text x="1048" y="485" class="small">elementwise sin/cos</text>
+
+<text x="1140" y="180" class="section">输出 Shape 不变</text>
+<rect x="1090" y="220" width="440" height="600" rx="24" class="green"/>
+<text x="1125" y="275" class="node">Q′ / K′ [B,h,T,dₕ]</text>
+<rect x="1130" y="335" width="360" height="120" rx="18" class="cyan"/>
+<text x="1160" y="378" class="body">pair-wise rotate</text>
+<text x="1160" y="414" class="math">x′ = x cosφ − y sinφ</text>
+<text x="1160" y="445" class="math">y′ = x sinφ + y cosφ</text>
+<path d="M1310 455 V520" class="flow"/>
+<rect x="1130" y="520" width="360" height="115" rx="18" class="blue"/>
+<text x="1160" y="565" class="node">Q′K′ᵀ / √dₕ</text>
+<text x="1160" y="605" class="small">Attention 主计算仍保持原 Shape</text>
+<text x="1125" y="700" class="body">额外运算：O(B·h·T·dₕ)</text>
+<text x="1125" y="745" class="body">Dense score 仍是 O(T²)</text>
+<text x="1125" y="790" class="small">RoPE ≠ 稀疏 Attention / KV 压缩</text>
+
+<rect x="70" y="865" width="1460" height="165" rx="22" class="orange"/>
+<text x="100" y="910" class="node">实现为什么不构造 block-diagonal matrix？</text>
+<text x="100" y="954" class="body">RΘ,m 每行最多只有两个非零系数；直接按 pair 用 cos/sin 逐元素乘加即可，避免 O(dₕ²) 的稠密矩阵乘。</text>
+<text x="100" y="998" class="body">cos/sin 表可预计算并在 batch/head 轴广播，也可在 fused kernel 中按块生成。</text>
+</svg>

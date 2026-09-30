@@ -48,12 +48,6 @@ Transformer
 ~~~
 
 
-## 总结架构图
-
-![教学总结图：A019-mqa](../../../figures/explainers/A019-mqa-summary.svg)
-
-> **教学总结图**：MQA 保留多 Query heads，但共享一组 K/V，从而显著压缩 Decode 阶段 KV Cache 与 HBM 读取。
-
 # 输入、输出与任务
 
 输入：
@@ -140,6 +134,11 @@ X
          concat heads
 ~~~
 
+![教学解释图：MHA vs. MQA Head Sharing](../../../figures/explainers/A019/01-mha-vs-mqa-head-sharing.svg)
+
+*教学解释图｜MHA vs. MQA Head Sharing。*
+
+
 ## MQA
 
 ~~~text
@@ -162,6 +161,11 @@ X ── Wv → shared V ┘
 ## 1. 为什么 Decode 与训练阶段的瓶颈不同
 
 训练/Prefill 时：
+
+![教学解释图：Decode Broadcast Tensor Flow](../../../figures/explainers/A019/03-decode-broadcast-tensor-flow.svg)
+
+*教学解释图｜Decode Broadcast Tensor Flow。*
+
 
 $$
 QK^\top
@@ -347,6 +351,11 @@ $$
 ## 4. 每个 Decode token 为什么也减少 HBM 读取
 
 第 `t` 步，每层至少需要历史 K/V：
+
+![教学解释图：Decode KV Cache Bandwidth](../../../figures/explainers/A019/02-decode-kv-cache-bandwidth.svg)
+
+*教学解释图｜Decode KV Cache Bandwidth。*
+
 
 $$
 2tH_{kv}d_hb.

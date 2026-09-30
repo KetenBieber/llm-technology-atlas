@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.grid{stroke:#d9e2e8;stroke-width:1.2}.curve{fill:none;stroke:#246b9b;stroke-width:5}.curve2{fill:none;stroke:#178d98;stroke-width:5}.curve3{fill:none;stroke:#d47a20;stroke-width:5}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style><defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">YaRN：Attention Scaling 为什么等价于同时放大 Q 与 K？</text><text x="70" y="112" class="subtitle">A018 · 长 context 改变 softmax 候选集合；YaRN 用经验 magnitude rule 重新调节 logit scale</text>
+<text x="70" y="175" class="section">1  Context 变长后，attention normalization 面对更多候选 key</text>
+<rect x="70" y="215" width="650" height="285" rx="22" class="gray"/>
+<text x="105" y="260" class="node">原始 attention</text>
+<text x="105" y="305" class="math">Q,K ∈ Rᴸˣᵈʰ</text>
+<text x="105" y="347" class="math">Z = QKᵀ / √d_h   ∈ Rᴸˣᴸ</text>
+<text x="105" y="392" class="math">A = softmax(Z)</text>
+<text x="105" y="442" class="body">L=4096 时，每行对 4096 个 key 归一化</text>
+
+<rect x="810" y="215" width="720" height="285" rx="22" class="orange"/>
+<text x="845" y="260" class="node">扩展到 L′=32768（8×）</text>
+<text x="845" y="305" class="body">每行 softmax 候选数扩大 8×</text>
+<text x="845" y="347" class="body">即使单个 logit 统计近似，entropy / mass concentration</text>
+<text x="845" y="383" class="body">也可能发生 shift。</text>
+<text x="845" y="435" class="small">论文观察：插值后适度 sharpen logits 可降低 perplexity</text>
+<path d="M720 355 H810" class="comm"/>
+
+<text x="70" y="575" class="section">2  不改 attention kernel：在 RoPE 输出处同时缩放 Q、K</text>
+<rect x="70" y="615" width="1460" height="250" rx="22" class="blue"/>
+<rect x="110" y="670" width="220" height="110" rx="18" class="cyan"/><text x="165" y="717" class="node">Q_rot</text><text x="150" y="758" class="math">Q′ = m · Q_rot</text>
+<rect x="390" y="670" width="220" height="110" rx="18" class="cyan"/><text x="445" y="717" class="node">K_rot</text><text x="430" y="758" class="math">K′ = m · K_rot</text>
+<path d="M330 710 C500 650 610 665 720 700" class="flow"/>
+<path d="M610 755 C660 755 680 750 720 748" class="flow"/>
+<rect x="720" y="650" width="390" height="150" rx="20" class="green"/>
+<text x="750" y="698" class="math">(mQ)(mK)ᵀ = m² QKᵀ</text>
+<text x="750" y="743" class="math">m² = 1/t</text>
+<text x="750" y="784" class="body">因此等价于 temperature scaling</text>
+<path d="M1110 725 H1190" class="good"/>
+<rect x="1190" y="650" width="300" height="150" rx="20" class="green"/>
+<text x="1220" y="697" class="math">softmax( QKᵀ </text>
+<text x="1220" y="735" class="math">/ (t√d_h) )</text>
+<text x="1220" y="782" class="small">t&lt;1 ⇒ sharper</text>
+
+<rect x="70" y="905" width="920" height="125" rx="20" class="green"/>
+<text x="100" y="947" class="node">YaRN 对 LLaMA / Llama 2 的经验拟合</text>
+<text x="100" y="990" class="math">m = √(1/t) = 0.1 ln s + 1</text>
+
+<rect x="1040" y="905" width="490" height="125" rx="20" class="orange"/>
+<text x="1070" y="947" class="body">s=8 ⇒ m≈1.208</text>
+<text x="1070" y="985" class="math">1/t=m²≈1.46  ⇒  t≈0.684</text>
+<text x="1070" y="1018" class="small">经验 rule，不是 closed-form optimum</text>
+</svg>

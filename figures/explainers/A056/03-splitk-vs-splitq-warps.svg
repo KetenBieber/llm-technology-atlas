@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><title>FlashAttention-2：Split-K → Split-Q，减少跨 Warp Partial-Output Reduction</title><desc>FA1 warps 切 K/V reduction dimension导致同一 O rows 的 partial outputs；FA2 warps 切 Q rows，让每个 warp独占完整 output slice。</desc><defs>
+<marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1557B0"/></marker>
+<marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E58A1F"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2E8B57"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#C23B3B"/></marker>
+<style>text{font-family:Inter,"Noto Sans SC","Microsoft YaHei",sans-serif;fill:#17324D}.title{font-size:46px;font-weight:700}.sub{font-size:23px;fill:#596579}.h{font-size:28px;font-weight:700}.n{font-size:22px}.small{font-size:20px}.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:21px}.panel{fill:#F8FBFE;stroke:#B8CADB;stroke-width:2}.blue{fill:#EAF3FF;stroke:#1557B0;stroke-width:2.5}.cyan{fill:#E8FAFB;stroke:#0E9AA7;stroke-width:2.5}.orange{fill:#FFF4E6;stroke:#E58A1F;stroke-width:2.5}.green{fill:#ECF8F1;stroke:#2E8B57;stroke-width:2.5}.red{fill:#FFF0F0;stroke:#C23B3B;stroke-width:2.5}.gray{fill:#F1F4F7;stroke:#7D8B99;stroke-width:2}.flow{fill:none;stroke:#1557B0;stroke-width:4;marker-end:url(#ab)}.comm{fill:none;stroke:#E58A1F;stroke-width:4;stroke-dasharray:11 8;marker-end:url(#ao)}.good{fill:none;stroke:#2E8B57;stroke-width:4;marker-end:url(#ag)}.bad{fill:none;stroke:#C23B3B;stroke-width:4;marker-end:url(#ar)}</style></defs><rect width="1600" height="1100" fill="#fff"/><text x="70" y="72" class="title">FlashAttention-2：Split-K → Split-Q，减少跨 Warp Partial-Output Reduction</text>
+<text x="70" y="112" class="sub">认知问题：为什么改变 warp 内 work partition，就能减少 shared-memory communication？</text>
+<rect x="65" y="155" width="720" height="825" rx="24" class="red"/><text x="100" y="205" class="h">FA1 · Split-K</text>
+<rect x="110" y="255" width="600" height="120" rx="18" class="cyan"/><text x="410" y="302" text-anchor="middle" class="n">共享 Q rows</text><text x="410" y="340" text-anchor="middle" class="small">同一输出 O 被多个 warps 共同生产</text>
+<g transform="translate(115,445)">
+ <rect x="0" y="0" width="130" height="105" rx="16" class="blue"/><text x="65" y="42" text-anchor="middle" class="n">Warp 0</text><text x="65" y="78" text-anchor="middle" class="small">K/V slice 0</text>
+ <rect x="150" y="0" width="130" height="105" rx="16" class="blue"/><text x="215" y="42" text-anchor="middle" class="n">Warp 1</text><text x="215" y="78" text-anchor="middle" class="small">K/V slice 1</text>
+ <rect x="300" y="0" width="130" height="105" rx="16" class="blue"/><text x="365" y="42" text-anchor="middle" class="n">Warp 2</text><text x="365" y="78" text-anchor="middle" class="small">K/V slice 2</text>
+ <rect x="450" y="0" width="130" height="105" rx="16" class="blue"/><text x="515" y="42" text-anchor="middle" class="n">Warp 3</text><text x="515" y="78" text-anchor="middle" class="small">K/V slice 3</text>
+</g>
+<path d="M180 550V650" class="bad"/><path d="M330 550V650" class="bad"/><path d="M480 550V650" class="bad"/><path d="M630 550V650" class="bad"/>
+<rect x="155" y="665" width="510" height="120" rx="18" class="orange"/><text x="410" y="707" text-anchor="middle" class="n">Shared Memory + Sync + Reduction</text><text x="410" y="747" text-anchor="middle" class="mono">O = Σ_w O_partial^(w)</text>
+<path d="M410 785V845" class="bad"/><rect x="245" y="850" width="330" height="75" rx="16" class="red"/><text x="410" y="898" text-anchor="middle" class="n">跨 warp partial output 通信</text>
+
+<rect x="815" y="155" width="720" height="825" rx="24" class="green"/><text x="850" y="205" class="h">FA2 · Split-Q</text>
+<rect x="865" y="255" width="620" height="120" rx="18" class="cyan"/><text x="1175" y="302" text-anchor="middle" class="n">K/V tile 驻留 Shared Memory</text><text x="1175" y="340" text-anchor="middle" class="small">所有 warps 读取同一 K/V，不等于从 HBM 复制多份</text>
+<g transform="translate(870,445)">
+ <rect x="0" y="0" width="135" height="120" rx="16" class="blue"/><text x="67" y="40" text-anchor="middle" class="n">Warp 0</text><text x="67" y="78" text-anchor="middle" class="small">Q rows 0</text><text x="67" y="104" text-anchor="middle" class="small">→ full O slice</text>
+ <rect x="155" y="0" width="135" height="120" rx="16" class="cyan"/><text x="222" y="40" text-anchor="middle" class="n">Warp 1</text><text x="222" y="78" text-anchor="middle" class="small">Q rows 1</text><text x="222" y="104" text-anchor="middle" class="small">→ full O slice</text>
+ <rect x="310" y="0" width="135" height="120" rx="16" class="green"/><text x="377" y="40" text-anchor="middle" class="n">Warp 2</text><text x="377" y="78" text-anchor="middle" class="small">Q rows 2</text><text x="377" y="104" text-anchor="middle" class="small">→ full O slice</text>
+ <rect x="465" y="0" width="135" height="120" rx="16" class="blue"/><text x="532" y="40" text-anchor="middle" class="n">Warp 3</text><text x="532" y="78" text-anchor="middle" class="small">Q rows 3</text><text x="532" y="104" text-anchor="middle" class="small">→ full O slice</text>
+</g>
+<path d="M937 565V690" class="good"/><path d="M1092 565V690" class="good"/><path d="M1247 565V690" class="good"/><path d="M1402 565V690" class="good"/>
+<rect x="890" y="705" width="570" height="120" rx="18" class="green"/><text x="1175" y="748" text-anchor="middle" class="n">输出 row slices 天然互斥</text><text x="1175" y="787" text-anchor="middle" class="mono">O = concat(O⁰,O¹,O²,O³)</text>
+<rect x="955" y="855" width="440" height="72" rx="16" class="green"/><text x="1175" y="901" text-anchor="middle" class="n">不需要 cross-warp output reduction</text>
+<text x="800" y="1030" text-anchor="middle" class="n">设计原则：让每个 warp 尽量拥有独立 output region；共享输入比共享 partial output 更容易高效实现。</text>
+</svg>

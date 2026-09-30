@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.thin{fill:none;stroke:#6d8797;stroke-width:2}.grid{stroke:#c9d6de;stroke-width:1.4}
+</style>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">Scalable Muon：为什么要把矩阵梯度“整体”正交化？</text><text x="70" y="112" class="subtitle">A006 · 谱范数预算下，奇异方向从不均衡幅值变成统一幅值</text>
+<text x="70" y="176" class="section">1  梯度矩阵携带方向与尺度</text>
+<rect x="70" y="210" width="430" height="600" rx="24" class="gray"/>
+<text x="100" y="255" class="node">动量矩阵 M ∈ Rᴬˣᴮ</text>
+<text x="100" y="295" class="math">M = U Σ Vᵀ</text>
+<ellipse cx="285" cy="470" rx="150" ry="62" fill="#e7eef2" stroke="#748895" stroke-width="3" transform="rotate(-18 285 470)"/>
+<line x1="165" y1="520" x2="407" y2="419" stroke="#c64a4a" stroke-width="7" marker-end="url(#arrowRed)"/>
+<line x1="225" y1="405" x2="340" y2="542" stroke="#246b9b" stroke-width="4" marker-end="url(#arrow)"/>
+<text x="116" y="575" class="body">σ₁ ≫ σ₂ 时，更新能量集中在主奇异方向</text>
+<rect x="110" y="630" width="330" height="38" fill="#c64a4a" opacity=".78"/><text x="120" y="658" class="body" fill="#fff">σ₁ = 大</text>
+<rect x="110" y="688" width="105" height="38" fill="#2b6f9f" opacity=".8"/><text x="120" y="716" class="body" fill="#fff">σ₂ = 小</text>
+<text x="100" y="775" class="small">逐元素/统一缩放不会消除奇异方向失衡</text>
+
+<path d="M505 505 C560 505 575 505 625 505" class="flow"/>
+<text x="520" y="478" class="small">Polar(M)</text>
+
+<text x="625" y="176" class="section">2  极分解只保留奇异向量</text>
+<rect x="610" y="210" width="420" height="600" rx="24" class="blue"/>
+<text x="640" y="255" class="node">O = U Vᵀ</text>
+<text x="640" y="294" class="math">σᵢ(O) = 1  （非零奇异方向）</text>
+<circle cx="820" cy="470" r="126" fill="#edf6fb" stroke="#2b6f9f" stroke-width="3"/>
+<line x1="820" y1="470" x2="946" y2="470" stroke="#2b6f9f" stroke-width="6" marker-end="url(#arrow)"/>
+<line x1="820" y1="470" x2="820" y2="344" stroke="#178d98" stroke-width="6" marker-end="url(#arrow)"/>
+<line x1="820" y1="470" x2="731" y2="559" stroke="#2f8a57" stroke-width="6" marker-end="url(#arrowGreen)"/>
+<text x="655" y="625" class="body">不同奇异方向不再因 σᵢ 的原始大小被压制</text>
+<rect x="655" y="668" width="320" height="42" class="green" rx="10"/>
+<text x="675" y="697" class="body">σ₁ = σ₂ = … = 1</text>
+<text x="640" y="766" class="small">不是低秩截断：非零奇异方向仍被保留</text>
+
+<path d="M1035 505 C1090 505 1105 505 1150 505" class="good"/>
+<text x="1048" y="477" class="small">结构化更新</text>
+
+<text x="1110" y="176" class="section">3  谱范数约束的最速下降</text>
+<rect x="1085" y="210" width="445" height="600" rx="24" class="green"/>
+<text x="1115" y="255" class="math">min tr(Mᵀ Δ)</text>
+<text x="1115" y="292" class="math">s.t. ‖Δ‖₂ ≤ ρ</text>
+<line x1="1160" y1="470" x2="1450" y2="470" class="thin"/>
+<line x1="1305" y1="325" x2="1305" y2="615" class="thin"/>
+<circle cx="1305" cy="470" r="112" fill="none" stroke="#2f8a57" stroke-width="3"/>
+<circle cx="1305" cy="470" r="7" fill="#17324d"/>
+<line x1="1305" y1="470" x2="1198" y2="520" stroke="#2f8a57" stroke-width="7" marker-end="url(#arrowGreen)"/>
+<text x="1135" y="560" class="node">Δ* = −ρ U Vᵀ</text>
+<text x="1115" y="630" class="body">每个非零奇异方向都“用满”同一谱范数预算</text>
+<rect x="1120" y="682" width="365" height="80" rx="12" class="box"/>
+<text x="1142" y="716" class="body">机制：重分配更新幅值</text>
+<text x="1142" y="748" class="small">不是改变 loss，也不是改变参数秩</text>
+
+<rect x="70" y="855" width="1460" height="170" rx="22" class="box"/>
+<text x="100" y="900" class="node">认知锚点</text>
+<text x="100" y="942" class="body">Muon 的关键对象不是单个梯度元素，而是二维权重矩阵的奇异结构；Polar(M) 把“σᵢ 多大”与“奇异方向是什么”分离。</text>
+<text x="100" y="982" class="math">M = UΣVᵀ  →  O = UVᵀ  →  W ← W − η · O</text>
+</svg>

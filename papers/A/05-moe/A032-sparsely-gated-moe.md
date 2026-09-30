@@ -54,12 +54,6 @@ MoE 的第一性原理目标不是“让每个 token 计算更多”，而是：
 Dense 模型参数和激活 FLOPs高度绑定；Sparse MoE 则允许大部分参数在当前 token 上不参与计算。
 
 
-## 总结架构图
-
-![教学总结图：A032-sparsely-gated-moe](../../../figures/explainers/A032-sparsely-gated-moe-summary.svg)
-
-> **教学总结图**：从 Router、Top-k Experts 到负载均衡、容量约束与分布式 dispatch，概括稀疏 MoE 的完整执行链。
-
 # 输入、输出与任务
 
 设输入 token hidden：
@@ -213,6 +207,11 @@ restore original token order
 
 Dense FFN：
 
+![教学解释图：Capacity Compute Decoupling](../../../figures/explainers/A032/01-capacity-compute-decoupling.svg)
+
+*教学解释图｜Capacity Compute Decoupling。*
+
+
 $$
 h
 =
@@ -327,6 +326,11 @@ $$
 
 如果 router 早期偶然更偏 expert 7：
 
+![教学解释图：Balance Capacity Collapse](../../../figures/explainers/A032/03-balance-capacity-collapse.svg)
+
+*教学解释图｜Balance Capacity Collapse。*
+
+
 $$
 g_7
 >
@@ -368,6 +372,11 @@ load collapse
 ## 4. Noisy Top-k 为什么有探索作用
 
 Router logits：
+
+![教学解释图：Noisy Top-k Routing Flow](../../../figures/explainers/A032/02-noisy-topk-routing-flow.svg)
+
+*教学解释图｜Noisy Top-k Routing Flow。*
+
 
 $$
 z_i=x^\top w_i.
@@ -558,6 +567,11 @@ capacity factor 太小：
 ## 8. Expert Parallel 为什么自然需要 All-to-All
 
 假设：
+
+![教学解释图：Expert Parallel All-to-All](../../../figures/explainers/A032/04-expert-parallel-alltoall.svg)
+
+*教学解释图｜Expert Parallel All-to-All。*
+
 
 - GPU 0 放 experts 0–15；
 - GPU 1 放 16–31；

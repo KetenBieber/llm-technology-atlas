@@ -84,12 +84,6 @@ rejection sampling 生成新 SFT 数据
 ---
 
 
-## 总结架构图
-
-![教学总结图：B010-deepseek-r1](../../../figures/explainers/B010-deepseek-r1-summary.svg)
-
-> **教学总结图**：从 R1-Zero 的 outcome reward 到 cold start、GRPO、数据回收与全场景 RL，概括 R1 推理后训练主线。
-
 ## 1. 先把 R1 和 V3 的关系摆正：R1 不是重新训练一个新 Base Model
 
 理解 R1 的第一步，是不要把它当成一个从零预训练的新模型。
@@ -448,6 +442,11 @@ GRPO
 
 论文给 R1-Zero 的 reward 主要包括两类：
 
+![教学解释图：R1 Zero Outcome Reward](../../../figures/explainers/B010/01-r1-zero-outcome-reward.svg)
+
+*教学解释图｜R1 Zero Outcome Reward。*
+
+
 ### Accuracy Reward
 
 对于数学：
@@ -668,6 +667,11 @@ $$
 ## 11. DeepSeek-R1：不是推翻 Zero，而是在 Zero 的发现上加入“行为塑形”
 
 原论文完整 multi-stage pipeline：
+
+![教学解释图：Four Stage Training Loop](../../../figures/explainers/B010/02-four-stage-training-loop.svg)
+
+*教学解释图｜Four Stage Training Loop。*
+
 
 ![DeepSeek-R1 原论文：多阶段训练 Pipeline](../../../figures/B010/fig1-r1-pipeline.svg)
 
@@ -967,6 +971,11 @@ $$
 ## 18. R1 最值得注意的第二条结论：大模型发现的 reasoning pattern 可以蒸馏
 
 R1 论文最后做了一件非常重要的事：
+
+![教学解释图：Reasoning Distillation](../../../figures/explainers/B010/03-reasoning-distillation.svg)
+
+*教学解释图｜Reasoning Distillation。*
+
 
 > 用 DeepSeek-R1 生成 reasoning data，再直接微调更小的 dense model。
 

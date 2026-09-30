@@ -43,12 +43,6 @@
 「反向传播」负责求 $\nabla_\theta L$，「SGD/Adam」负责利用梯度更新 $\theta$；不能把优化器与求导算法混为一谈。模型的前向架构也不同于训练算法：Transformer 的 Attention 并不是「反向传播的一种」。
 
 
-## 总结架构图
-
-![教学总结图：A001-backpropagation](../../../figures/explainers/A001-backpropagation-summary.svg)
-
-> **教学总结图**：从前向计算、loss 到隐藏层梯度和参数更新的完整信用分配闭环。
-
 # 输入、输出与任务
 
 ## 从论文的逐样本网络转为现代张量记号
@@ -106,6 +100,11 @@
 ### Fig.5：展开迭代网络——从「层」转到「时间」必须保留共享权重
 
 ![原论文 Fig.5：三次迭代网络与等价分层网络的展开示意](../../../figures/A001/fig5-unrolled-recurrent-network.svg)
+
+![教学解释图：Shared Weight Unroll](../../../figures/explainers/A001/03-shared-weight-unroll.svg)
+
+*教学解释图｜Shared Weight Unroll。*
+
 
 **怎么读图：** 左侧是循环重复使用的同一组权重；右侧把三次迭代展开成等价的层状有向图，同名权重在多层**重复出现，但共享同一参数**。反向过程中每个展开时间位置产生一份梯度贡献，最后按照参数共享关系合并，而不是给原来同一条连接训练三套独立权重。原文将此图放在对称与家谱实验之后，承担的是“方法还可以推广到哪一类计算图”的角色；它不是前两个实验的另一个可视化结果。
 
@@ -179,6 +178,11 @@ $\delta$ 是**损失对某节点前激活的敏感度**，不是「预测误差�
 
 最自然但有问题的想法：从最终输出误差直接减去一个隐藏层目标。问题是训练数据并未给出 $h^\star$，无法计算 $h-h^\star$。反向传播不需要虚构这个目标，它把后层的梯度沿真实计算依赖传回来。
 
+![教学解释图：Credit Assignment Flow](../../../figures/explainers/A001/01-credit-assignment-flow.svg)
+
+*教学解释图｜Credit Assignment Flow。*
+
+
 对隐藏单元 $i$，先问「它的输出 $h_i$ 增加一点，会影响哪些后层前激活？」因为
 
 $$
@@ -235,6 +239,11 @@ $$
 ## 3. 手算一次：一条输入路径如何收到最终输出误差
 
 最小两层网络取 $x=2$、$w_1=0.5$、$b_1=0$、$w_2=1$、$b_2=0$、$y=1$：
+
+![教学解释图：Multipath VJP](../../../figures/explainers/A001/02-multipath-vjp.svg)
+
+*教学解释图｜Multipath VJP。*
+
 
 $$
 z_1=2(0.5)=1,\quad

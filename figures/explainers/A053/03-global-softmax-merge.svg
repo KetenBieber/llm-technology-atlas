@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/></marker>
+  <marker id="arrO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+  <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#16855b"/></marker>
+  <style>
+    .t{font-family:"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#15324b}
+    .title{font-size:44px;font-weight:700}.sub{font-size:25px;font-weight:650}.body{font-size:22px}.small{font-size:20px}
+    .muted{fill:#5b7083}.blue{fill:#eaf4fb;stroke:#2f77a8;stroke-width:2}.cyan{fill:#e9fbfb;stroke:#249ca0;stroke-width:2}
+    .green{fill:#edf9f2;stroke:#269267;stroke-width:2}.orange{fill:#fff5e7;stroke:#d97706;stroke-width:2}.red{fill:#fff0f0;stroke:#c94a4a;stroke-width:2}
+    .gray{fill:#f4f7f9;stroke:#9aaab8;stroke-width:2}.flow{fill:none;stroke:#1f5f8b;stroke-width:4;marker-end:url(#arr)}
+    .flowO{fill:none;stroke:#d97706;stroke-width:4;marker-end:url(#arrO)}.flowG{fill:none;stroke:#16855b;stroke-width:4;marker-end:url(#arrG)}
+    .dash{stroke-dasharray:10 8}.thin{stroke-width:2.5}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text class="t title" x="66" y="72">DCA · Global Softmax Merge：三路 kernel 仍必须恢复一个概率分布</text>
+<text class="t body muted" x="68" y="112">核心问题：Intra / Successive / Inter 分三次 attention 之后，怎样保持与“对全部合法 key 做一次 softmax”一致？</text>
+
+<rect x="68" y="160" width="250" height="105" rx="16" class="gray"/>
+<text class="t sub" x="102" y="202">同一 qᵢ content</text><text class="t body" x="112" y="240">3 种 RoPE phase</text>
+<path d="M 318 212 C 390 212, 370 215, 430 215" class="flow"/>
+
+<rect x="430" y="145" width="360" height="205" rx="18" class="blue"/>
+<text class="t sub" x="454" y="187">Intra</text>
+<text class="t body" x="454" y="229">qᵢᴵ · K(current chunk)ᵀ → logits z_g</text>
+<text class="t body" x="454" y="271">local stats: (m_g, ℓ_g, U_g)</text>
+<text class="t small muted" x="454" y="310">U_g = Σ exp(z−m_g)V</text><rect x="430" y="405" width="360" height="205" rx="18" class="green"/>
+<text class="t sub" x="454" y="447">Successive</text>
+<text class="t body" x="454" y="489">qᵢˢ · K(previous chunk)ᵀ → logits z_g</text>
+<text class="t body" x="454" y="531">local stats: (m_g, ℓ_g, U_g)</text>
+<text class="t small muted" x="454" y="570">U_g = Σ exp(z−m_g)V</text><rect x="430" y="665" width="360" height="205" rx="18" class="cyan"/>
+<text class="t sub" x="454" y="707">Inter</text>
+<text class="t body" x="454" y="749">qᵢᴱ · K(older chunks)ᵀ → logits z_g</text>
+<text class="t body" x="454" y="791">local stats: (m_g, ℓ_g, U_g)</text>
+<text class="t small muted" x="454" y="830">U_g = Σ exp(z−m_g)V</text>
+
+<path d="M 330 212 C 380 212, 380 242, 430 242" class="flow"/>
+<path d="M 330 212 C 380 212, 380 502, 430 502" class="flowG"/>
+<path d="M 330 212 C 380 212, 380 762, 430 762" class="flow"/>
+
+<rect x="895" y="250" width="625" height="420" rx="22" class="orange"/>
+<text class="t sub" x="925" y="295">Stable merge：合并 sufficient statistics</text>
+<text class="t body" x="925" y="348">m = max(m₁, m₂, m₃)</text>
+<text class="t body" x="925" y="398">ℓ = Σg exp(m_g − m) · ℓ_g</text>
+<text class="t body" x="925" y="448">U = Σg exp(m_g − m) · U_g</text>
+<line x1="925" y1="480" x2="1480" y2="480" stroke="#d7a15c" stroke-width="2"/>
+<text class="t sub" x="925" y="530">O = U / ℓ</text>
+<text class="t body" x="925" y="575">等价于对 K₁ ∪ K₂ ∪ K₃ 做一次 global softmax</text>
+<text class="t small muted" x="925" y="620">无需 materialize 全局 attention map；</text>
+<text class="t small muted" x="925" y="650">直接复用 online-softmax sufficient statistics。</text>
+
+<path d="M 790 250 C 850 250, 835 340, 895 340" class="flowO"/>
+<path d="M 790 510 C 850 510, 835 460, 895 460" class="flowO"/>
+<path d="M 790 770 C 850 770, 835 575, 895 575" class="flowO"/>
+
+<rect x="75" y="890" width="680" height="130" rx="18" class="red"/>
+<text class="t sub" x="102" y="932">错误：O₁ + O₂ + O₃</text>
+<text class="t body" x="102" y="975">隐式假设每个 group 拥有相同总概率质量；改变原 attention distribution。</text>
+<line x1="105" y1="990" x2="690" y2="913" stroke="#c94a4a" stroke-width="5"/>
+
+<rect x="825" y="890" width="695" height="130" rx="18" class="green"/>
+<text class="t sub" x="854" y="932">正确：按 partition mass 重新归一化</text>
+<text class="t body" x="854" y="975">O = (Z₁O₁ + Z₂O₂ + Z₃O₃) / (Z₁+Z₂+Z₃)，稳定实现用 (m,ℓ,U)。</text>
+</svg>

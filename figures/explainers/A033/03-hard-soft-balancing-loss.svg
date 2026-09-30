@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+<defs>
+  <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1557b0"/></marker>
+  <style>
+  text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#17212b}.title{font-size:40px;font-weight:700}.sub{font-size:23px;fill:#52606d}
+  .h{font-size:29px;font-weight:700}.b{font-size:23px}.s{font-size:20px;fill:#52606d}.panel{fill:#fff;stroke:#c6d1dc;stroke-width:2}
+  .cell{fill:#f7fafc;stroke:#9aa9b8;stroke-width:1.5}.hot{fill:#e9f2ff;stroke:#1557b0;stroke-width:2}.metric{fill:#e7fbfc;stroke:#0e8f9b;stroke-width:2}
+  .flow{stroke:#1557b0;stroke-width:3;fill:none;marker-end:url(#a)}.formula{fill:#edf9f0;stroke:#2e8b57;stroke-width:2}
+  </style>
+</defs>
+<rect width="1600" height="1100" fill="#fff"/>
+<text x="800" y="62" text-anchor="middle" class="title">Switch Balance：为什么同时使用 Hard Load f_i 与 Soft Preference P_i</text>
+<text x="800" y="101" text-anchor="middle" class="sub">hard assignment 告诉你“token 实际去了哪里”；soft probability 告诉你“Router 正在把概率质量推向哪里”</text>
+
+<rect x="55" y="150" width="740" height="735" rx="22" class="panel"/>
+<text x="425" y="195" text-anchor="middle" class="h">4 tokens × 4 experts 的概率矩阵</text>
+<text x="185" y="250" class="b">E1</text><text x="305" y="250" class="b">E2</text><text x="425" y="250" class="b">E3</text><text x="545" y="250" class="b">E4</text>
+<g>
+<rect x="145" y="275" width="100" height="70" class="hot"/><text x="195" y="318" text-anchor="middle" class="b">0.7</text>
+<rect x="265" y="275" width="100" height="70" class="cell"/><text x="315" y="318" text-anchor="middle" class="b">0.1</text>
+<rect x="385" y="275" width="100" height="70" class="cell"/><text x="435" y="318" text-anchor="middle" class="b">0.1</text>
+<rect x="505" y="275" width="100" height="70" class="cell"/><text x="555" y="318" text-anchor="middle" class="b">0.1</text>
+
+<rect x="145" y="360" width="100" height="70" class="hot"/><text x="195" y="403" text-anchor="middle" class="b">0.6</text>
+<rect x="265" y="360" width="100" height="70" class="cell"/><text x="315" y="403" text-anchor="middle" class="b">0.2</text>
+<rect x="385" y="360" width="100" height="70" class="cell"/><text x="435" y="403" text-anchor="middle" class="b">0.1</text>
+<rect x="505" y="360" width="100" height="70" class="cell"/><text x="555" y="403" text-anchor="middle" class="b">0.1</text>
+
+<rect x="145" y="445" width="100" height="70" class="cell"/><text x="195" y="488" text-anchor="middle" class="b">0.1</text>
+<rect x="265" y="445" width="100" height="70" class="hot"/><text x="315" y="488" text-anchor="middle" class="b">0.7</text>
+<rect x="385" y="445" width="100" height="70" class="cell"/><text x="435" y="488" text-anchor="middle" class="b">0.1</text>
+<rect x="505" y="445" width="100" height="70" class="cell"/><text x="555" y="488" text-anchor="middle" class="b">0.1</text>
+
+<rect x="145" y="530" width="100" height="70" class="cell"/><text x="195" y="573" text-anchor="middle" class="b">0.1</text>
+<rect x="265" y="530" width="100" height="70" class="hot"/><text x="315" y="573" text-anchor="middle" class="b">0.6</text>
+<rect x="385" y="530" width="100" height="70" class="cell"/><text x="435" y="573" text-anchor="middle" class="b">0.2</text>
+<rect x="505" y="530" width="100" height="70" class="cell"/><text x="555" y="573" text-anchor="middle" class="b">0.1</text>
+</g>
+<text x="655" y="320" class="s">t1 → E1</text><text x="655" y="405" class="s">t2 → E1</text><text x="655" y="490" class="s">t3 → E2</text><text x="655" y="575" class="s">t4 → E2</text>
+<path d="M425 620 V675" class="flow"/>
+<rect x="120" y="690" width="610" height="140" rx="16" class="metric"/>
+<text x="425" y="730" text-anchor="middle" class="b">hard token fraction  f = (0.5, 0.5, 0, 0)</text>
+<text x="425" y="772" text-anchor="middle" class="b">mean probability  P = (0.375, 0.4, 0.125, 0.1)</text>
+<text x="425" y="810" text-anchor="middle" class="s">两者描述的是 routing 的不同侧面</text>
+
+<rect x="835" y="150" width="710" height="735" rx="22" class="panel"/>
+<text x="1190" y="195" text-anchor="middle" class="h">目标：L_aux = α E Σ_i f_i P_i</text>
+<rect x="910" y="260" width="560" height="170" rx="16" class="formula"/>
+<text x="1190" y="307" text-anchor="middle" class="b">当前例子：</text>
+<text x="1190" y="349" text-anchor="middle" class="b">4 × [0.5·0.375 + 0.5·0.4]</text>
+<text x="1190" y="397" text-anchor="middle" class="h">= 1.55</text>
+<rect x="905" y="495" width="270" height="210" rx="16" fill="#edf9f0" stroke="#2e8b57" stroke-width="2"/>
+<text x="1040" y="540" text-anchor="middle" class="h">完全均衡</text>
+<text x="1040" y="586" text-anchor="middle" class="b">f_i=P_i=1/E</text>
+<text x="1040" y="632" text-anchor="middle" class="b">E Σ f_iP_i = 1</text>
+<text x="1040" y="676" text-anchor="middle" class="s">最低基线</text>
+<rect x="1205" y="495" width="270" height="210" rx="16" fill="#fff1f0" stroke="#c43d3d" stroke-width="2"/>
+<text x="1340" y="540" text-anchor="middle" class="h">完全 collapse</text>
+<text x="1340" y="586" text-anchor="middle" class="b">f₁=P₁=1</text>
+<text x="1340" y="632" text-anchor="middle" class="b">E Σ f_iP_i = E</text>
+<text x="1340" y="676" text-anchor="middle" class="s">惩罚随 expert 数放大</text>
+<text x="1190" y="780" text-anchor="middle" class="b">把 hard 与 soft 相乘，迫使 Router</text>
+<text x="1190" y="815" text-anchor="middle" class="s">同时修正“已经发生的拥塞”和“正在形成的偏好”。</text>
+
+<rect x="125" y="935" width="1350" height="105" rx="16" fill="#f4f8fb" stroke="#c6d1dc" stroke-width="2"/>
+<text x="800" y="975" text-anchor="middle" class="b">Top-1 并没有把 Router 变成不可训练的硬 hash：selected probability p_e* 仍乘在 expert output 上，完整概率分布又进入 balancing objective。</text>
+<text x="800" y="1014" text-anchor="middle" class="s">这张图只解释 routing balance；它与控制 logit 数值幅度的 router stability 正则是不同问题。</text>
+</svg>

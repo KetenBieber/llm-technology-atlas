@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><style>
+text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;fill:#17324d}
+.title{font-size:46px;font-weight:700}.subtitle{font-size:24px;fill:#526b80}
+.section{font-size:30px;font-weight:700}.node{font-size:24px;font-weight:650}.body{font-size:21px}.small{font-size:20px;fill:#526b80}.math{font-size:23px;font-family:"STIX Two Text","Times New Roman",serif}
+.box{fill:#f8fbfd;stroke:#8fb6cc;stroke-width:2.2}.blue{fill:#eaf4fb;stroke:#2b6f9f;stroke-width:2.4}.cyan{fill:#eafafa;stroke:#178d98;stroke-width:2.4}.orange{fill:#fff4e8;stroke:#d47a20;stroke-width:2.4}.red{fill:#fff0f0;stroke:#c64a4a;stroke-width:2.4}.green{fill:#edf9f1;stroke:#2f8a57;stroke-width:2.4}.gray{fill:#f2f4f6;stroke:#8795a1;stroke-width:2}
+.flow{fill:none;stroke:#246b9b;stroke-width:5;marker-end:url(#arrow)}.aux{fill:none;stroke:#607d8b;stroke-width:3;marker-end:url(#arrowGray)}.comm{fill:none;stroke:#d47a20;stroke-width:5;stroke-dasharray:11 8;marker-end:url(#arrowOrange)}.good{fill:none;stroke:#2f8a57;stroke-width:5;marker-end:url(#arrowGreen)}.bad{fill:none;stroke:#c64a4a;stroke-width:4;stroke-dasharray:9 7;marker-end:url(#arrowRed)}
+.axis{fill:none;stroke:#607d8b;stroke-width:2}.grid{stroke:#d9e2e8;stroke-width:1.2}.curve{fill:none;stroke:#246b9b;stroke-width:5}.curve2{fill:none;stroke:#178d98;stroke-width:5}.curve3{fill:none;stroke:#d47a20;stroke-width:5}.dash{fill:none;stroke:#8795a1;stroke-width:2;stroke-dasharray:8 7}
+</style><defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#246b9b"/></marker>
+<marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#607d8b"/></marker>
+<marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d47a20"/></marker>
+<marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f8a57"/></marker>
+<marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c64a4a"/></marker>
+</defs><rect width="1600" height="1100" fill="#ffffff"/><text x="70" y="72" class="title">YaRN：为什么不同 RoPE 频率不能用同一个缩放因子？</text><text x="70" y="112" class="subtitle">A018 · 用 r=L/λ 表示训练窗口内转了几圈，再按频段决定 interpolate / blend / keep</text>
+<text x="70" y="175" class="section">从频率到决策：每个二维 RoPE 时钟走一条独立路径</text>
+<rect x="70" y="215" width="250" height="105" rx="18" class="blue"/><text x="100" y="258" class="node">ωᵢ</text><text x="100" y="295" class="small">RoPE angular frequency</text>
+<path d="M320 268 H390" class="flow"/>
+<rect x="390" y="215" width="270" height="105" rx="18" class="cyan"/><text x="420" y="258" class="math">λᵢ = 2π / ωᵢ</text><text x="420" y="295" class="small">一圈需要多少 token</text>
+<path d="M660 268 H730" class="flow"/>
+<rect x="730" y="215" width="270" height="105" rx="18" class="cyan"/><text x="760" y="258" class="math">rᵢ = L / λᵢ</text><text x="760" y="295" class="small">训练窗口内旋转圈数</text>
+<path d="M1000 268 H1070" class="flow"/>
+<rect x="1070" y="200" width="460" height="135" rx="18" class="green"/><text x="1100" y="245" class="math">ωᵢ′ = (1−γᵢ)ωᵢ/s + γᵢωᵢ</text><text x="1100" y="286" class="small">每个频率得到自己的 scale factor kᵢ</text><text x="1100" y="318" class="math">kᵢ=(1−γᵢ)/s+γᵢ ∈ [1/s,1]</text>
+
+<text x="70" y="405" class="section">γ(r) 不是装饰权重：它把 wavelength 语义显式分成三段</text>
+<rect x="70" y="445" width="1460" height="330" rx="22" class="box"/>
+<line x1="150" y1="700" x2="1450" y2="700" class="axis"/><line x1="150" y1="700" x2="150" y2="500" class="axis"/>
+<text x="110" y="515" class="small">γ</text><text x="1400" y="735" class="small">r=L/λ</text>
+<line x1="420" y1="690" x2="420" y2="515" class="dash"/><line x1="1110" y1="690" x2="1110" y2="515" class="dash"/>
+<text x="400" y="730" class="small">α=1</text><text x="1080" y="730" class="small">β=32</text>
+<path d="M170 680 L420 680 L1110 535 L1430 535" class="curve2"/>
+<text x="190" y="570" class="node">长 wavelength · r&lt;α</text>
+<text x="190" y="610" class="body">γ=0 → full interpolation</text>
+<text x="190" y="648" class="math">ω′ = ω/s</text>
+<text x="610" y="565" class="node">中频</text>
+<text x="610" y="605" class="body">0&lt;γ&lt;1 → blend</text>
+<text x="1190" y="570" class="node">短 wavelength · r&gt;β</text>
+<text x="1190" y="610" class="body">γ=1 → keep original</text>
+<text x="1190" y="648" class="math">ω′ = ω</text>
+
+<text x="70" y="835" class="section">一个 s=8 的具体频率切片</text>
+<rect x="70" y="875" width="450" height="150" rx="20" class="green"/>
+<text x="100" y="918" class="node">λ=8192，L=4096</text><text x="100" y="957" class="math">r=0.5 → γ=0 → k=0.125</text><text x="100" y="995" class="small">长波：完整压回训练范围</text>
+<rect x="575" y="875" width="450" height="150" rx="20" class="orange"/>
+<text x="605" y="918" class="node">r=8</text><text x="605" y="957" class="math">γ=7/31≈0.226 → k≈0.323</text><text x="605" y="995" class="small">中频：平滑混合</text>
+<rect x="1080" y="875" width="450" height="150" rx="20" class="blue"/>
+<text x="1110" y="918" class="node">λ=64，L=4096</text><text x="1110" y="957" class="math">r=64 → γ=1 → k=1</text><text x="1110" y="995" class="small">短波：保留 local relative resolution</text>
+</svg>

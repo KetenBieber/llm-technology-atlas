@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100"><desc>R1-Zero outcome reward, trajectory sampling and probability redistribution.</desc>
+<defs>
+<marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B4F9C"/></marker>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#16A34A"/></marker>
+<marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F59E0B"/></marker>
+<style>.t{font:700 44px Inter,'Microsoft YaHei',sans-serif;fill:#10243e}.s{font:400 23px Inter,'Microsoft YaHei',sans-serif;fill:#52647a}.h{font:700 30px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.n{font:700 24px Inter,'Microsoft YaHei',sans-serif;fill:#15385f}.x{font:400 21px Inter,'Microsoft YaHei',sans-serif;fill:#26384d}.m{font:600 20px Inter,'Microsoft YaHei',sans-serif;fill:#42556d}.mono{font:600 21px Consolas,monospace;fill:#18334f}.blue{fill:#EAF3FF;stroke:#0B4F9C;stroke-width:2.4}.cyan{fill:#E8FBFC;stroke:#0E9AA7;stroke-width:2.4}.gray{fill:#F3F6F9;stroke:#94A3B8;stroke-width:2}.orange{fill:#FFF5DF;stroke:#F59E0B;stroke-width:2.4}.green{fill:#ECF9F0;stroke:#16A34A;stroke-width:2.4}.red{fill:#FFF0F0;stroke:#DC2626;stroke-width:2.4}.f{fill:none;stroke:#0B4F9C;stroke-width:4;marker-end:url(#b)}.opt{fill:none;stroke:#16A34A;stroke-width:4;marker-end:url(#g)}.cost{fill:none;stroke:#F59E0B;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#o)}.dash{fill:none;stroke:#64748B;stroke-width:2.5;stroke-dasharray:8 7}.d{stroke:#D9E2EC;stroke-width:2}</style></defs>
+<rect width="1600" height="1100" fill="#fff"/><text x="65" y="70" class="t">DeepSeek‑R1 · R1‑Zero：Outcome reward 怎样重排 reasoning 轨迹？</text><text x="65" y="108" class="s">对应 §2–§10｜没有 reasoning SFT 时，rule-based reward 如何通过采样与 GRPO 改变轨迹概率</text>
+<text x="65" y="165" class="h">Baseline：Base policy 只负责提出候选，不被示范“应该怎样推理”</text>
+<rect x="65" y="205" width="250" height="115" rx="18" class="gray"/><text x="90" y="245" class="n">V3‑Base + Prompt</text><text x="90" y="280" class="x">无 reasoning cold-start SFT</text>
+<path d="M315 263 H410" class="f"/>
+<text x="410" y="200" class="m">同题采样 G 条完整 response</text>
+<g>
+<rect x="410" y="220" width="330" height="78" rx="14" class="blue"/><text x="430" y="252" class="x">τ₁: direct attempt → answer A</text>
+<rect x="410" y="315" width="330" height="78" rx="14" class="cyan"/><text x="430" y="347" class="x">τ₂: derive → check → revise → B</text>
+<rect x="410" y="410" width="330" height="78" rx="14" class="blue"/><text x="430" y="442" class="x">τ₃: alternate path → answer C</text>
+</g>
+<path d="M740 259 C820 259 825 300 890 300" class="f"/><path d="M740 354 H890" class="f"/><path d="M740 449 C820 449 825 410 890 410" class="f"/>
+<rect x="890" y="245" width="300" height="220" rx="18" class="orange"/><text x="915" y="285" class="n">Rule-based verifier</text><text x="915" y="325" class="x">accuracy reward：最终答案可验证</text><text x="915" y="360" class="x">format reward：只约束输出格式</text><text x="915" y="410" class="mono">rᵢ = r_accuracy + r_format</text>
+<path d="M1190 355 H1280" class="opt"/>
+<rect x="1280" y="280" width="255" height="155" rx="18" class="green"/><text x="1305" y="320" class="n">Group-relative update</text><text x="1305" y="358" class="x">高 reward 轨迹概率 ↑</text><text x="1305" y="393" class="x">低 reward 轨迹概率 ↓</text>
+<line x1="65" y1="535" x2="1535" y2="535" class="d"/>
+<text x="65" y="590" class="h">关键因果：reward 不标注中间 token，但优化的是整条 sampled trajectory 的 log-probability</text>
+<rect x="95" y="635" width="310" height="150" rx="18" class="red"/><text x="120" y="675" class="n">不是 process supervision</text><text x="120" y="715" class="x">中间“反思/验证”没有单独标签</text><text x="120" y="750" class="x">不能说 verifier 教了具体 CoT</text>
+<path d="M405 710 H510" class="f"/>
+<rect x="510" y="620" width="430" height="180" rx="18" class="blue"/><text x="535" y="660" class="n">Policy-gradient credit</text><text x="535" y="700" class="mono">∇ log πθ(τ|q) · Â(τ)</text><text x="535" y="740" class="x">response 内 token 共同承受 trajectory-level 信号</text>
+<path d="M940 710 H1045" class="opt"/>
+<rect x="1045" y="610" width="445" height="200" rx="18" class="green"/><text x="1070" y="650" class="n">分布发生变化</text><text x="1070" y="690" class="x">可验证成功的长链、检查、修正更常被采到</text><text x="1070" y="725" class="x">“Aha”是行为现象，不是额外 reward 类型</text><text x="1070" y="770" class="mono">π_old(τ) → π_new(τ)</text>
+<text x="65" y="885" class="h">读图边界</text>
+<rect x="65" y="920" width="1470" height="105" rx="16" class="gray"/><text x="95" y="960" class="x">这张图支持“outcome reward 可通过轨迹采样重排产生中间推理行为”；不支持“最终答案 reward 精确定位了哪一个 token 是正确推理步骤”。</text>
+</svg>

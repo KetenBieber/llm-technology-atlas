@@ -30,12 +30,6 @@ RoPE 想同时满足两个条件：单个 token 在位置 `m` 的 Q/K 含有**�
 主技术树：`Transformer → Attention → Position Information → Relative Position Mechanism → Rotary Position Embedding (RoPE)`。RoPE 不是 Tokenizer，也不是对原始输入 `X` 应用 2D 图像几何旋转；它发生在 Attention 头内部**Q/K 的特征维**。后续 Llama、其他模型具体是否使用全部或部分维度旋转、不同 base 和 scaling 要逐个报告核验。
 
 
-## 总结架构图
-
-![教学总结图：A014-roformer-rope](../../../figures/explainers/A014-roformer-rope-summary.svg)
-
-> **教学总结图**：RoPE 对 Q/K 做位置相关旋转，使点积中的位置依赖自然化为相对位移。
-
 # 输入、输出与任务
 
 ## 三种空间必须分开：token、Attention head、二维旋转对子空间
@@ -115,6 +109,11 @@ $$
 
 定义标准二维旋转矩阵
 
+![教学解释图：Relative Rotation Geometry](../../../figures/explainers/A014/01-relative-rotation-geometry.svg)
+
+*教学解释图｜Relative Rotation Geometry。*
+
+
 $$
 R(\phi)=
 \begin{bmatrix}
@@ -186,6 +185,11 @@ $$
 ## 4. 从二维推广到 `d_h` 维：Block Diagonal Rotation 的代价
 
 若 `d_h` 为偶数，把每个 head 的向量拆为 `d_h/2` 个二维对：
+
+![教学解释图：Multifrequency Block Rotation](../../../figures/explainers/A014/02-multifrequency-block-rotation.svg)
+
+*教学解释图｜Multifrequency Block Rotation。*
+
 
 $$
 q=[q^{(0)},q^{(1)},\ldots,q^{(d_h/2-1)}],
@@ -349,6 +353,11 @@ RoPE 的 `\cos,\sin` 表可按位置预计算、在整个 batch/head 间广播�
 ### Prefill 与 Decode：绝对 position_id 是真正的工程陷阱
 
 Prefill 已有 `T` token 时，为每个位置 `0,\ldots,T-1` 计算旋转 Q/K，生成 causal Attention，并将**已按各自 position 旋转的 K** 和未旋转的 V 写入缓存。Decode 新 token 的绝对位置 `m=T` 时，只给它的当前 Q/K 用 `R_{\Theta,m}` 旋转，再与缓存 K 做点积，不应重复旋转旧 K。
+
+![教学解释图：Prefill Decode Position Cache](../../../figures/explainers/A014/03-prefill-decode-position-cache.svg)
+
+*教学解释图｜Prefill Decode Position Cache。*
+
 
 如果滑动窗口保留最后 `W` 个 token 却把所有缓存 Key 每次都擅自重编号为 `0,\ldots,W-1`，而当前 Q 继续用全局 `m`，就改变了相对位置关系；若确需重新定位，必须保证窗口内所有 Q/K 的**共同坐标偏移一致**（或者做具有数学证明的重新旋转）。这正是 Position ID 与 KV Cache 的耦合点，和「删除旧 Key 后容量变小」不是同一层问题。
 
