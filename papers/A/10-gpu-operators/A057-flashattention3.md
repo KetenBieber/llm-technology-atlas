@@ -15,7 +15,7 @@
 
 三代 FlashAttention 的主线可以先压成一句：
 
-\[
+$$
 \boxed{
 \text{FA1: 少搬数据}
 \rightarrow
@@ -23,7 +23,7 @@
 \rightarrow
 \text{FA3: 让不同硬件单元异步重叠工作}
 }
-\]
+$$
 
 这篇文章最值得学的不是“H100 上又快了多少”，而是一个更一般的 accelerator 设计问题：
 
@@ -47,15 +47,15 @@
 10. ping-pong scheduling 到底 overlap 了谁和谁？
 11. 为什么 softmax FLOPs 很少，却仍能占掉可观 wall-clock？
 12. 2-stage GEMM-softmax pipeline 如何打破“QK → softmax → PV”看似完全串行的结构？
-13. 2-stage 为什么需要额外保存 \(S_{\mathrm{next}}\)？
+13. 2-stage 为什么需要额外保存 $S_{\mathrm{next}}$？
 14. 3-stage 为什么不一定更快？
 15. FP8 Tensor Core 为什么让 softmax 相对更“贵”？
 16. FP8 WGMMA 的 k-major layout 限制是什么？
-17. 为什么 \(V\) 需要在 kernel 内转置？
+17. 为什么 $V$ 需要在 kernel 内转置？
 18. 为什么第一个 GEMM 的 FP32 accumulator 不能直接喂给第二个 FP8 WGMMA？
-19. byte permutation 与 matching \(V\) permutation 为什么保持结果正确？
+19. byte permutation 与 matching $V$ permutation 为什么保持结果正确？
 20. block quantization 为什么比 per-tensor scaling 更适合 FlashAttention？
-21. incoherent processing 为什么不改变 \(QK^\top\)？
+21. incoherent processing 为什么不改变 $QK^\top$？
 22. 为什么 Hadamard transform 可以把 outlier 摊平？
 23. FA3 FP8 的误差改善到底来自 block quantization 还是 incoherent processing？
 24. 740 TFLOPs/s、1.2 PFLOPs/s 和 75% peak 应该怎样理解？
@@ -82,35 +82,35 @@
 
 真正重要的是：
 
-\[
+$$
 \boxed{
 \text{每一代都在解决上一代优化后新暴露出来的瓶颈}
 }
-\]
+$$
 
 ## 1. Standard Attention：HBM traffic 太大
 
 标准 Attention：
 
-\[
+$$
 S=QK^\top,
 \qquad
 P=\operatorname{softmax}(S),
 \qquad
 O=PV.
-\]
+$$
 
 如果把：
 
-\[
+$$
 S,P\in\mathbb R^{N\times N}
-\]
+$$
 
 完整写入 HBM，再读回来，wall-clock 会被 memory traffic 拖累。
 
 于是 FA1 做：
 
-\[
+$$
 \boxed{
 \text{tiling}
 +
@@ -118,9 +118,9 @@ S,P\in\mathbb R^{N\times N}
 +
 \text{recomputation}
 }
-\]
+$$
 
-让 \(S,P\) 不再 materialize 到 HBM。
+让 $S,P$ 不再 materialize 到 HBM。
 
 ## 2. FA1 之后：GPU 还是没吃满
 
@@ -139,9 +139,9 @@ HBM traffic 降下来以后，FA2 发现：
 
 核心变成：
 
-\[
+$$
 \boxed{\text{更好的 work ownership}}
-\]
+$$
 
 ## 3. FA2 到 H100：硬件变了，旧 execution schedule 没跟上
 
@@ -149,16 +149,16 @@ FA2 在 A100 上已经能达到很高的有效吞吐。
 
 但论文指出，在 H100 上，FA2 相对 optimized GEMM 仍然利用率不高：
 
-\[
+$$
 \text{FA2 attention utilization}
 \approx35\%
-\]
+$$
 
 而优化 GEMM 可以达到：
 
-\[
+$$
 80\%\sim90\%.
-\]
+$$
 
 为什么？
 
@@ -174,13 +174,13 @@ FA2 在 A100 上已经能达到很高的有效吞吐。
 
 如果 kernel 仍按较同步的执行模型组织：
 
-\[
+$$
 \boxed{
 \text{新硬件存在}
 \neq
 \text{算法自动得到新硬件收益}
 }
-\]
+$$
 
 这就是 FA3 的出发点。
 
@@ -216,17 +216,17 @@ Ampere 时代常强调 warp-level MMA。
 
 Hopper 中 FA3 重点使用：
 
-\[
+$$
 \boxed{\text{WGMMA}}
-\]
+$$
 
 即 warpgroup-level matrix multiply-accumulate。
 
 一组 4 warps：
 
-\[
+$$
 128\text{ threads}
-\]
+$$
 
 共同发起大 tile 的 Tensor Core matrix multiply。
 
@@ -250,15 +250,15 @@ WGMMA 可以被异步发起。
 
 所以 execution graph 从：
 
-\[
+$$
 A\rightarrow B\rightarrow C
-\]
+$$
 
 有机会变成：
 
-\[
+$$
 A\rightarrow \boxed{\text{async B}}
-\]
+$$
 
 同时其他可独立推进的 work 继续执行。
 
@@ -270,11 +270,11 @@ A\rightarrow \boxed{\text{async B}}
 
 优化的本质是：
 
-\[
+$$
 \boxed{
 \text{只在数据依赖真正存在的位置等待}
 }
-\]
+$$
 
 而不是每发一个大操作就全体停住。
 
@@ -286,9 +286,9 @@ A\rightarrow \boxed{\text{async B}}
 
 过去做：
 
-\[
+$$
 \text{HBM}\rightarrow\text{SMEM}
-\]
+$$
 
 通常需要很多 threads：
 
@@ -308,19 +308,19 @@ A\rightarrow \boxed{\text{async B}}
 
 TMA：
 
-\[
+$$
 \boxed{\text{Tensor Memory Accelerator}}
-\]
+$$
 
 是 Hopper 专门负责 tensor memory movement 的硬件路径。
 
 可以把 tile movement 理解成：
 
-\[
+$$
 \text{GMEM}
 \xrightarrow{\mathrm{TMA}}
 \text{SMEM}.
-\]
+$$
 
 它可以：
 
@@ -333,9 +333,9 @@ TMA：
 
 而是开始：
 
-\[
+$$
 \boxed{\text{warp specialization}}
-\]
+$$
 
 ---
 
@@ -349,8 +349,8 @@ FA3 把一个 CTA 内的 warps / warpgroups 分成角色。
 
 Producer 主要负责：
 
-- TMA load \(Q_i\)；
-- TMA load \(K_j,V_j\)；
+- TMA load $Q_i$；
+- TMA load $K_j,V_j$；
 - 管理 circular SMEM buffer；
 - 发 barrier signal。
 
@@ -363,14 +363,14 @@ Producer 主要负责：
 Consumer 负责：
 
 - WGMMA：
-  \[
+  :::{math}
   Q_iK_j^\top
-  \]
+  :::
 - online softmax；
 - WGMMA：
-  \[
+  :::{math}
   P_{ij}V_j
-  \]
+  :::
 - output accumulator；
 - softmax statistics。
 
@@ -395,13 +395,13 @@ FA3 中：
 
 于是：
 
-\[
+$$
 \boxed{
 \text{角色 specialization}
 \rightarrow
 \text{resource specialization}
 }
-\]
+$$
 
 这非常重要。
 
@@ -417,17 +417,17 @@ warp specialization 不是只把代码分支写成不同角色。
 
 假设 shared memory 中准备：
 
-\[
+$$
 s
-\]
+$$
 
 个 stages。
 
 例如：
 
-\[
+$$
 s=3.
-\]
+$$
 
 可以想象成：
 
@@ -444,15 +444,15 @@ SMEM
 
 producer 不断把：
 
-\[
+$$
 K_j,V_j
-\]
+$$
 
 装进：
 
-\[
+$$
 j\bmod s
-\]
+$$
 
 对应的 stage。
 
@@ -466,27 +466,27 @@ j\bmod s
 
 producer 已经完成 TMA load：
 
-\[
+$$
 \text{tile ready for consumer}.
-\]
+$$
 
 ### consumed
 
 consumer 已经完成所有依赖计算：
 
-\[
+$$
 \text{stage reusable by producer}.
-\]
+$$
 
 所以 producer / consumer 的协作不是靠“大家一起同步”。
 
 而是：
 
-\[
+$$
 \boxed{
 \text{per-stage barrier state machine}
 }
-\]
+$$
 
 ## 11. 为什么 circular buffer 能隐藏 memory latency？
 
@@ -518,20 +518,20 @@ producer:             load stage 2
 
 理想情况下：
 
-\[
+$$
 T_{\text{tile}}
 \approx
 \max(
 T_{\text{load}},
 T_{\text{compute}}
 ).
-\]
+$$
 
 而不是：
 
-\[
+$$
 T_{\text{load}}+T_{\text{compute}}.
-\]
+$$
 
 ---
 
@@ -539,23 +539,23 @@ T_{\text{load}}+T_{\text{compute}}.
 
 到这里解决的是：
 
-\[
+$$
 \boxed{
 \text{TMA data movement}
 \parallel
 \text{consumer compute}
 }
-\]
+$$
 
 但 consumer 自己内部还是有一个非常棘手的依赖链：
 
-\[
+$$
 QK^\top
 \rightarrow
 \operatorname{softmax}
 \rightarrow
 PV.
-\]
+$$
 
 看起来三步必须完全串行。
 
@@ -567,15 +567,15 @@ FA3 的第二个关键贡献，就是继续把这个链条挖出 overlap。
 
 现代 GPU 上：
 
-\[
+$$
 \text{matmul FLOPs}
-\]
+$$
 
 和：
 
-\[
+$$
 \text{exp / max / sum / scalar FLOPs}
-\]
+$$
 
 不是同一种硬件吞吐。
 
@@ -583,43 +583,43 @@ FA3 的第二个关键贡献，就是继续把这个链条挖出 overlap。
 
 FP16 Tensor Core matmul：
 
-\[
+$$
 989\text{ TFLOPs/s}
-\]
+$$
 
 而 special function，例如 exponential：
 
-\[
+$$
 \approx3.9\text{ TFLOPs/s}.
-\]
+$$
 
 ## 12. Head dim = 128 的直觉计算
 
 论文指出在该设置下，matmul FLOPs 数大约是 exponential 数量的：
 
-\[
+$$
 512\times.
-\]
+$$
 
 看起来 exp 很少。
 
 但 exp throughput 比 matmul 低约：
 
-\[
+$$
 256\times.
-\]
+$$
 
 因此 exponential 即使数量远少于 matmul，仍可能消耗到 matmul 一半量级的 cycle budget。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{FLOP count}
 \neq
 \text{time share}
 }
-\]
+$$
 
 ---
 
@@ -629,23 +629,23 @@ Hopper FP8 Tensor Core throughput 大约进一步翻倍。
 
 但：
 
-\[
+$$
 \exp
-\]
+$$
 
 并不会跟着翻倍。
 
 于是：
 
-\[
+$$
 T_{\text{matmul}}\downarrow
-\]
+$$
 
 而：
 
-\[
+$$
 T_{\text{softmax}}
-\]
+$$
 
 变化不大。
 
@@ -653,13 +653,13 @@ T_{\text{softmax}}
 
 这就是一个非常有意思的系统规律：
 
-\[
+$$
 \boxed{
 \text{某个单元越快}
 \Rightarrow
 \text{其他单元越容易成为新 bottleneck}
 }
-\]
+$$
 
 ---
 
@@ -671,9 +671,9 @@ T_{\text{softmax}}
 
 假设有两个 consumer warpgroups：
 
-\[
+$$
 C_0,\ C_1.
-\]
+$$
 
 概念性的时序：
 
@@ -684,36 +684,36 @@ C1:                 WGMMA(tile 1) → softmax(tile 1)
 
 因为 WGMMA 本身异步：
 
-- 当 \(C_0\) 开始执行普通 CUDA/SFU softmax；
-- \(C_1\) 可以继续让 Tensor Core 执行 WGMMA。
+- 当 $C_0$ 开始执行普通 CUDA/SFU softmax；
+- $C_1$ 可以继续让 Tensor Core 执行 WGMMA。
 
 随后交换角色。
 
 所以叫：
 
-\[
+$$
 \boxed{\text{ping-pong}}
-\]
+$$
 
 ## 13. Ping-pong overlap 的是谁？
 
 不是：
 
-\[
+$$
 \text{load}\parallel\text{compute}.
-\]
+$$
 
 那是 producer / consumer TMA pipeline。
 
 这里 overlap 的是：
 
-\[
+$$
 \boxed{
 \text{consumer A 的 softmax}
 \parallel
 \text{consumer B 的 WGMMA}
 }
-\]
+$$
 
 这是第二层 pipeline。
 
@@ -727,9 +727,9 @@ C1:                 WGMMA(tile 1) → softmax(tile 1)
 
 主要占：
 
-\[
+$$
 \text{Tensor Core}.
-\]
+$$
 
 ## softmax
 
@@ -754,29 +754,29 @@ C1:                 WGMMA(tile 1) → softmax(tile 1)
 
 假设当前正在处理：
 
-\[
+$$
 j
-\]
+$$
 
 号 K/V block。
 
 逻辑上需要：
 
-\[
+$$
 S_j=QK_j^\top
-\]
+$$
 
 然后：
 
-\[
+$$
 P_j=\operatorname{softmax}(S_j)
-\]
+$$
 
 最后：
 
-\[
+$$
 O\mathrel{+}=P_jV_j.
-\]
+$$
 
 如果完全同步：
 
@@ -799,17 +799,17 @@ WGMMA 可以异步 issue。
 
 于是当：
 
-\[
+$$
 \operatorname{softmax}(S_j)
-\]
+$$
 
 在普通执行单元运行时，可以让 Tensor Core 同时开始：
 
-\[
+$$
 S_{j+1}
 =
 QK_{j+1}^\top.
-\]
+$$
 
 形成：
 
@@ -821,13 +821,13 @@ CUDA/SFU:           softmax_j  softmax_{j+1}
 
 于是：
 
-\[
+$$
 \boxed{
 QK_{j+1}
 \parallel
 \operatorname{softmax}(S_j)
 }
-\]
+$$
 
 ---
 
@@ -835,67 +835,67 @@ QK_{j+1}
 
 因为：
 
-\[
+$$
 \operatorname{softmax}(S_j)
-\]
+$$
 
 依赖的是：
 
-\[
+$$
 S_j.
-\]
+$$
 
 而：
 
-\[
+$$
 QK_{j+1}^\top
-\]
+$$
 
 只依赖：
 
-\[
+$$
 Q,\ K_{j+1}.
-\]
+$$
 
 它不依赖：
 
-\[
+$$
 P_j.
-\]
+$$
 
 所以原始依赖图其实是：
 
-\[
+$$
 QK_j
 \rightarrow
 \operatorname{softmax}_j
 \rightarrow
 P_jV_j
-\]
+$$
 
 同时：
 
-\[
+$$
 QK_{j+1}
-\]
+$$
 
 可以独立开始。
 
 同步实现只是人为地把：
 
-\[
+$$
 QK_{j+1}
-\]
+$$
 
-排到了整个 tile \(j\) 完成之后。
+排到了整个 tile $j$ 完成之后。
 
 FA3 做的是：
 
-\[
+$$
 \boxed{
 \text{恢复真实 dependency graph，而不是服从人为 serial schedule}
 }
-\]
+$$
 
 ---
 
@@ -903,35 +903,35 @@ FA3 做的是：
 
 为了 overlap：
 
-\[
+$$
 \operatorname{softmax}(S_j)
-\]
+$$
 
 和：
 
-\[
+$$
 QK_{j+1}^\top,
-\]
+$$
 
 必须同时保留：
 
 - 当前处理的 score tile；
 - 下一块异步生成中的：
-  \[
+  :::{math}
   S_{\mathrm{next}}.
-  \]
+  :::
 
 额外 register footprint 约与：
 
-\[
+$$
 B_rB_c
-\]
+$$
 
 个 FP32 accumulator 成正比。
 
 因此：
 
-\[
+$$
 \boxed{
 \text{deeper pipeline}
 \Rightarrow
@@ -939,7 +939,7 @@ B_rB_c
 \Rightarrow
 \text{more registers}
 }
-\]
+$$
 
 ---
 
@@ -956,7 +956,7 @@ B_rB_c
 
 所以：
 
-\[
+$$
 \boxed{
 \text{pipeline overlap}
 \leftrightarrow
@@ -964,7 +964,7 @@ B_rB_c
 \leftrightarrow
 \text{occupancy / tile size}
 }
-\]
+$$
 
 FA3 不是“pipeline stage 越多越好”。
 
@@ -976,9 +976,9 @@ FA3 不是“pipeline stage 越多越好”。
 
 3-stage 进一步尝试让第二个 WGMMA：
 
-\[
+$$
 P_jV_j
-\]
+$$
 
 也与 softmax / 其他 GEMM 更深重叠。
 
@@ -993,13 +993,13 @@ P_jV_j
 
 因此：
 
-\[
+$$
 \boxed{
 \text{more asynchronous stages}
 \not\Rightarrow
 \text{monotonic speedup}
 }
-\]
+$$
 
 最终仍要 profiling。
 
@@ -1040,11 +1040,11 @@ tile j-2 : WGMMA PV
 
 这就是 software pipeline 的核心：
 
-\[
+$$
 \boxed{
 \text{不同 tile 占用不同 hardware engines}
 }
-\]
+$$
 
 ---
 
@@ -1052,9 +1052,9 @@ tile j-2 : WGMMA PV
 
 概念上都在做：
 
-\[
+$$
 \text{latency hiding}.
-\]
+$$
 
 不是让某个 operation latency 消失。
 
@@ -1073,9 +1073,9 @@ GPU 上又多了一层：
 
 所以 kernel optimization 很大一部分是在构造：
 
-\[
+$$
 \boxed{\text{explicit producer-consumer dependency graph}}
-\]
+$$
 
 而不是单纯写一串 arithmetic expressions。
 
@@ -1087,12 +1087,12 @@ Hopper 提供 FP8 Tensor Core。
 
 理论上：
 
-\[
+$$
 \text{FP8 matmul throughput}
 \approx
 2\times
 \text{FP16/BF16}.
-\]
+$$
 
 于是非常诱人：
 
@@ -1111,9 +1111,9 @@ FA3 必须同时解决。
 
 设 GEMM：
 
-\[
+$$
 A B^\top.
-\]
+$$
 
 矩阵可以有不同 memory layout。
 
@@ -1128,31 +1128,31 @@ FP16 WGMMA 对 SMEM operand 的 layout 更灵活。
 
 但 FP8 WGMMA：
 
-\[
+$$
 \boxed{\text{SMEM operand 需要 k-major}}
-\]
+$$
 
 这会直接影响 Attention 的第二个 GEMM。
 
 ---
 
-# 二十一、为什么 \(V\) layout 会出问题？
+# 二十一、为什么 $V$ layout 会出问题？
 
 Attention：
 
-\[
+$$
 P V.
-\]
+$$
 
 Q/K/V 输入通常按 head dimension contiguous。
 
-但为了让 FP8 WGMMA 的第二个 GEMM 满足 k-major 约束，\(V\) tile 需要不同的局部 layout。
+但为了让 FP8 WGMMA 的第二个 GEMM 满足 k-major 约束，$V$ tile 需要不同的局部 layout。
 
 一种最简单方案：
 
-\[
+$$
 \text{先在 HBM 把 V transpose}
-\]
+$$
 
 但这会增加额外 memory pass。
 
@@ -1160,13 +1160,13 @@ Q/K/V 输入通常按 head dimension contiguous。
 
 FA3 选择：
 
-\[
+$$
 \boxed{\text{in-kernel transpose}}
-\]
+$$
 
 ---
 
-# 二十二、LDSM / STSM：在 SMEM↔RMEM 路径里重排 \(V\)
+# 二十二、LDSM / STSM：在 SMEM↔RMEM 路径里重排 $V$
 
 FA3 利用 **ldmatrix** 与 **stmatrix**。
 
@@ -1174,9 +1174,9 @@ FA3 利用 **ldmatrix** 与 **stmatrix**。
 
 这样：
 
-\[
+$$
 V_j
-\]
+$$
 
 从 HBM 经 TMA 进入 SMEM 后，可以在 kernel 内完成适配 FP8 WGMMA 的 tile transpose。
 
@@ -1192,27 +1192,27 @@ V_j
 
 第一个 GEMM：
 
-\[
+$$
 S=QK^\top.
-\]
+$$
 
 softmax 后：
 
-\[
+$$
 P.
-\]
+$$
 
 第二个 GEMM：
 
-\[
+$$
 O=PV.
-\]
+$$
 
 理想上希望：
 
-\[
+$$
 P
-\]
+$$
 
 一直留在 registers，不写回 SMEM/HBM。
 
@@ -1226,51 +1226,51 @@ P
 
 # 二十四、FA3 的解法：register byte permutation + matching V permutation
 
-FA3 对 \(P\) 在 registers 中做 byte-level rearrangement。
+FA3 对 $P$ 在 registers 中做 byte-level rearrangement。
 
-这会让逻辑上的 \(P\) columns 顺序发生 permutation。
+这会让逻辑上的 $P$ columns 顺序发生 permutation。
 
-如果只变 \(P\)：
+如果只变 $P$：
 
-\[
+$$
 PV
-\]
+$$
 
 当然会错。
 
-但如果同步对 \(V\) rows 做对应 permutation：
+但如果同步对 $V$ rows 做对应 permutation：
 
 设 permutation matrix：
 
-\[
+$$
 \Pi.
-\]
+$$
 
 那么：
 
-\[
+$$
 (P\Pi^\top)(\Pi V)
 =
 P\Pi^\top\Pi V
 =
 PV.
-\]
+$$
 
 因为：
 
-\[
+$$
 \Pi^\top\Pi=I.
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 \text{paired layout permutation}
 \Rightarrow
 \text{matrix product invariant}
 }
-\]
+$$
 
 这是一个非常漂亮的例子：
 
@@ -1293,7 +1293,7 @@ PV.
 
 所以性能工程真正优化的是：
 
-\[
+$$
 \boxed{
 \text{数学依赖图}
 +
@@ -1301,7 +1301,7 @@ PV.
 +
 \text{execution-unit schedule}
 }
-\]
+$$
 
 而不仅仅是 FLOPs。
 
@@ -1310,9 +1310,9 @@ PV.
 
 FP8 并不只是：
 
-\[
+$$
 \text{FP16 bytes}/2.
-\]
+$$
 
 FA3 使用的 FP8 E4M3：
 
@@ -1321,9 +1321,9 @@ FA3 使用的 FP8 E4M3：
 
 相较 FP16 / BF16：
 
-\[
+$$
 \boxed{\text{表示精度显著下降}}
-\]
+$$
 
 尤其是 LLM activation 中常见的 outlier，会让简单量化变得很困难。
 
@@ -1333,29 +1333,29 @@ FA3 使用的 FP8 E4M3：
 
 假设一个 tensor 绝大多数值都在：
 
-\[
+$$
 [-2,2]
-\]
+$$
 
 但偶尔有一个：
 
-\[
+$$
 40.
-\]
+$$
 
 如果整块 tensor 只共享一个 scale：
 
-\[
+$$
 s
-\]
+$$
 
 为了让 40 不 overflow，scale 必须覆盖更大的动态范围。
 
 于是原本大量：
 
-\[
+$$
 0.1,\ 0.4,\ 1.2
-\]
+$$
 
 这样的正常值，被压缩到更少的 FP8 representable levels。
 
@@ -1363,7 +1363,7 @@ quantization step 变粗。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{少数极端值}
 \rightarrow
@@ -1371,7 +1371,7 @@ quantization step 变粗。
 \rightarrow
 \text{多数普通值精度变差}
 }
-\]
+$$
 
 ---
 
@@ -1383,21 +1383,21 @@ FA3 的第一种办法非常自然：
 
 对于：
 
-\[
+$$
 Q,\ K,\ V
-\]
+$$
 
 分别按：
 
-\[
+$$
 B_r\times d
-\]
+$$
 
 或：
 
-\[
+$$
 B_c\times d
-\]
+$$
 
 的 block 量化。
 
@@ -1422,29 +1422,29 @@ scale 的粒度直接跟执行 tile 对齐。
 
 在 score 计算：
 
-\[
+$$
 S_{ij}
 =
 Q_iK_j^\top
-\]
+$$
 
 时，可以把：
 
-\[
+$$
 s_{Q_i}s_{K_j}
-\]
+$$
 
 融合到对应 tile 的 scaling 里。
 
 因此：
 
-\[
+$$
 \boxed{
 \text{algorithmic tile}
 =
 \text{quantization tile}
 }
-\]
+$$
 
 这是一个很好的硬件/数值协同设计。
 
@@ -1454,15 +1454,15 @@ s_{Q_i}s_{K_j}
 
 它把：
 
-\[
+$$
 \text{global dynamic range}
-\]
+$$
 
 变成：
 
-\[
+$$
 \text{local dynamic range}.
-\]
+$$
 
 如果 outlier 只出现在某几个 blocks：
 
@@ -1477,29 +1477,29 @@ s_{Q_i}s_{K_j}
 
 假设某个 block：
 
-\[
+$$
 Q_i
-\]
+$$
 
 内部仍有：
 
-\[
+$$
 [0.3,0.5,0.1,45.0,\dots].
-\]
+$$
 
 即使这个 block 独享 scale：
 
-\[
+$$
 45
-\]
+$$
 
 仍然会主导该 block。
 
 所以需要第二种方法：
 
-\[
+$$
 \boxed{\text{incoherent processing}}
-\]
+$$
 
 ---
 
@@ -1507,29 +1507,29 @@ Q_i
 
 FA3 对：
 
-\[
+$$
 Q,\ K
-\]
+$$
 
 同时右乘同一个随机正交矩阵：
 
-\[
+$$
 M.
-\]
+$$
 
 得到：
 
-\[
+$$
 Q'=QM,
 \qquad
 K'=KM.
-\]
+$$
 
 要求：
 
-\[
+$$
 MM^\top=I.
-\]
+$$
 
 ---
 
@@ -1537,40 +1537,40 @@ MM^\top=I.
 
 原 score：
 
-\[
+$$
 QK^\top.
-\]
+$$
 
 变换后：
 
-\[
+$$
 Q'K'^\top
 =
 (QM)(KM)^\top.
-\]
+$$
 
 展开：
 
-\[
+$$
 =
 QM M^\top K^\top.
-\]
+$$
 
 因为：
 
-\[
+$$
 MM^\top=I,
-\]
+$$
 
 所以：
 
-\[
+$$
 \boxed{
 Q'K'^\top
 =
 QK^\top
 }
-\]
+$$
 
 也就是说：
 
@@ -1580,9 +1580,9 @@ QK^\top
 
 真正引入误差的是后面的：
 
-\[
+$$
 \text{FP8 quantization}.
-\]
+$$
 
 ---
 
@@ -1590,18 +1590,18 @@ QK^\top
 
 假设原向量：
 
-\[
+$$
 x=
 [0.2,0.1,40,0.4,\dots].
-\]
+$$
 
 第三个坐标非常极端。
 
 乘一个“充分混合”的正交矩阵：
 
-\[
+$$
 x'=xM
-\]
+$$
 
 后，每个新坐标近似是原来多个 coordinates 的线性组合。
 
@@ -1619,10 +1619,10 @@ x'=xM
 
 关键是：
 
-\[
+$$
 \boxed{
 \max_i |x'_i|
-\]
+$$
 
 通常比原始集中 outlier 的 peak 更平滑。
 
@@ -1638,15 +1638,15 @@ x'=xM
 
 例如：
 
-\[
+$$
 x\approx 40e_3.
-\]
+$$
 
 随机正交 mixing 后：
 
-\[
+$$
 xM
-\]
+$$
 
 不再和某个 canonical basis coordinate 强烈对齐。
 
@@ -1660,15 +1660,15 @@ xM
 
 如果直接乘：
 
-\[
+$$
 M\in\mathbb R^{d\times d},
-\]
+$$
 
 成本：
 
-\[
+$$
 O(d^2).
-\]
+$$
 
 这会把量化省下来的收益吃掉。
 
@@ -1676,17 +1676,17 @@ FA3 使用随机符号矩阵与 Hadamard transform 的组合。
 
 Fast Hadamard Transform：
 
-\[
+$$
 \boxed{
 O(d\log d)
 }
-\]
+$$
 
 而不是：
 
-\[
+$$
 O(d^2).
-\]
+$$
 
 而且可以与前面的 RoPE 等 bandwidth-bound operation 融合。
 
@@ -1700,9 +1700,9 @@ O(d^2).
 
 ## 数学层
 
-\[
+$$
 (QM)(KM)^\top=QK^\top.
-\]
+$$
 
 exact。
 
@@ -1710,53 +1710,53 @@ exact。
 
 变换后的：
 
-\[
+$$
 QM,\ KM
-\]
+$$
 
 coordinate distribution 更均匀。
 
 所以 FP8：
 
-\[
+$$
 \operatorname{Quant}(QM),
 \quad
 \operatorname{Quant}(KM)
-\]
+$$
 
 产生的误差更小。
 
 ---
 
-# 三十四、为什么不对 \(V\) 做同样的正交变换？
+# 三十四、为什么不对 $V$ 做同样的正交变换？
 
 Attention score 的不变性来自：
 
-\[
+$$
 QMM^\top K^\top.
-\]
+$$
 
 Q/K 成对出现，正交矩阵可以彼此抵消。
 
 但输出：
 
-\[
+$$
 PV
-\]
+$$
 
-里 \(V\) 没有一个自然配对的：
+里 $V$ 没有一个自然配对的：
 
-\[
+$$
 M^\top
-\]
+$$
 
 让变换自动抵消。
 
 因此 incoherent processing 主要用于：
 
-\[
+$$
 Q,\ K.
-\]
+$$
 
 V 仍可以做 block quantization，但不是通过同样的 Q/K orthogonal invariance。
 
@@ -1770,9 +1770,9 @@ V 仍可以做 block quantization，但不是通过同样的 Q/K orthogonal inva
 
 解决：
 
-\[
+$$
 \boxed{\text{scale 粒度太粗}}
-\]
+$$
 
 让不同 tile 各自有 scale。
 
@@ -1780,9 +1780,9 @@ V 仍可以做 block quantization，但不是通过同样的 Q/K orthogonal inva
 
 解决：
 
-\[
+$$
 \boxed{\text{单个 tile 内 feature outlier 太集中}}
-\]
+$$
 
 先把能量摊平，再量化。
 
@@ -1794,24 +1794,24 @@ V 仍可以做 block quantization，但不是通过同样的 Q/K orthogonal inva
 
 为了模拟 LLM activation outlier，论文构造输入：
 
-\[
+$$
 \mathcal N(0,1)
 +
 \mathcal N(0,100)\cdot
 \operatorname{Bernoulli}(0.001).
-\]
+$$
 
 如果把：
 
-\[
+$$
 \mathcal N(0,100)
-\]
+$$
 
 中的第二参数理解为 variance，那么标准差是：
 
-\[
+$$
 10.
-\]
+$$
 
 论文正文也描述为：
 
@@ -1827,9 +1827,9 @@ V 仍可以做 block quantization，但不是通过同样的 Q/K orthogonal inva
 
 | Method | RMSE |
 | --- | ---: |
-| Baseline FP16 | \(3.2\times10^{-4}\) |
-| FA2 FP16 | \(1.9\times10^{-4}\) |
-| FA3 FP16 | \(1.9\times10^{-4}\) |
+| Baseline FP16 | $3.2\times10^{-4}$ |
+| FA2 FP16 | $1.9\times10^{-4}$ |
+| FA3 FP16 | $1.9\times10^{-4}$ |
 
 FA2/FA3 反而优于 standard FP16 baseline。
 
@@ -1837,13 +1837,13 @@ FA2/FA3 反而优于 standard FP16 baseline。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{更快}
 \not\Rightarrow
 \text{必须更不准确}
 }
-\]
+$$
 
 ---
 
@@ -1853,24 +1853,24 @@ FA2/FA3 反而优于 standard FP16 baseline。
 
 | Method | RMSE |
 | --- | ---: |
-| Baseline FP8 per-tensor scale | \(2.4\times10^{-2}\) |
-| FA3 FP8 | \(9.1\times10^{-3}\) |
-| No block quantization | \(9.3\times10^{-3}\) |
-| No incoherent processing | \(2.4\times10^{-2}\) |
+| Baseline FP8 per-tensor scale | $2.4\times10^{-2}$ |
+| FA3 FP8 | $9.1\times10^{-3}$ |
+| No block quantization | $9.3\times10^{-3}$ |
+| No incoherent processing | $2.4\times10^{-2}$ |
 
 于是：
 
-\[
+$$
 \frac{2.4\times10^{-2}}
 {9.1\times10^{-3}}
 \approx2.64.
-\]
+$$
 
 所以论文说约：
 
-\[
+$$
 \boxed{2.6\times}
-\]
+$$
 
 更低 RMSE。
 
@@ -1880,31 +1880,31 @@ FA2/FA3 反而优于 standard FP16 baseline。
 
 去掉 block quantization：
 
-\[
+$$
 9.1\times10^{-3}
 \rightarrow
 9.3\times10^{-3}.
-\]
+$$
 
 变化不大。
 
 但去掉 incoherent processing：
 
-\[
+$$
 9.1\times10^{-3}
 \rightarrow
 2.4\times10^{-2}.
-\]
+$$
 
 几乎回到 baseline。
 
 在这组 outlier-heavy 实验里：
 
-\[
+$$
 \boxed{
 \text{incoherent processing 是主要 accuracy contributor}
 }
-\]
+$$
 
 block quantization 仍有合理性，但论文这组 ablation 表明：
 
@@ -1918,30 +1918,30 @@ block quantization 仍有合理性，但论文这组 ablation 表明：
 
 论文在：
 
-\[
+$$
 \text{H100 80GB SXM5}
-\]
+$$
 
 上 benchmark。
 
 设置：
 
 - sequence length：
-  \[
+  :::{math}
   512,1K,\dots,16K
-  \]
+  :::
 - total tokens 固定约：
-  \[
+  :::{math}
   16K
-  \]
+  :::
 - hidden size：
-  \[
+  :::{math}
   2048
-  \]
+  :::
 - head dim：
-  \[
+  :::{math}
   64,\ 128,\ 256.
-  \]
+  :::
 
 ---
 
@@ -1949,47 +1949,47 @@ block quantization 仍有合理性，但论文这组 ablation 表明：
 
 单 head：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 约：
 
-\[
+$$
 2N^2d
-\]
+$$
 
 FLOPs。
 
 第二个 GEMM：
 
-\[
+$$
 PV
-\]
+$$
 
 也约：
 
-\[
+$$
 2N^2d.
-\]
+$$
 
 所以多头 forward：
 
-\[
+$$
 \boxed{
 4N^2dH
 }
-\]
+$$
 
-其中 \(H\) 是 heads。
+其中 $H$ 是 heads。
 
 causal attention 只计算下三角近似一半 entries：
 
-\[
+$$
 \boxed{
 2N^2dH
 }
-\]
+$$
 
 作为 effective FLOPs 计数。
 
@@ -2003,36 +2003,36 @@ forward 两个主要 matmuls。
 
 backward 需要：
 
-- \(dV\)；
-- \(dP\)；
-- \(dQ\)；
-- \(dK\)；
-- recompute \(QK^\top\)。
+- $dV$；
+- $dP$；
+- $dQ$；
+- $dK$；
+- recompute $QK^\top$。
 
 粗略：
 
-\[
+$$
 5
-\]
+$$
 
 个大 matmul，相对 forward 的：
 
-\[
+$$
 2
-\]
+$$
 
 个。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{backward FLOPs}
 \approx
 2.5\times
 \text{forward FLOPs}
 }
-\]
+$$
 
 ---
 
@@ -2042,27 +2042,27 @@ backward 需要：
 
 论文报告：
 
-\[
+$$
 \boxed{
 1.5\sim2.0\times
 }
-\]
+$$
 
 FA2 forward speedup。
 
 峰值：
 
-\[
+$$
 \boxed{
 \approx740\text{ TFLOPs/s}
 }
-\]
+$$
 
 约为 H100 理论 FP16 Tensor Core peak 的：
 
-\[
+$$
 \boxed{75\%}
-\]
+$$
 
 左右。
 
@@ -2090,9 +2090,9 @@ FA2 forward speedup。
 
 所以能把 fused attention 推到：
 
-\[
+$$
 \sim75\%
-\]
+$$
 
 的 matmul theoretical peak，本身已经说明异步 overlap 非常有效。
 
@@ -2104,11 +2104,11 @@ FA2 forward speedup。
 
 论文 backward：
 
-\[
+$$
 \boxed{
 1.5\sim1.75\times
 }
-\]
+$$
 
 FA2。
 
@@ -2130,17 +2130,17 @@ Backward 比 forward 更难：
 
 FA3 FP8 forward：
 
-\[
+$$
 \boxed{
 \approx1.2\text{ PFLOPs/s}
 }
-\]
+$$
 
 也就是：
 
-\[
+$$
 1200\text{ TFLOPs/s}
-\]
+$$
 
 量级。
 
@@ -2156,13 +2156,13 @@ FP8 并不是单纯把 FP16 kernel dtype 改一下。
 
 所以：
 
-\[
+$$
 \boxed{
 \text{low precision throughput}
 \neq
 \text{free speedup}
 }
-\]
+$$
 
 ---
 
@@ -2170,11 +2170,11 @@ FP8 并不是单纯把 FP16 kernel dtype 改一下。
 
 论文固定：
 
-\[
+$$
 \{B,N,H,d\}
 =
 \{4,8448,16,128\}.
-\]
+$$
 
 比较：
 
@@ -2190,21 +2190,21 @@ FP8 并不是单纯把 FP16 kernel dtype 改一下。
 
 Full：
 
-\[
+$$
 661.
-\]
+$$
 
 没有 GEMM-softmax overlap：
 
-\[
+$$
 582.
-\]
+$$
 
 没有 warp specialization：
 
-\[
+$$
 570.
-\]
+$$
 
 说明两条设计都不是装饰。
 
@@ -2222,7 +2222,7 @@ Full：
 
 因此：
 
-\[
+$$
 \boxed{
 \text{FA3 speedup}
 =
@@ -2230,7 +2230,7 @@ Full：
 +
 \text{compute-unit pipeline}
 }
-\]
+$$
 
 ---
 
@@ -2240,7 +2240,7 @@ Full：
 
 设：
 
-\[
+$$
 T
 =
 T_{\mathrm{load}}
@@ -2248,19 +2248,19 @@ T_{\mathrm{load}}
 T_{\mathrm{gemm}}
 +
 T_{\mathrm{softmax}}.
-\]
+$$
 
 warp specialization 已经隐藏一部分：
 
-\[
+$$
 T_{\mathrm{load}}.
-\]
+$$
 
 GEMM-softmax pipeline 又隐藏一部分：
 
-\[
+$$
 T_{\mathrm{softmax}}.
-\]
+$$
 
 两者同时启用时：
 
@@ -2270,13 +2270,13 @@ T_{\mathrm{softmax}}.
 
 所以：
 
-\[
+$$
 \boxed{
 \Delta T_1+\Delta T_2
 \neq
 \Delta T_{1+2}
 }
-\]
+$$
 
 必须看最终 schedule。
 
@@ -2294,9 +2294,9 @@ T_{\mathrm{softmax}}.
 
 所以：
 
-\[
+$$
 N\uparrow
-\]
+$$
 
 往往让 pipeline 更容易进入 steady state。
 
@@ -2325,13 +2325,13 @@ FP16 FA3 有：
 
 这提醒我们：
 
-\[
+$$
 \boxed{
 \text{更高 arithmetic peak}
 \not\Rightarrow
 \text{所有 shape 都更快}
 }
-\]
+$$
 
 ---
 
@@ -2363,9 +2363,9 @@ FA3 discussion 明确把 FP8 persistent kernel 作为后续改进方向之一。
 
 causal mask：
 
-\[
+$$
 j>i
-\]
+$$
 
 的 upper-triangular blocks 不需要计算。
 
@@ -2373,15 +2373,15 @@ j>i
 
 靠近 sequence 开头的 query：
 
-\[
+$$
 \text{work 少}
-\]
+$$
 
 靠近结尾：
 
-\[
+$$
 \text{work 多}.
-\]
+$$
 
 所以 CTA workload 不均匀。
 
@@ -2395,11 +2395,11 @@ persistent work scheduler 可以把 tile work 更动态地分配给 SM。
 
 FP16/BF16 FA3 仍计算：
 
-\[
+$$
 O
 =
 \operatorname{softmax}(QK^\top)V.
-\]
+$$
 
 它改变的是：
 
@@ -2412,9 +2412,9 @@ O
 
 因此：
 
-\[
+$$
 \boxed{\text{FP16/BF16 FA3 = exact dense attention}}
-\]
+$$
 
 ---
 
@@ -2428,25 +2428,25 @@ O
 
 但输入 / GEMM operand 被量化为 FP8：
 
-\[
+$$
 Q\rightarrow \hat Q,
 \qquad
 K\rightarrow \hat K,
 \qquad
 V\rightarrow \hat V.
-\]
+$$
 
 所以数值结果相对 FP16/FP64 reference 存在 quantization error。
 
 因此：
 
-\[
+$$
 \boxed{
 \text{dense exact attention structure}
 +
 \text{low-precision numerical approximation}
 }
-\]
+$$
 
 不要把“没有稀疏近似”和“数值逐 bit exact”混在一起。
 
@@ -2460,25 +2460,25 @@ V\rightarrow \hat V.
 
 这里的不变量：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 在同时右乘正交矩阵时不变。
 
 于是可以自由改变：
 
-\[
+$$
 Q,K
-\]
+$$
 
 的 coordinate representation。
 
 目的不是改变模型 semantics，而是让：
 
-\[
+$$
 \text{quantization geometry}
-\]
+$$
 
 更友好。
 
@@ -2492,11 +2492,11 @@ Q,K
 
 它们的共同模式：
 
-\[
+$$
 \boxed{
 \text{数学等价类中寻找硬件更友好的表示}
 }
-\]
+$$
 
 ---
 
@@ -2506,15 +2506,15 @@ Q,K
 
 问题：
 
-\[
+$$
 \text{HBM IO}
-\]
+$$
 
 核心：
 
-\[
+$$
 \boxed{\text{IO-aware algorithm}}
-\]
+$$
 
 工具：
 
@@ -2528,15 +2528,15 @@ Q,K
 
 问题：
 
-\[
+$$
 \text{GPU occupancy + warp communication}
-\]
+$$
 
 核心：
 
-\[
+$$
 \boxed{\text{work partition}}
-\]
+$$
 
 工具：
 
@@ -2550,15 +2550,15 @@ Q,K
 
 问题：
 
-\[
+$$
 \text{heterogeneous execution units not overlapped}
-\]
+$$
 
 核心：
 
-\[
+$$
 \boxed{\text{asynchronous pipeline}}
-\]
+$$
 
 工具：
 
@@ -2578,33 +2578,33 @@ Q,K
 
 ## 第一层：Data Movement
 
-\[
+$$
 \boxed{\text{搬了多少 bytes？}}
-\]
+$$
 
 是否有不必要 HBM round-trip？
 
 ## 第二层：Work Decomposition
 
-\[
+$$
 \boxed{\text{工作怎么切给 SM / warp？}}
-\]
+$$
 
 是否有 idle hardware / unnecessary reduction？
 
 ## 第三层：Execution Overlap
 
-\[
+$$
 \boxed{\text{不同硬件单元能否同时工作？}}
-\]
+$$
 
 memory engine、matrix engine、scalar/SFU 是否被串行 schedule？
 
 ## 第四层：Numerical Representation
 
-\[
+$$
 \boxed{\text{能否用更低 precision？}}
-\]
+$$
 
 如果可以，layout 与 accuracy 怎么处理？
 
@@ -2616,17 +2616,17 @@ FA1/2/3 恰好逐层走完。
 
 增加线程主要是：
 
-\[
+$$
 \text{spatial parallelism}.
-\]
+$$
 
 让更多 worker 同时做相似工作。
 
 FA3 强调：
 
-\[
+$$
 \text{temporal pipeline parallelism}.
-\]
+$$
 
 同一个 CTA 内：
 
@@ -2636,13 +2636,13 @@ FA3 强调：
 
 所以是：
 
-\[
+$$
 \boxed{
 \text{空间并行}
 +
 \text{时间流水}
 }
-\]
+$$
 
 共同提高 utilization。
 
@@ -2733,9 +2733,9 @@ store(tile j-2)
 
 如果每次都：
 
-\[
+$$
 \operatorname{sync\ all\ threads}
-\]
+$$
 
 那么 producer / consumer specialization 的价值会被抵消。
 
@@ -2751,11 +2751,11 @@ store(tile j-2)
 
 所以现代 GPU kernel 越来越强调：
 
-\[
+$$
 \boxed{
 \text{event/barrier-based dependency synchronization}
 }
-\]
+$$
 
 而不是全局 lock-step。
 
@@ -2765,23 +2765,23 @@ store(tile j-2)
 
 C001 里我们写：
 
-\[
+$$
 \text{logical decomposition}
 \rightarrow
 \text{communication pattern}
 \rightarrow
 \text{physical topology}.
-\]
+$$
 
 FA3 可以写成：
 
-\[
+$$
 \text{logical tile decomposition}
 \rightarrow
 \text{data dependency}
 \rightarrow
 \text{hardware execution-unit mapping}.
-\]
+$$
 
 一个是集群级。
 
@@ -2789,11 +2789,11 @@ FA3 可以写成：
 
 但都在做：
 
-\[
+$$
 \boxed{
 \text{把算法 dependency graph 映射到硬件 topology}
 }
-\]
+$$
 
 ---
 
@@ -2846,9 +2846,9 @@ serving 中还要考虑：
 
 FA3 benchmark 测的是：
 
-\[
+$$
 \boxed{\text{Attention kernel}}
-\]
+$$
 
 完整模型还有：
 
@@ -2863,15 +2863,15 @@ FA3 benchmark 测的是：
 
 所以：
 
-\[
+$$
 2\times\text{ attention speed}
-\]
+$$
 
 绝不意味着：
 
-\[
+$$
 2\times\text{ model speed}.
-\]
+$$
 
 仍然受 Amdahl's Law 限制。
 
@@ -2897,11 +2897,11 @@ DMA + Matrix Engine + Vector Engine + ...
 
 硬件越 heterogeneous：
 
-\[
+$$
 \boxed{
 \text{算法必须越显式地表达 pipeline 与 ownership}
 }
-\]
+$$
 
 否则新增 specialized unit 只是“存在”，并不会自动进入 critical path。
 
@@ -2915,9 +2915,9 @@ FA2 在 H100 上的问题不是：
 
 恰恰相反：
 
-\[
+$$
 \boxed{\text{Tensor Core 太快了}}
-\]
+$$
 
 于是：
 
@@ -2937,7 +2937,7 @@ Hopper 又恰好提供：
 
 FA3 所做的是把这些能力组织成：
 
-\[
+$$
 \boxed{
 \text{producer-consumer pipeline}
 +
@@ -2945,7 +2945,7 @@ FA3 所做的是把这些能力组织成：
 +
 \text{low-precision layout/numerical co-design}
 }
-\]
+$$
 
 ---
 
@@ -2957,15 +2957,15 @@ FA3 所做的是把这些能力组织成：
 
 如果：
 
-\[
+$$
 A_{j+1}
-\]
+$$
 
 不依赖：
 
-\[
+$$
 B_j,
-\]
+$$
 
 就应该问：
 
@@ -2987,14 +2987,14 @@ B_j,
 
 目标更接近：
 
-\[
+$$
 \boxed{
 \max
 \left(
 \text{simultaneous useful hardware activity}
 \right)
 }
-\]
+$$
 
 ---
 
@@ -3002,15 +3002,15 @@ B_j,
 
 FP8 不是：
 
-\[
+$$
 \text{dtype=fp8}
-\]
+$$
 
 这么简单。
 
 需要同时处理：
 
-\[
+$$
 \boxed{
 \text{hardware layout contract}
 +
@@ -3018,7 +3018,7 @@ FP8 不是：
 +
 \text{outlier geometry}
 }
-\]
+$$
 
 FA3 的 block quantization、paired permutation 与 incoherent processing 都是在做这件事。
 
@@ -3057,7 +3057,7 @@ FlashAttention-3
 
 这条主线真正建立的是：
 
-\[
+$$
 \boxed{
 \text{IO}
 \rightarrow
@@ -3067,7 +3067,7 @@ FlashAttention-3
 \rightarrow
 \text{Low Precision}
 }
-\]
+$$
 
 也就是现代 accelerator kernel 优化最核心的几个层次。
 

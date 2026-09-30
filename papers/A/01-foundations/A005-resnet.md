@@ -386,17 +386,17 @@ $1\times1$ 并不是“提取空间局部特征”的主力，它主要在这里
 图里有两条信息路径：
 
 1. 主分支：
-   $$
+   :::{math}
    x
    \rightarrow
    \mathcal F(x)
-   $$
+   :::
 2. shortcut：
-   $$
+   :::{math}
    x
    \rightarrow
    x
-   $$
+   :::
 
 然后逐元素相加：
 
@@ -1046,17 +1046,17 @@ assert change(x).shape == (2, 128, 28, 28)
 Shape：
 
 - identity block：
-  $$
+  :::{math}
   [2,64,56,56]
   \rightarrow
   [2,64,56,56]
-  $$
+  :::
 - projection block：
-  $$
+  :::{math}
   [2,64,56,56]
   \rightarrow
   [2,128,28,28].
-  $$
+  :::
 
 当前 MCP 默认 Python 没有 PyTorch，因此这里只完成代码结构、Shape 与论文 v1 布局审查，**不声称本地运行通过**。
 

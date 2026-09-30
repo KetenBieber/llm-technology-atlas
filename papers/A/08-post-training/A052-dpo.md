@@ -39,12 +39,12 @@ DPO 的答案是：可以，而且在一组明确假设下，这不是经验技�
 1. RLHF 为什么先训练 Reward Model？
 2. Bradley–Terry model 到底在建模什么？
 3. KL penalty 为什么会让最优 policy 有 closed form？
-4. partition function \(Z(x)\) 为什么看似麻烦，却能在 DPO 中消失？
-5. 为什么 reward 可以写成 \(\beta\log\frac{\pi}{\pi_{\mathrm{ref}}}\)？
+4. partition function $Z(x)$ 为什么看似麻烦，却能在 DPO 中消失？
+5. 为什么 reward 可以写成 $\beta\log\frac{\pi}{\pi_{\mathrm{ref}}}$？
 6. “Your Language Model is Secretly a Reward Model” 到底是什么意思？
 7. DPO loss 怎样一步步推出来？
 8. DPO 是 response-level preference，为什么 token 参数仍然能被训练？
-9. \(\beta\) 为什么既乘在 DPO logit 上，又代表更强 KL regularization？
+9. $\beta$ 为什么既乘在 DPO logit 上，又代表更强 KL regularization？
 10. reference policy 为什么不可有可无？
 11. DPO gradient 为什么不是简单的“preferred 加、rejected 减”？
 12. DPO 与 SFT、Unlikelihood、PPO、GRPO 到底差在哪里？
@@ -87,7 +87,7 @@ $$
 
 也就是：
 
-> 在 prompt \(x\) 下，我更喜欢 \(y_1\)。
+> 在 prompt $x$ 下，我更喜欢 $y_1$。
 
 于是 preference dataset 通常写成：
 
@@ -101,12 +101,12 @@ $$
 
 其中：
 
-- \(y_w\)：winner / preferred response；
-- \(y_l\)：loser / dispreferred response。
+- $y_w$：winner / preferred response；
+- $y_l$：loser / dispreferred response。
 
 现在真正的问题是：
 
-> **这种“相对关系”怎样转化成语言模型参数 \(\theta\) 的训练信号？**
+> **这种“相对关系”怎样转化成语言模型参数 $\theta$ 的训练信号？**
 
 ---
 
@@ -114,7 +114,7 @@ $$
 
 最直接的想法：
 
-> 既然 \(y_w\) 更好，那就只训练 \(y_w\)。
+> 既然 $y_w$ 更好，那就只训练 $y_w$。
 
 即：
 
@@ -181,8 +181,8 @@ $$
 
 最小化它，相当于：
 
-- 增加 \(y_w\) likelihood；
-- 降低 \(y_l\) likelihood。
+- 增加 $y_w$ likelihood；
+- 降低 $y_l$ likelihood。
 
 看起来正好。
 
@@ -206,7 +206,7 @@ DPO 原论文的 Unlikelihood baseline 就观察到明显退化生成，包括�
 
 所以我们缺的不是一句：
 
-> \(y_w\uparrow,\ y_l\downarrow\)。
+> $y_w\uparrow,\ y_l\downarrow$。
 
 而是：
 
@@ -347,7 +347,7 @@ $$
 
 ---
 
-## 6. Reward Model loss 为什么是 \(-\log\sigma(\Delta r)\)？
+## 6. Reward Model loss 为什么是 $-\log\sigma(\Delta r)$？
 
 数据已经告诉我们：
 
@@ -448,9 +448,9 @@ $$
 
 其中 reference 通常来自 SFT model。
 
-\(\beta>0\) 控制“偏离 reference 的价格”。
+$\beta>0$ 控制“偏离 reference 的价格”。
 
-### \(\beta\) 大
+### $\beta$ 大
 
 更强地惩罚偏离：
 
@@ -458,7 +458,7 @@ $$
 \pi\approx\pi_{\mathrm{ref}}.
 $$
 
-### \(\beta\) 小
+### $\beta$ 小
 
 policy 更愿意离开 reference 去追逐 reward。
 
@@ -468,9 +468,9 @@ policy 更愿意离开 reference 去追逐 reward。
 
 ## 8. DPO 最关键的一步：先别想 PPO，直接求这个优化问题的最优 policy
 
-固定一个 prompt \(x\)。
+固定一个 prompt $x$。
 
-把所有 response 记成 \(y\)。
+把所有 response 记成 $y$。
 
 此时先把：
 
@@ -538,7 +538,7 @@ $$
 \right).
 $$
 
-对 \(\pi_y\) 求偏导：
+对 $\pi_y$ 求偏导：
 
 $$
 \frac{\partial\mathcal J}{\partial\pi_y}
@@ -580,7 +580,7 @@ $$
 r_y+\lambda-\beta.
 $$
 
-除以 \(\beta\)：
+除以 $\beta$：
 
 $$
 \log
@@ -620,7 +620,7 @@ C(x)
 \exp\left(\frac{\lambda}{\beta}-1\right)
 $$
 
-对固定 \(x\) 是常数。
+对固定 $x$ 是常数。
 
 利用：
 
@@ -717,7 +717,7 @@ $$
 
 ---
 
-## 11. \(\beta\) 在 closed form 中做什么？
+## 11. $\beta$ 在 closed form 中做什么？
 
 最优 policy：
 
@@ -752,7 +752,7 @@ $$
 \pi_r\to\pi_{\mathrm{ref}}.
 $$
 
-反过来，当 \(\beta\) 很小，reward difference 被指数放大，policy 更愿意离开 reference。
+反过来，当 $\beta$ 很小，reward difference 被指数放大，policy 更愿意离开 reference。
 
 所以：
 
@@ -766,7 +766,7 @@ $$
 }
 $$
 
-后面 DPO loss 中 \(\beta\) 又乘在 logit 前，这并不矛盾，我们会专门拆。
+后面 DPO loss 中 $\beta$ 又乘在 logit 前，这并不矛盾，我们会专门拆。
 
 ---
 
@@ -820,7 +820,7 @@ D_{\mathrm{KL}}(\pi\|q)
 \right].
 $$
 
-对固定 \(x\)，\(\log Z(x)\) 与 \(y\) 无关，所以：
+对固定 $x$，$\log Z(x)$ 与 $y$ 无关，所以：
 
 $$
 D_{\mathrm{KL}}(\pi\|q)
@@ -833,7 +833,7 @@ D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})
 \log Z.
 $$
 
-两边乘 \(-\beta\)：
+两边乘 $-\beta$：
 
 $$
 -\beta D_{\mathrm{KL}}(\pi\|q)
@@ -863,9 +863,9 @@ q(\cdot|x)
 }
 $$
 
-第一项与 \(\pi\) 无关。
+第一项与 $\pi$ 无关。
 
-所以最大化 \(J\) 等价于：
+所以最大化 $J$ 等价于：
 
 $$
 \min_\pi
@@ -922,7 +922,7 @@ Z(x)
 e^{r(x,y)/\beta}.
 $$
 
-这里的 \(y\) 是所有可能的 response sequence。
+这里的 $y$ 是所有可能的 response sequence。
 
 语言模型的 sequence space 巨大到无法枚举。
 
@@ -942,7 +942,7 @@ $$
 
 DPO 的第二个关键想法就是：
 
-> **不要算 \(Z(x)\)。把 reward 反解出来，然后利用 Bradley–Terry 只看 reward difference 这一点，让 \(Z(x)\) 自动消失。**
+> **不要算 $Z(x)$。把 reward 反解出来，然后利用 Bradley–Terry 只看 reward difference 这一点，让 $Z(x)$ 自动消失。**
 
 ---
 
@@ -982,7 +982,7 @@ $$
 \frac{r(x,y)}{\beta}.
 $$
 
-乘 \(\beta\)：
+乘 $\beta$：
 
 $$
 \beta
@@ -1056,7 +1056,7 @@ r'(x,y)
 r(x,y)+f(x).
 $$
 
-也就是对同一个 prompt，所有 response 的 reward 都整体加一个只与 \(x\) 有关的常数。
+也就是对同一个 prompt，所有 response 的 reward 都整体加一个只与 $x$ 有关的常数。
 
 那么：
 
@@ -1112,13 +1112,13 @@ $$
 
 DPO 论文因此定义：
 
-如果存在只依赖 prompt 的函数 \(f(x)\)，使：
+如果存在只依赖 prompt 的函数 $f(x)$，使：
 
 $$
 r'(x,y)=r(x,y)+f(x),
 $$
 
-那么 \(r\) 与 \(r'\) 属于同一个 reward equivalence class。
+那么 $r$ 与 $r'$ 属于同一个 reward equivalence class。
 
 直觉上：
 
@@ -1292,20 +1292,20 @@ $$
 DPO 的说法严格依赖：
 
 1. 一个 fixed reference policy：
-   $$
+   :::{math}
    \pi_{\mathrm{ref}};
-   $$
+   :::
 
 2. 一个 KL coefficient：
-   $$
+   :::{math}
    \beta;
-   $$
+   :::
 
 3. sequence-level probability ratio：
-   $$
+   :::{math}
    \frac{\pi_\theta(y|x)}
    {\pi_{\mathrm{ref}}(y|x)}.
-   $$
+   :::
 
 implicit reward 才是：
 
@@ -1336,13 +1336,9 @@ $$
 
 问题是：
 
-> 普通 Reward Model \(r_\phi(x,y)\) 看起来可以任意输出 scalar；现在强行写成
-> \[
-> \beta\log\frac{\pi(y|x)}{\pi_{\mathrm{ref}}(y|x)}
-> \]
-> 会不会缩小 reward function class？
+> 普通 Reward Model $r_\phi(x,y)$ 看起来可以任意输出 scalar；现在强行写成 $\beta\log\frac{\pi(y|x)}{\pi_{\mathrm{ref}}(y|x)}$，会不会缩小 reward function class？
 
-论文证明：在 reference policy 对考虑的 response 有正概率、\(\beta>0\) 等条件下，每个 Bradley–Terry / Plackett–Luce 可辨识的 reward equivalence class，都存在一个代表可以写成：
+论文证明：在 reference policy 对考虑的 response 有正概率、$\beta>0$ 等条件下，每个 Bradley–Terry / Plackett–Luce 可辨识的 reward equivalence class，都存在一个代表可以写成：
 
 $$
 r(x,y)
@@ -1477,7 +1473,7 @@ $$
 
 ---
 
-## 23. 最后一步：把未知 \(\pi^*\) 换成 trainable \(\pi_\theta\)
+## 23. 最后一步：把未知 $\pi^*$ 换成 trainable $\pi_\theta$
 
 真实 optimal policy：
 
@@ -1930,7 +1926,7 @@ $$
 
 这变成：
 
-> 只要 policy 自己越来越偏 \(y_w\) 就行。
+> 只要 policy 自己越来越偏 $y_w$ 就行。
 
 但 DPO 的理论来源是：
 
@@ -2048,7 +2044,7 @@ $$
 
 ---
 
-## 33. \(\beta\) 的“表面矛盾”：为什么 KL 越强，DPO logit 前的系数反而越大？
+## 33. $\beta$ 的“表面矛盾”：为什么 KL 越强，DPO logit 前的系数反而越大？
 
 DPO：
 
@@ -2071,7 +2067,7 @@ $$
 
 于是很容易误解：
 
-> \(\beta\) 大是不是让 preference learning 更激进？
+> $\beta$ 大是不是让 preference learning 更激进？
 
 但要回到它真正的定义：
 
@@ -2121,7 +2117,7 @@ $$
 
 ---
 
-## 34. 再用最优 policy 看一遍 \(\beta\)，避免只盯 loss
+## 34. 再用最优 policy 看一遍 $\beta$，避免只盯 loss
 
 最优 policy：
 
@@ -2137,7 +2133,7 @@ $$
 r_w-r_l=2.
 $$
 
-### 若 \(\beta=0.1\)
+### 若 $\beta=0.1$
 
 reward tilt ratio：
 
@@ -2149,7 +2145,7 @@ $$
 
 非常激进。
 
-### 若 \(\beta=2\)
+### 若 $\beta=2$
 
 $$
 e^{(r_w-r_l)/\beta}
@@ -2161,7 +2157,7 @@ $$
 
 所以从 underlying RL objective 看非常清楚：
 
-> \(\beta\) 越大，reward 对 reference distribution 的 tilt 越弱。
+> $\beta$ 越大，reward 对 reference distribution 的 tilt 越弱。
 
 DPO loss 里的乘法形式只是 reward reparameterization 后的结果。
 
@@ -2340,8 +2336,8 @@ gradient weight 很大。
 
 模型被强烈要求：
 
-- 提高 \(y_w\)；
-- 降低 \(y_l\)。
+- 提高 $y_w$；
+- 降低 $y_l$。
 
 ### 情况 B：两者差不多
 
@@ -2937,10 +2933,10 @@ $$
 
 所以参数更新可能出现多种实现方式：
 
-- \(y_w\) probability 上升更多；
-- \(y_l\) probability 下降更多；
+- $y_w$ probability 上升更多；
+- $y_l$ probability 下降更多；
 - 两者同时发生；
-- \(y_w\) 甚至下降，但 \(y_l\) 下降得更多。
+- $y_w$ 甚至下降，但 $y_l$ 下降得更多。
 
 只要：
 
@@ -3082,7 +3078,7 @@ PPO 实际训练还会包含：
 
 所谓 exact mapping 指：
 
-给定 reward function \(r\)，KL-regularized non-parametric problem 的最优 policy：
+给定 reward function $r$，KL-regularized non-parametric problem 的最优 policy：
 
 $$
 \pi_r
@@ -3105,7 +3101,7 @@ $$
 
 但真实训练中：
 
-- \(\pi_\theta\) 是有限参数 Transformer；
+- $\pi_\theta$ 是有限参数 Transformer；
 - dataset 有限；
 - preference 有噪声；
 - optimization 非凸；
@@ -3537,16 +3533,16 @@ $$
 Best-of-N：
 
 1. 从 reference/SFT model 采样：
-   $$
+   :::{math}
    y_1,\dots,y_N;
-   $$
+   :::
 
 2. Reward Model 打分；
 3. 返回最高分 response。
 
 它完全不修改 policy。
 
-当 \(N\) 很大时，可以通过 test-time compute 获得很强表现。
+当 $N$ 很大时，可以通过 test-time compute 获得很强表现。
 
 所以它帮助回答：
 
@@ -3556,7 +3552,7 @@ Best-of-N：
 
 - 每个 query 都要采样很多次；
 - serving 成本高；
-- 随 \(N\) 增长收益逐渐饱和。
+- 随 $N$ 增长收益逐渐饱和。
 
 因此 DPO 的价值之一是：
 
@@ -3652,7 +3648,7 @@ $$
 
 而是：
 
-> DPO 不再单独拟合一个 standalone \(r_\phi(x,y)\)，而是把 reward representative 写进 policy/reference log-ratio。
+> DPO 不再单独拟合一个 standalone $r_\phi(x,y)$，而是把 reward representative 写进 policy/reference log-ratio。
 
 即：
 
@@ -4066,7 +4062,7 @@ flowchart TD
 
 - reference correction；
 - logistic dynamic weight；
-- KL-derived \(\beta\)。
+- KL-derived $\beta$。
 
 ### 错法 2：DPO 完全不需要 Reward Model
 
@@ -4076,11 +4072,11 @@ flowchart TD
 
 只是 inner optimization loop 不需要 current-policy rollout。
 
-### 错法 4：DPO 的 \(\hat r\) 是人类绝对 reward
+### 错法 4：DPO 的 $\hat r$ 是人类绝对 reward
 
 不是，只是 reward equivalence class 中的一个 representative。
 
-### 错法 5：\(\beta\) 越大 preference 越激进
+### 错法 5：$\beta$ 越大 preference 越激进
 
 从 underlying KL-RL objective 看，恰好代表更强 regularization。
 
@@ -4263,53 +4259,53 @@ Human Preference
 
 读完 DPO，至少应该能从头推导并回答：
 
-1. preference dataset 为什么通常写成 \((x,y_w,y_l)\)？
-2. 为什么只对 \(y_w\) 做 SFT 会浪费 pairwise information？
+1. preference dataset 为什么通常写成 $(x,y_w,y_l)$？
+2. 为什么只对 $y_w$ 做 SFT 会浪费 pairwise information？
 3. naive chosen↑/rejected↓ 为什么缺少约束？
 4. Bradley–Terry 为什么得到：
-   $$
+   :::{math}
    p(y_w\succ y_l)=\sigma(r_w-r_l)?
-   $$
+   :::
 5. Reward Model loss 为什么是：
-   $$
+   :::{math}
    -\log\sigma(r_w-r_l)?
-   $$
+   :::
 6. 为什么经典 RLHF objective 中需要 KL？
 7. 怎样从拉格朗日乘子推导：
-   $$
+   :::{math}
    \pi^*
    =
    \frac1Z\pi_{\mathrm{ref}}e^{r/\beta}?
-   $$
+   :::
 8. 怎样把同一个 objective 重写成 KL，从而证明是全局最优？
-9. \(Z(x)\) 是什么，为什么语言模型里难以显式计算？
+9. $Z(x)$ 是什么，为什么语言模型里难以显式计算？
 10. 怎样反解：
-    $$
+    :::{math}
     r
     =
     \beta\log\frac{\pi^*}{\pi_{\mathrm{ref}}}
     +
     \beta\log Z?
-    $$
-11. 为什么 \(r\) 与 \(r+f(x)\) 对 preference 等价？
+    :::
+11. 为什么 $r$ 与 $r+f(x)$ 对 preference 等价？
 12. 为什么它们产生的 KL-regularized optimal policy 也相同？
 13. “Your Language Model is Secretly a Reward Model” 精确指什么？
 14. 为什么 DPO reparameterization 没有丢失 reward equivalence class？
 15. Bradley–Terry 中 partition function 为什么严格消失？
 16. 怎样从 preference maximum likelihood 推到完整 DPO loss？
 17. 为什么 DPO 学的是：
-    $$
+    :::{math}
     \Delta_\theta-\Delta_{\mathrm{ref}}
-    $$
-    而不是单纯 \(\Delta_\theta\)？
+    :::
+    而不是单纯 $\Delta_\theta$？
 18. sequence log-prob 怎样拆到 token？
 19. response-level preference 怎样给每个 token 参数产生梯度？
 20. reference policy 为什么是 alignment 的坐标系？
-21. \(\beta\) 为什么越大反而对应更强 KL regularization？
+21. $\beta$ 为什么越大反而对应更强 KL regularization？
 22. DPO gradient 中：
-    $$
+    :::{math}
     \sigma(\hat r_l-\hat r_w)
-    $$
+    :::
     为什么是动态 pair weight？
 23. 为什么 pair 已经学对以后 gradient 会自然衰减？
 24. DPO 为什么比 naive Unlikelihood 稳定？

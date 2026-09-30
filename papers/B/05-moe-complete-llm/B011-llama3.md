@@ -324,7 +324,7 @@ $$
 3.94\ \text{chars/token}.
 $$
 
-假设一段文本有 \(C\) 个字符，粗略 token 数：
+假设一段文本有 $C$ 个字符，粗略 token 数：
 
 $$
 N_{\text{token}}
@@ -332,7 +332,7 @@ N_{\text{token}}
 \frac{C}{r},
 $$
 
-其中 \(r\) 是 chars/token。
+其中 $r$ 是 chars/token。
 
 于是：
 
@@ -557,7 +557,7 @@ Llama 3 很值得学习的一部分，是 Meta 真正把 scaling law 当作工�
 团队训练了大量小规模实验：
 
 - 模型从 40M 到 16B；
-- compute budget 从 \(6\times10^{18}\) 到 \(10^{22}\) FLOPs。
+- compute budget 从 $6\times10^{18}$ 到 $10^{22}$ FLOPs。
 
 对每个 compute budget：
 
@@ -585,7 +585,7 @@ N^\star(C)
 AC^\alpha,
 $$
 
-其中 \(N^\star(C)\) 是 compute-optimal training token 数。
+其中 $N^\star(C)$ 是 compute-optimal training token 数。
 
 论文拟合得到：
 
@@ -593,7 +593,7 @@ $$
 \alpha=0.53,\qquad A=0.29.
 $$
 
-真正重要的不是死记 \(A\)，而是方法：
+真正重要的不是死记 $A$，而是方法：
 
 > **先用可承受的小模型实验估计 compute 增长时最优 token 数如何增长，再向旗舰预算外推。**
 
@@ -825,7 +825,7 @@ $$
 \frac{128K}{8K}=16.
 $$
 
-仅 \(L^2\) 项就是：
+仅 $L^2$ 项就是：
 
 $$
 16^2=256
@@ -1290,7 +1290,7 @@ $$
 
 ### 25.2 Rejection Sampling
 
-对同一个 prompt \(x\)，从当前或最近的强 policy 中采样：
+对同一个 prompt $x$，从当前或最近的强 policy 中采样：
 
 $$
 y_1,\dots,y_K.

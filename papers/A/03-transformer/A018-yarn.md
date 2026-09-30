@@ -78,14 +78,14 @@ YaRN 的价值就在于：
 5. RoPE 的 wavelength 到底怎么解释？
 6. 为什么短 wavelength 维度应该尽量不动？
 7. 为什么长 wavelength 维度反而最需要 interpolation？
-8. \(r=L/\lambda\) 为什么可以衡量一个维度在训练窗口中转了几圈？
-9. NTK-by-parts 的 \(\gamma(r)\) ramp 如何工作？
+8. $r=L/\lambda$ 为什么可以衡量一个维度在训练窗口中转了几圈？
+9. NTK-by-parts 的 $\gamma(r)$ ramp 如何工作？
 10. YaRN 比 NTK-by-parts 多了什么？
-11. Attention temperature \(t\) 为什么可以通过同时缩放 Q/K 实现？
+11. Attention temperature $t$ 为什么可以通过同时缩放 Q/K 实现？
 12. 为什么作者建议：
-    $$
+    :::{math}
     \sqrt{1/t}=0.1\ln s+1?
-    $$
+    :::
 13. Dynamic YaRN 与普通 YaRN 有什么区别？
 14. Dynamic scaling 为什么会和 KV Cache 实现发生冲突？
 15. 64K fine-tuning 为什么可以在论文里外推到 128K？
@@ -111,7 +111,7 @@ $$
 
 RoPE 把维度两两配对。
 
-第 \(i\) 个二维 pair 的角频率常写成：
+第 $i$ 个二维 pair 的角频率常写成：
 
 $$
 \omega_i
@@ -164,7 +164,7 @@ k'_{n,i}
 R(n\omega_i)k_{n,i}.
 $$
 
-不同 \(i\) 的：
+不同 $i$ 的：
 
 $$
 \omega_i
@@ -258,7 +258,7 @@ $$
 L.
 $$
 
-在第 \(i\) 个频率维度里，对应 phase：
+在第 $i$ 个频率维度里，对应 phase：
 
 $$
 \Delta\phi_i
@@ -314,7 +314,7 @@ $$
 
 你可能会说：
 
-> \(\sin,\cos\) 本来就是周期函数，超过 \(2\pi\) 不就绕回来了吗？
+> $\sin,\cos$ 本来就是周期函数，超过 $2\pi$ 不就绕回来了吗？
 
 问题恰恰在这里。
 
@@ -428,7 +428,7 @@ R\left(
 \right).
 $$
 
-等价地，也可以保持 \(m\) 不变，把频率写成：
+等价地，也可以保持 $m$ 不变，把频率写成：
 
 $$
 \boxed{
@@ -643,7 +643,7 @@ $$
 
 这意味着：
 
-> 所有二维时钟都被减速 \(s\) 倍。
+> 所有二维时钟都被减速 $s$ 倍。
 
 但不同 RoPE 维度本来承担的 positional scale 不一样。
 
@@ -720,13 +720,13 @@ $$
 
 因此：
 
-- 高频 \(\omega_i\) 大；
-- wavelength \(\lambda_i\) 短；
+- 高频 $\omega_i$ 大；
+- wavelength $\lambda_i$ 短；
 
 反之：
 
-- 低频 \(\omega_i\) 小；
-- wavelength \(\lambda_i\) 长。
+- 低频 $\omega_i$ 小；
+- wavelength $\lambda_i$ 长。
 
 ---
 
@@ -850,7 +850,7 @@ $$
 
 ---
 
-## 16. 用 \(r=L/\lambda\) 表示“训练时转了几圈”
+## 16. 用 $r=L/\lambda$ 表示“训练时转了几圈”
 
 YaRN 定义：
 
@@ -886,13 +886,13 @@ $$
 
 例如：
 
-### \(r=128\)
+### $r=128$
 
 训练窗口转 128 圈。
 
 高度周期化。
 
-### \(r=0.25\)
+### $r=0.25$
 
 训练窗口只转四分之一圈。
 
@@ -920,11 +920,11 @@ $$
 
 NTK-aware 的思路：
 
-> **不要每个频率都除同样的 \(s\)。高频尽量少改，低频多改。**
+> **不要每个频率都除同样的 $s$。高频尽量少改，低频多改。**
 
 最简单实现：
 
-> 改 RoPE base \(b\)。
+> 改 RoPE base $b$。
 
 ---
 
@@ -1067,7 +1067,7 @@ $$
 
 最高频不变。
 
-随着 \(i\) 增大，缩放越来越强。
+随着 $i$ 增大，缩放越来越强。
 
 到最低频附近：
 
@@ -1185,7 +1185,7 @@ $$
 \alpha<\beta.
 $$
 
-### 情况 1：\(r<\alpha\)
+### 情况 1：$r<\alpha$
 
 训练窗口内旋转很少。
 
@@ -1199,7 +1199,7 @@ $$
 \frac{\omega_i}{s}.
 $$
 
-### 情况 2：\(r>\beta\)
+### 情况 2：$r>\beta$
 
 训练窗口内转很多圈。
 
@@ -1223,7 +1223,7 @@ $$
 
 ---
 
-## 24. Ramp function \(\gamma(r)\)
+## 24. Ramp function $\gamma(r)$
 
 YaRN 定义：
 
@@ -1249,8 +1249,8 @@ $$
 
 于是：
 
-- \(\gamma=0\)：full interpolation；
-- \(\gamma=1\)：不 interpolation；
+- $\gamma=0$：full interpolation；
+- $\gamma=1$：不 interpolation；
 - 中间：线性过渡。
 
 ---
@@ -1338,7 +1338,7 @@ r large
 
 ---
 
-## 27. LLaMA family 的 \(\alpha,\beta\) 是多少？
+## 27. LLaMA family 的 $\alpha,\beta$ 是多少？
 
 YaRN 论文实验推荐：
 
@@ -1352,13 +1352,13 @@ $$
 
 也就是：
 
-### \(r<1\)
+### $r<1$
 
 训练 context 内连一圈都不到：
 
 > full interpolation。
 
-### \(r>32\)
+### $r>32$
 
 训练 context 内超过约 32 圈：
 
@@ -1625,7 +1625,7 @@ YaRN 论文经验观察到：
 
 ---
 
-## 32. Temperature \(t\) 怎样进入 Attention？
+## 32. Temperature $t$ 怎样进入 Attention？
 
 YaRN 写：
 
@@ -1804,7 +1804,7 @@ $$
 
 这是非常重要的证据边界。
 
-论文在多个 LLaMA sizes 与不同 scale \(s\) 上搜索：
+论文在多个 LLaMA sizes 与不同 scale $s$ 上搜索：
 
 $$
 m
@@ -1830,7 +1830,7 @@ $$
 
 ![YaRN attention magnitude scaling 与 perplexity](../../../figures/A018/fig-mscale-ppl.png)
 
-*YaRN 原论文 appendix：固定 \(s=8\)，扫描 \(1/\sqrt t\)（等价于 Q/K magnitude scale）并测 LLaMA 7B perplexity。实验支持某个统一 magnitude scaling 在不同样本上可以改善扩展后的 perplexity。*
+*YaRN 原论文 appendix：固定 $s=8$，扫描 $1/\sqrt t$（等价于 Q/K magnitude scale）并测 LLaMA 7B perplexity。实验支持某个统一 magnitude scaling 在不同样本上可以改善扩展后的 perplexity。*
 
 它能支持：
 
@@ -1838,7 +1838,7 @@ $$
 
 但不能推出：
 
-> 所有模型都严格服从 \(0.1\ln s+1\)。
+> 所有模型都严格服从 $0.1\ln s+1$。
 
 ---
 
@@ -2243,7 +2243,7 @@ $$
 L=4096.
 $$
 
-### Scale \(s=16\)
+### Scale $s=16$
 
 目标：
 
@@ -2258,11 +2258,11 @@ $$
 - 64K chunks；
 - PG19；
 - AdamW；
-- learning rate \(2\times10^{-5}\)；
+- learning rate $2\times10^{-5}$；
 - FSDP；
 - FlashAttention 2。
 
-### Scale \(s=32\)
+### Scale $s=32$
 
 目标：
 
@@ -2296,7 +2296,7 @@ $$
 
 ## 47. 一个非常重要的结果：训练 64K，评估到 128K
 
-论文的 \(s=32\) model：
+论文的 $s=32$ model：
 
 - YaRN target scale 对应 128K；
 - additional fine-tuning data 最大只有 64K；
@@ -2821,7 +2821,7 @@ $$
 
 ---
 
-## 66. 但 YaRN 完全没有解决 \(O(L^2)\)
+## 66. 但 YaRN 完全没有解决 $O(L^2)$
 
 这是必须钉死的边界。
 
@@ -3162,7 +3162,7 @@ low frequency
 
 YaRN 是一种 scale-selective transformation。
 
-这种思想比具体的 \(\alpha,\beta\) 更值得迁移。
+这种思想比具体的 $\alpha,\beta$ 更值得迁移。
 
 ---
 
@@ -3182,7 +3182,7 @@ YaRN 是一种 scale-selective transformation。
 
 ---
 
-## 78. 为什么 \(\alpha,\beta\) 仍然是经验超参数？
+## 78. 为什么 $\alpha,\beta$ 仍然是经验超参数？
 
 即使：
 
@@ -3362,15 +3362,15 @@ $$
 
 没有。
 
-### 84.3 \(0.1\ln s+1\) 对所有模型最优
+### 84.3 $0.1\ln s+1$ 对所有模型最优
 
 没有。
 
-### 84.4 \(\alpha=1,\beta=32\) 是 universal constants
+### 84.4 $\alpha=1,\beta=32$ 是 universal constants
 
 没有。
 
-### 84.5 YaRN 降低 \(O(L^2)\)
+### 84.5 YaRN 降低 $O(L^2)$
 
 没有。
 
@@ -3728,35 +3728,35 @@ position validity、long-context learning、attention complexity、serving runti
 
 读完 YaRN，至少应该能回答：
 
-1. RoPE 第 \(i\) 个 pair 的频率怎么写？
-2. 为什么 RoPE dot product 只依赖 \(m-n\)？
+1. RoPE 第 $i$ 个 pair 的频率怎么写？
+2. 为什么 RoPE dot product 只依赖 $m-n$？
 3. 为什么 relative position 不等于 unlimited length generalization？
 4. direct extrapolation 为什么仍会 OOD？
-5. PI 为什么用 \(m/s\)？
-6. 为什么 \(m/s\) 等价于 \(\omega/s\)？
+5. PI 为什么用 $m/s$？
+6. 为什么 $m/s$ 等价于 $\omega/s$？
 7. interpolation 为什么一般比 extrapolation 更受约束？
 8. PI 为什么能用少量 fine-tuning 扩窗？
 9. PI 最大的 frequency-level 缺陷是什么？
-10. wavelength \(2\pi/\omega\) 如何解释？
+10. wavelength $2\pi/\omega$ 如何解释？
 11. 为什么短 wavelength 在训练窗口内会转很多圈？
 12. 为什么这类维度更应保留 local resolution？
 13. 为什么长 wavelength 更需要 interpolation？
-14. \(r=L/\lambda\) 表示什么？
+14. $r=L/\lambda$ 表示什么？
 15. NTK-aware 为什么改 base？
-16. 如何推导 \(b'=bs^{d/(d-2)}\)？
+16. 如何推导 $b'=bs^{d/(d-2)}$？
 17. 为什么 base change 使高频少缩、低频多缩？
 18. NTK-aware 的局限是什么？
-19. NTK-by-parts 的 \(\alpha,\beta\) 做什么？
-20. ramp \(\gamma(r)\) 怎么写？
-21. \(\gamma=0\) 为什么表示 full interpolation？
-22. \(\gamma=1\) 为什么表示 keep original？
+19. NTK-by-parts 的 $\alpha,\beta$ 做什么？
+20. ramp $\gamma(r)$ 怎么写？
+21. $\gamma=0$ 为什么表示 full interpolation？
+22. $\gamma=1$ 为什么表示 keep original？
 23. 中频怎样混合？
-24. LLaMA family 的 \(\alpha=1,\beta=32\) 为什么只是经验值？
+24. LLaMA family 的 $\alpha=1,\beta=32$ 为什么只是经验值？
 25. 完整 YaRN 比 NTK-by-parts 多什么？
-26. temperature \(t\) 怎样进入 softmax？
+26. temperature $t$ 怎样进入 softmax？
 27. 为什么同时缩放 Q/K 等效于 temperature scaling？
-28. \(m=0.1\ln s+1\) 是理论式还是经验式？
-29. Dynamic Scaling 的 \(s_{\rm dyn}\) 怎么写？
+28. $m=0.1\ln s+1$ 是理论式还是经验式？
+29. Dynamic Scaling 的 $s_{\rm dyn}$ 怎么写？
 30. Dynamic Scaling 为什么保护 short context？
 31. Dynamic Scaling 为什么影响 KV Cache？
 32. cached post-RoPE K 为什么会失效？
@@ -3765,7 +3765,7 @@ position validity、long-context learning、attention complexity、serving runti
 35. PPL、passkey、short benchmark 各测什么？
 36. 为什么 passkey 不等于 long reasoning？
 37. YaRN 为什么容易兼容 FlashAttention？
-38. YaRN 为什么没有降低 \(O(L^2)\)？
+38. YaRN 为什么没有降低 $O(L^2)$？
 39. Qwen2.5 中 YaRN、DCA、MInference 各自在哪一层？
 40. 为什么 1M context 绝不能简单归因于 YaRN？
 

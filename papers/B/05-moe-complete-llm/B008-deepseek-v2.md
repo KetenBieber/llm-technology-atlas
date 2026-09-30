@@ -1117,9 +1117,9 @@ Tokenizer：
 
 - byte-level BPE；
 - vocab：
-  $$
+  :::{math}
   100K.
-  $$
+  :::
 
 主模型：
 
@@ -1198,14 +1198,14 @@ $$
 因为：
 
 - content latent：
-  $$
+  :::{math}
   c_t^{KV}
-  $$
+  :::
   不承担 RoPE；
 - positional subspace：
-  $$
+  :::{math}
   q^R,k^R
-  $$
+  :::
   才编码位置。
 
 所以 context extension 实际只需要改位置路径。
@@ -1213,17 +1213,17 @@ $$
 V2 长上下文阶段：
 
 - 训练：
-  $$
+  :::{math}
   1000\text{ steps};
-  $$
+  :::
 - sequence length：
-  $$
+  :::{math}
   32K;
-  $$
+  :::
 - batch：
-  $$
+  :::{math}
   576.
-  $$
+  :::
 
 虽然只在 32K sequence 上训练，论文 NIAH 测到 128K。
 
@@ -1249,9 +1249,9 @@ SFT 训练：
 
 - 2 epochs；
 - learning rate：
-  $$
+  :::{math}
   5\times10^{-6}.
-  $$
+  :::
 
 之后采用 DeepSeekMath 提出的 GRPO。
 
@@ -1313,9 +1313,9 @@ $$
 
 - KV Cache quantization；
 - 平均每个 KV 元素约：
-  $$
+  :::{math}
   6\text{ bits}.
-  $$
+  :::
 
 所以 Figure 1 的：
 

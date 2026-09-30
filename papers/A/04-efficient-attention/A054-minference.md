@@ -2,7 +2,7 @@
 
 > **论文**：Huiqiang Jiang et al., [MInference 1.0: Accelerating Pre-filling for Long-Context LLMs via Dynamic Sparse Attention](https://arxiv.org/abs/2407.02490)，NeurIPS 2024。  
 > **类型**：A · 方法 / 系统交叉论文；Dynamic Sparse Attention + GPU Kernel Co-design。  
-> **一句话定位**：MInference 不负责把模型的 RoPE 从 32K 外推到 1M，也不负责训练新的 long-context reasoning。它假设模型已经具备长上下文能力，然后专门处理另一个问题：**Prefill 阶段的 Dense Attention 是 \(O(L^2)\)，在百万 token 时会吞掉绝大部分 TTFT；而真实 attention weight 往往高度稀疏、但稀疏位置随输入动态变化。因此可以离线为每个 head 选择 GPU 友好的稀疏结构，在线以很低成本预测当前 prompt 的具体 sparse indices，最后只计算重要 attention tiles。**
+> **一句话定位**：MInference 不负责把模型的 RoPE 从 32K 外推到 1M，也不负责训练新的 long-context reasoning。它假设模型已经具备长上下文能力，然后专门处理另一个问题：**Prefill 阶段的 Dense Attention 是 $O(L^2)$，在百万 token 时会吞掉绝大部分 TTFT；而真实 attention weight 往往高度稀疏、但稀疏位置随输入动态变化。因此可以离线为每个 head 选择 GPU 友好的稀疏结构，在线以很低成本预测当前 prompt 的具体 sparse indices，最后只计算重要 attention tiles。**
 
 这篇文章正好接在 [Dual Chunk Attention](A053-dual-chunk-attention.md) 后面。
 
@@ -36,17 +36,17 @@ MInference
 
 建议先掌握：
 
-- [Transformer](../03-transformer/A013-transformer-attention-is-all-you-need.md)：Self-Attention 的 \(QK^T\)、Softmax、\(AV\)；
+- [Transformer](../03-transformer/A013-transformer-attention-is-all-you-need.md)：Self-Attention 的 $QK^T$、Softmax、$AV$；
 - [GQA](A020-gqa.md)：Decode 为什么被 KV Cache / memory bandwidth 限制；
 - [YaRN](../03-transformer/A018-yarn.md)：context length 超过训练范围时，RoPE frequency 怎么处理；
-- [Dual Chunk Attention](A053-dual-chunk-attention.md)：为什么 position relation 合理了，计算复杂度仍然还是 \(O(L^2)\)；
+- [Dual Chunk Attention](A053-dual-chunk-attention.md)：为什么 position relation 合理了，计算复杂度仍然还是 $O(L^2)$；
 - [Qwen2.5](../../B/05-moe-complete-llm/B012-qwen2.5.md)：MInference 在真实 1M pipeline 中负责什么。
 
 本文重点回答：
 
 1. Prefill 与 Decode 的计算结构为什么完全不同？
 2. 为什么长上下文首先卡 TTFT，而不是 tokens/s？
-3. \(QK^T\) 为什么在 prefill 阶段是 \(L\times L\)？
+3. $QK^T$ 为什么在 prefill 阶段是 $L\times L$？
 4. 1M token 为什么会产生万亿级 attention pair？
 5. FlashAttention 已经不 materialize attention matrix，为什么还是很慢？
 6. MInference 为什么不是普通 Top-K Attention？
@@ -177,7 +177,7 @@ $$
 
 ---
 
-## 3. Decode 为什么不是 \(L^2\)？
+## 3. Decode 为什么不是 $L^2$？
 
 生成第一个新 token 时，只有一个新的 query：
 
@@ -344,7 +344,7 @@ $$
 
 ---
 
-## 7. FlashAttention 不是把 \(O(L^2)\) 变成 \(O(L)\)
+## 7. FlashAttention 不是把 $O(L^2)$ 变成 $O(L)$
 
 这是 MInference 必须建立的前置认识。
 
@@ -451,7 +451,7 @@ $$
 
 这带来一个非常诱人的想法：
 
-> 如果 95% 以上 attention weight 都集中在少数位置，为什么还要计算全部 \(L^2\) entry？
+> 如果 95% 以上 attention weight 都集中在少数位置，为什么还要计算全部 $L^2$ entry？
 
 ---
 
@@ -680,8 +680,8 @@ A-shape 通常有两部分：
 
 因为 mask 可以提前固定：
 
-- first \(g\) tokens；
-- last \(w\) local window。
+- first $g$ tokens；
+- last $w$ local window。
 
 例如论文默认计算预算参考：
 
@@ -774,7 +774,7 @@ $$
 j=i-\delta,
 $$
 
-则随着 query index \(i\) 增长，key index \(j\) 也跟着增长。
+则随着 query index $i$ 增长，key index $j$ 也跟着增长。
 
 在二维矩阵上形成一条斜线：
 
@@ -1342,7 +1342,7 @@ $$
 
 ## 35. 为什么偏偏用最后几个 Query？
 
-Causal attention 中，第 \(i\) 个 query 只能看到：
+Causal attention 中，第 $i$ 个 query 只能看到：
 
 $$
 j\le i.
@@ -1412,7 +1412,7 @@ $$
 
 ## 37. 一列为什么代表一个 Key Token？
 
-\(\hat A\) 中：
+$\hat A$ 中：
 
 - row：probe query；
 - column：key position。
@@ -1600,8 +1600,8 @@ $$
 
 如果简单把：
 
-- \(k_v\) 个 columns；
-- \(k_s\) 条 diagonals；
+- $k_v$ 个 columns；
+- $k_s$ 条 diagonals；
 
 全部变成散乱 scalar indices，GPU execution 仍然不理想。
 
@@ -1891,8 +1891,8 @@ $$
 
 当：
 
-- \(j<g\)，属于 global token；
-- 或 \(i-j<w\)，属于 local window。
+- $j<g$，属于 global token；
+- 或 $i-j<w$，属于 local window。
 
 例如：
 
@@ -1936,7 +1936,7 @@ $$
 O(L(g+w)d).
 $$
 
-若 \(g,w\) 固定，近似：
+若 $g,w$ 固定，近似：
 
 $$
 O(Ld).
@@ -1964,7 +1964,7 @@ $$
 
 依赖保留 columns + slash blocks 的真实面积。
 
-不是简单一个统一 \(k\)。
+不是简单一个统一 $k$。
 
 ---
 
@@ -2008,7 +2008,7 @@ $$
 O(Lk_bBd).
 $$
 
-若 \(k_b,B\) 固定，则随 L 近似线性。
+若 $k_b,B$ 固定，则随 L 近似线性。
 
 ---
 
@@ -2289,7 +2289,7 @@ $$
 
 也就是说：
 
-> 动态 sparse attention 有固定/低阶开销，只有 dense \(L^2\) 足够大时才能 amortize。
+> 动态 sparse attention 有固定/低阶开销，只有 dense $L^2$ 足够大时才能 amortize。
 
 这是典型的：
 
@@ -2458,9 +2458,9 @@ $$
 
 其中：
 
-- \(S\)：sequence length；
-- \(B\)：block size；
-- \(k_b\)：selected blocks 数。
+- $S$：sequence length；
+- $B$：block size；
+- $k_b$：selected blocks 数。
 
 这是一种 kernel-level approximation。
 
@@ -2617,9 +2617,9 @@ $$
 
 所以继续需要 FlashAttention-style：
 
-- running max \(m\)；
-- running normalizer \(l\)；
-- running output accumulator \(O\)。
+- running max $m$；
+- running normalizer $l$；
+- running output accumulator $O$。
 
 ---
 
@@ -3590,7 +3590,7 @@ $$
 
 # 三十七、为什么 MInference 只做 Prefill Sparse，Decode 保持 Dense？
 
-## 103. Decode 本身已经不是 \(L^2\)
+## 103. Decode 本身已经不是 $L^2$
 
 单 decode token：
 
@@ -3660,7 +3660,7 @@ KV compression：
 
 MInference：
 
-> Prefill 阶段 full \(QK^T\) 太贵。
+> Prefill 阶段 full $QK^T$ 太贵。
 
 所以它们可以叠加：
 
@@ -4306,7 +4306,7 @@ $$
 
 如果 vertical/slash budget不随 L 线性增长：
 
-> 实际计算区域远低于 \(L^2\)。
+> 实际计算区域远低于 $L^2$。
 
 可近似表现为：
 
@@ -4585,8 +4585,8 @@ $$
 
 其中：
 
-- \(T_A\)：dense attention；
-- \(T_R\)：rest。
+- $T_A$：dense attention；
+- $T_R$：rest。
 
 MInference：
 
@@ -4602,8 +4602,8 @@ $$
 
 其中：
 
-- \(T_E\)：dynamic index estimation；
-- \(T_S\)：sparse attention。
+- $T_E$：dynamic index estimation；
+- $T_S$：sparse attention。
 
 真正 speedup：
 
@@ -4997,7 +4997,7 @@ $$
 但现在已经真正需要理解：
 
 - 为什么 naive attention 是 IO-bound；
-- tiling 如何避免写 \(N\times N\) matrix 到 HBM；
+- tiling 如何避免写 $N\times N$ matrix 到 HBM；
 - online softmax 怎样允许 block-by-block exact normalization；
 - SRAM / HBM cost model；
 - forward / backward；
@@ -5015,10 +5015,10 @@ $$
 读完 MInference，至少应该能回答：
 
 1. Prefill 与 Decode 的 attention shape 分别是什么？
-2. 为什么 prefill 是 \(O(L^2)\)？
+2. 为什么 prefill 是 $O(L^2)$？
 3. 1M prompt 有多少量级 QK pair？
 4. TTFT 为什么成为 long-context serving 核心指标？
-5. FlashAttention 为什么仍然没有消除 \(L^2\) 算术量？
+5. FlashAttention 为什么仍然没有消除 $L^2$ 算术量？
 6. 论文的 96.8% attention-mass recall 是怎么得到的、能说明什么？
 7. 为什么 sparse indices 不能静态跨 prompt 复用？
 8. pattern family 和 pattern indices 有什么区别？
@@ -5039,7 +5039,7 @@ $$
 23. 为什么 pooled QK 对应 block-average dot product？
 24. 为什么 softmax 后不能称为完全精确 estimator？
 25. A-shape 为什么没有 online index overhead？
-26. dynamic mask \(M\) 怎样进入 attention formula？
+26. dynamic mask $M$ 怎样进入 attention formula？
 27. MInference 的两个优化目标是什么？
 28. 为什么 index-building cost 必须进入目标？
 29. 什么条件下 sparse attention 才真正比 dense 快？

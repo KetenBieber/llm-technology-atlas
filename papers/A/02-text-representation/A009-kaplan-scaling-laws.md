@@ -2,7 +2,7 @@
 
 > **论文**：Jared Kaplan et al., [Scaling Laws for Neural Language Models](https://arxiv.org/abs/2001.08361)，2020。  
 > **类型**：A · 原始经验方法论文。  
-> **一句话定位**：这篇论文真正改变的不是 Transformer 结构，而是大模型研发的决策方式：模型参数量 \(N\)、数据量 \(D\)、训练计算量 \(C\) 与最终 language-model loss 之间，在实验区间内呈现出稳定、可拟合的幂律，于是“训练多大模型、要多少数据、给多少算力”第一次可以被当成一个经验可预测的资源分配问题。
+> **一句话定位**：这篇论文真正改变的不是 Transformer 结构，而是大模型研发的决策方式：模型参数量 $N$、数据量 $D$、训练计算量 $C$ 与最终 language-model loss 之间，在实验区间内呈现出稳定、可拟合的幂律，于是“训练多大模型、要多少数据、给多少算力”第一次可以被当成一个经验可预测的资源分配问题。
 
 这篇论文必须和下一篇 **Chinchilla** 连起来读。
 
@@ -70,15 +70,15 @@ Kaplan 2020
 本文重点解决：
 
 1. Scaling law 到底在预测什么？
-2. \(N,D,C,B,S,L\) 分别是什么，为什么经常被混淆？
+2. $N,D,C,B,S,L$ 分别是什么，为什么经常被混淆？
 3. 为什么 log-log 图上近似直线就意味着 power law？
-4. \(L(N)\)、\(L(D)\)、\(L(C)\) 为什么必须在“另外两个资源不成为瓶颈”时才有意义？
-5. 小小的指数 \(0.076\)、\(0.095\) 为什么仍然重要？
-6. Kaplan 的联合 \(L(N,D)\) 为什么是经验 ansatz，而不是第一性定理？
-7. “\(D\propto N^{0.74}\)”到底是什么意思，为什么它**不是** Chinchilla 问的 compute-optimal token ratio？
-8. \(C\approx6NBS\) 从哪来？
+4. $L(N)$、$L(D)$、$L(C)$ 为什么必须在“另外两个资源不成为瓶颈”时才有意义？
+5. 小小的指数 $0.076$、$0.095$ 为什么仍然重要？
+6. Kaplan 的联合 $L(N,D)$ 为什么是经验 ansatz，而不是第一性定理？
+7. “$D\propto N^{0.74}$”到底是什么意思，为什么它**不是** Chinchilla 问的 compute-optimal token ratio？
+8. $C\approx6NBS$ 从哪来？
 9. Critical Batch Size 为什么也会进入 compute-efficient training？
-10. 为什么 Kaplan 得到 \(N_{\rm opt}\propto C^{0.73}\)？
+10. 为什么 Kaplan 得到 $N_{\rm opt}\propto C^{0.73}$？
 11. 为什么这会推出“模型做得更大、提前停训”？
 12. Kaplan 自己为什么已经意识到 scaling law 必然会失效？
 13. Chinchilla 后来到底修正的是哪一层？
@@ -155,14 +155,14 @@ Kaplan 论文中常见变量：
 
 | 符号 | 含义 | 最容易混淆的地方 |
 |---|---|---|
-| \(N\) | non-embedding trainable parameters | 不一定等于今天报告的 total parameters |
-| \(D\) | dataset size / data tokens | 与训练中累计处理 token 数的语境要区分 |
-| \(B\) | batch 中处理的 token 数 | 不是 sequence count |
-| \(S\) | optimizer update steps | 不是 token 数 |
-| \(C\) | training FLOPs | 不是 GPU 峰值算力，也不是 wall-clock time |
-| \(C_{\min}\) | 调整 batch inefficiency 后的最小有效 compute | 是经验归一化量 |
-| \(L\) | test negative log-likelihood | 论文主要优化对象 |
-| \(B_{\rm crit}\) | critical batch size | 随 training state / loss 变化 |
+| $N$ | non-embedding trainable parameters | 不一定等于今天报告的 total parameters |
+| $D$ | dataset size / data tokens | 与训练中累计处理 token 数的语境要区分 |
+| $B$ | batch 中处理的 token 数 | 不是 sequence count |
+| $S$ | optimizer update steps | 不是 token 数 |
+| $C$ | training FLOPs | 不是 GPU 峰值算力，也不是 wall-clock time |
+| $C_{\min}$ | 调整 batch inefficiency 后的最小有效 compute | 是经验归一化量 |
+| $L$ | test negative log-likelihood | 论文主要优化对象 |
+| $B_{\rm crit}$ | critical batch size | 随 training state / loss 变化 |
 
 训练过程中累计处理 token 数可粗略写成：
 
@@ -182,7 +182,7 @@ D_{\rm processed}
 D_{\rm unique}.
 $$
 
-后面读 Chinchilla 时尤其要注意：它讨论的 \(D\) 更直接指本次训练总共处理多少 tokens。
+后面读 Chinchilla 时尤其要注意：它讨论的 $D$ 更直接指本次训练总共处理多少 tokens。
 
 ---
 
@@ -274,11 +274,11 @@ $$
 L(X)=kX^{-\alpha},
 $$
 
-其中 \(X\) 可以是：
+其中 $X$ 可以是：
 
-- \(N\)；
-- \(D\)；
-- \(C\)。
+- $N$；
+- $D$；
+- $C$。
 
 两边取 log：
 
@@ -354,8 +354,8 @@ $$
 只需要知道：
 
 - 当前 scale；
-- 放大倍数 \(q\)；
-- 指数 \(\alpha\)；
+- 放大倍数 $q$；
+- 指数 $\alpha$；
 
 就能估计收益。
 
@@ -564,7 +564,7 @@ $$
 
 Kaplan 做了一个非常有影响力的观察：
 
-> 在合理范围内，当 non-embedding parameter count \(N\) 固定时，深度、宽度、head 数等 shape 改变，对 loss 的影响远小于 scale 本身。
+> 在合理范围内，当 non-embedding parameter count $N$ 固定时，深度、宽度、head 数等 shape 改变，对 loss 的影响远小于 scale 本身。
 
 注意这不是说 architecture 不重要。
 
@@ -602,7 +602,7 @@ $$
 
 但它们并不总是以和 Transformer block 内矩阵相同的方式贡献 compute/capacity。
 
-因此 Kaplan 的 \(N\) 主要采用：
+因此 Kaplan 的 $N$ 主要采用：
 
 > non-embedding parameter count。
 
@@ -658,11 +658,11 @@ $$
 
 ![Kaplan：Model size 与 dataset size 的联合影响](../../../figures/A009/fig-data-model-joint.svg)
 
-*原论文联合 \(N,D\) 实验的一部分。它的意义是：模型大小和数据大小共同决定最终 loss，并存在可预测的数据瓶颈边界。*
+*原论文联合 $N,D$ 实验的一部分。它的意义是：模型大小和数据大小共同决定最终 loss，并存在可预测的数据瓶颈边界。*
 
 ---
 
-## 12. Kaplan 的 \(L(N,D)\) 从哪里来？不是严格推导，是 empirical ansatz
+## 12. Kaplan 的 $L(N,D)$ 从哪里来？不是严格推导，是 empirical ansatz
 
 论文提出：
 
@@ -716,7 +716,7 @@ L(N,\infty)
 }
 $$
 
-恢复 \(L(N)\)。
+恢复 $L(N)$。
 
 ### 当模型无限大
 
@@ -736,7 +736,7 @@ L(\infty,D)
 }
 $$
 
-恢复 \(L(D)\)。
+恢复 $L(D)$。
 
 所以它至少保证两端行为一致。
 
@@ -746,7 +746,7 @@ $$
 
 ---
 
-## 13. \(D\propto N^{0.74}\) 到底在回答什么？
+## 13. $D\propto N^{0.74}$ 到底在回答什么？
 
 从联合函数看，有限数据惩罚大致由一个无量纲比例控制：
 
@@ -796,7 +796,7 @@ $$
 
 ---
 
-## 14. 这绝对不是“compute-optimal tokens 应该按 \(N^{0.74}\) 增长”
+## 14. 这绝对不是“compute-optimal tokens 应该按 $N^{0.74}$ 增长”
 
 这是理解 Kaplan → Chinchilla 最关键的分界。
 
@@ -834,7 +834,7 @@ Chinchilla compute-optimal law
 
 ---
 
-## 15. 训练 FLOPs 的 \(6N\) 近似从哪里来？
+## 15. 训练 FLOPs 的 $6N$ 近似从哪里来？
 
 对于 dense Transformer，粗略看每个参数参与主要矩阵乘法。
 
@@ -871,7 +871,7 @@ C_{\rm token}
 6N.
 $$
 
-若每 step 处理 \(B\) tokens，训练 \(S\) steps：
+若每 step 处理 $B$ tokens，训练 $S$ steps：
 
 $$
 \boxed{
@@ -901,11 +901,11 @@ $$
 
 ---
 
-## 16. 为什么 \(6ND\) 不是 GPU 账单公式？
+## 16. 为什么 $6ND$ 不是 GPU 账单公式？
 
 它忽略：
 
-- attention \(L^2\) 项；
+- attention $L^2$ 项；
 - embedding/output head；
 - normalization；
 - activation recomputation；
@@ -1084,7 +1084,7 @@ $$
 
 ![Kaplan：Critical Batch Size 随 loss 的变化](../../../figures/A009/fig-critical-batch.svg)
 
-*原论文关于 critical batch 的经验结果。论文观察到 \(B_{\rm crit}\) 更主要与当前性能/loss 水平相关，而不是简单由模型参数量决定。*
+*原论文关于 critical batch 的经验结果。论文观察到 $B_{\rm crit}$ 更主要与当前性能/loss 水平相关，而不是简单由模型参数量决定。*
 
 当训练越后期、loss 越低时：
 
@@ -1098,7 +1098,7 @@ $$
 
 ---
 
-## 21. 为什么论文还引入 \(C_{\min}\)，而不是直接用实测 \(C\)？
+## 21. 为什么论文还引入 $C_{\min}$，而不是直接用实测 $C$？
 
 如果一个 run 的 batch 远离 critical batch，那么它可能浪费 compute。
 
@@ -1132,7 +1132,7 @@ $$
 
 ![Kaplan：调整 batch 后的 compute-efficient frontier](../../../figures/A009/fig-compute-frontier.svg)
 
-*原论文把不同训练 run 调整到更接近 compute-efficient batch 后，重新观察 loss 与 \(C_{\min}\) 的关系。论文认为这条曲线比固定 batch 的原始 compute 曲线更适合用于外推。*
+*原论文把不同训练 run 调整到更接近 compute-efficient batch 后，重新观察 loss 与 $C_{\min}$ 的关系。论文认为这条曲线比固定 batch 的原始 compute 曲线更适合用于外推。*
 
 拟合：
 
@@ -1237,7 +1237,7 @@ $$
 
 ![Kaplan：Compute 与 optimal model size](../../../figures/A009/fig-optimal-size.svg)
 
-*原论文的 compute-optimal model-size trend。该论文在自己的实验设置与 batch-adjusted learning-curve 建模下，得到最优模型规模随 compute 约按 \(C^{0.73}\) 增长。*
+*原论文的 compute-optimal model-size trend。该论文在自己的实验设置与 batch-adjusted learning-curve 建模下，得到最优模型规模随 compute 约按 $C^{0.73}$ 增长。*
 
 直觉是：
 
@@ -1459,7 +1459,7 @@ $$
 
 增长得很慢。
 
-另一方面，为了不让 overfitting penalty 恶化，联合 \(N,D\) law 暗示：
+另一方面，为了不让 overfitting penalty 恶化，联合 $N,D$ law 暗示：
 
 $$
 D_{\rm overfit}
@@ -1531,7 +1531,7 @@ scale 足够大以后，一定会冲突。
 
 而是修正：
 
-> **固定 FLOPs 下，最优 \(N\) 与 \(D\) 如何共同增长。**
+> **固定 FLOPs 下，最优 $N$ 与 $D$ 如何共同增长。**
 
 Kaplan：
 
@@ -1936,7 +1936,7 @@ Scaling law 也是类似。
 
 ## 41. 哪些量不能跨论文直接比较？
 
-### 41.1 \(N_c,D_c,C_c\)
+### 41.1 $N_c,D_c,C_c$
 
 依赖 tokenizer、dataset 和 loss unit。
 
@@ -2202,7 +2202,7 @@ $$
 
 比较稳妥的结论：
 
-1. 在论文所研究的 autoregressive Transformer / WebText2 regime 内，test loss 随 \(N,D,C\) 呈稳定经验 power law；
+1. 在论文所研究的 autoregressive Transformer / WebText2 regime 内，test loss 随 $N,D,C$ 呈稳定经验 power law；
 2. 模型参数量是解释 performance 的强 scale variable，模型 shape 在所测范围内影响相对较弱；
 3. 参数与数据存在可拟合的共同 bottleneck；
 4. learning curve、critical batch 也表现出相对稳定的 scaling behavior；
@@ -2217,7 +2217,7 @@ $$
 
 没有。
 
-### 48.2 \(N^{0.74}\) 是 universal data law
+### 48.2 $N^{0.74}$ 是 universal data law
 
 没有。
 
@@ -2417,11 +2417,11 @@ flowchart TD
 
 不是，只说明观察区间可近似 power law。
 
-### 错法 3：\(D\propto N^{0.74}\) 就是 Chinchilla 的 token ratio
+### 错法 3：$D\propto N^{0.74}$ 就是 Chinchilla 的 token ratio
 
 不是，它主要描述数据瓶颈/overfitting scaling。
 
-### 错法 4：\(6ND\) 是实际 GPU 成本
+### 错法 4：$6ND$ 是实际 GPU 成本
 
 不是，是 dense training FLOPs approximation。
 
@@ -2437,7 +2437,7 @@ flowchart TD
 
 错误。compute-allocation exponent 被修正，但 scaling methodology 被继承。
 
-### 错法 8：\(C_{\min}\) 就是实际训练 compute
+### 错法 8：$C_{\min}$ 就是实际训练 compute
 
 不是，它包含 batch efficiency normalization。
 
@@ -2456,28 +2456,28 @@ flowchart TD
 读完 Kaplan Scaling Laws，应该能回答：
 
 1. scaling law 为什么首先是工程决策问题？
-2. \(N,D,B,S,C,L\) 分别是什么？
+2. $N,D,B,S,C,L$ 分别是什么？
 3. 为什么 processed tokens 与 unique data size 要区分？
 4. 为什么 log-log 直线对应 power law？
-5. \(L(N)\) 的前提是什么？
-6. \(L(D)\) 的前提是什么？
+5. $L(N)$ 的前提是什么？
+6. $L(D)$ 的前提是什么？
 7. 为什么资源 bottleneck 会污染单变量 scaling fit？
-8. \(\alpha_N\approx0.076\) 怎样解释？
+8. $\alpha_N\approx0.076$ 怎样解释？
 9. 为什么小 exponent 仍然可以跨规模积累明显收益？
 10. Kaplan 为什么使用 non-embedding parameters？
-11. 联合 \(L(N,D)\) 公式为什么属于 empirical ansatz？
-12. 怎样验证其 \(D\to\infty\) 与 \(N\to\infty\) 极限？
-13. \(D\propto N^{0.74}\) 到底回答什么？
+11. 联合 $L(N,D)$ 公式为什么属于 empirical ansatz？
+12. 怎样验证其 $D\to\infty$ 与 $N\to\infty$ 极限？
+13. $D\propto N^{0.74}$ 到底回答什么？
 14. 为什么它不是 fixed-compute optimum？
-15. \(C\approx6NBS\) 怎样得到？
-16. 为什么 \(6ND\) 不是 wall-clock cost？
+15. $C\approx6NBS$ 怎样得到？
+16. 为什么 $6ND$ 不是 wall-clock cost？
 17. 什么叫 sample efficiency？
 18. learning curve 为什么也可以 scaling？
 19. critical batch 是什么？
-20. 为什么 \(B_{\rm crit}\) 会随 loss 改变？
-21. \(C_{\min}\) 为什么被引入？
-22. Kaplan 怎样得到 \(N_{\rm opt}\propto C^{0.73}\)？
-23. 为什么这会推出 \(D_{\rm processed}\propto C^{0.27}\)？
+20. 为什么 $B_{\rm crit}$ 会随 loss 改变？
+21. $C_{\min}$ 为什么被引入？
+22. Kaplan 怎样得到 $N_{\rm opt}\propto C^{0.73}$？
+23. 为什么这会推出 $D_{\rm processed}\propto C^{0.27}$？
 24. “larger model + early stop”为什么可能 compute-efficient？
 25. training-compute optimum 与 deployment optimum 有什么区别？
 26. Kaplan 自己发现了什么 extrapolation contradiction？

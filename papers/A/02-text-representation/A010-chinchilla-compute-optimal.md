@@ -2,7 +2,7 @@
 
 > **论文**：Jordan Hoffmann et al., [Training Compute-Optimal Large Language Models](https://arxiv.org/abs/2203.15556)，2022。  
 > **类型**：A · 原始经验方法论文；同时包含 70B Chinchilla 的高成本验证。  
-> **一句话定位**：Chinchilla 不是“发现 20 tokens/parameter”这么简单。它真正重新定义的是一个受约束优化问题：**给定固定训练 FLOPs \(C\)，模型参数量 \(N\) 与训练 token 数 \(D\) 应该怎样分配，才能得到最低 loss？** 作者用 training-curve envelope、IsoFLOP profiles、parametric loss fit 三套彼此不同的方法都得到相近结论：随着 compute 增长，\(N\) 与 \(D\) 应更接近同步扩展，而不是像 Kaplan 2020 的估计那样主要把新增 compute 用于增大模型。
+> **一句话定位**：Chinchilla 不是“发现 20 tokens/parameter”这么简单。它真正重新定义的是一个受约束优化问题：**给定固定训练 FLOPs $C$，模型参数量 $N$ 与训练 token 数 $D$ 应该怎样分配，才能得到最低 loss？** 作者用 training-curve envelope、IsoFLOP profiles、parametric loss fit 三套彼此不同的方法都得到相近结论：随着 compute 增长，$N$ 与 $D$ 应更接近同步扩展，而不是像 Kaplan 2020 的估计那样主要把新增 compute 用于增大模型。
 
 这篇必须紧接 [Kaplan Scaling Laws](A009-kaplan-scaling-laws.md)。
 
@@ -78,7 +78,7 @@ $$
 
 建议先读：
 
-- [Kaplan Scaling Laws](A009-kaplan-scaling-laws.md)：理解 power law、\(N,D,C\)、critical batch 和 Kaplan 的 compute allocation；
+- [Kaplan Scaling Laws](A009-kaplan-scaling-laws.md)：理解 power law、$N,D,C$、critical batch 和 Kaplan 的 compute allocation；
 - [Transformer](../03-transformer/A013-transformer-attention-is-all-you-need.md)：底层语言模型仍是普通 decoder Transformer；
 - [AdamW](../01-foundations/A003-adamw.md)：Chinchilla 最终模型相对 Gopher 的 recipe 变化之一；
 - [Llama 3](../../B/05-moe-complete-llm/B011-llama3.md)：现代 IsoFLOPs 设计的真实案例；
@@ -87,25 +87,25 @@ $$
 本文重点解决：
 
 1. Chinchilla 到底修正 Kaplan 什么，没有修正什么？
-2. 为什么固定 FLOPs 后 \(N\) 和 \(D\) 必须互相竞争？
-3. 为什么 \(C\approx6ND\) 会让“模型越大越好”失效？
+2. 为什么固定 FLOPs 后 $N$ 和 $D$ 必须互相竞争？
+3. 为什么 $C\approx6ND$ 会让“模型越大越好”失效？
 4. Approach 1 的 training-curve envelope 在做什么？
 5. Approach 2 的 IsoFLOP valley 为什么是最直观证据？
 6. Approach 3 为什么要拟合：
-   $$
+   :::{math}
    L(N,D)=E+\frac{A}{N^\alpha}+\frac{B}{D^\beta}?
-   $$
-7. 怎样一步不省地用约束优化推出 \(N_{\rm opt}(C)\)、\(D_{\rm opt}(C)\)？
+   :::
+7. 怎样一步不省地用约束优化推出 $N_{\rm opt}(C)$、$D_{\rm opt}(C)$？
 8. 最优点为什么满足：
-   $$
+   :::{math}
    \alpha A N^{-\alpha}
    =
    \beta B D^{-\beta}?
-   $$
+   :::
 9. 三种方法为什么给出略不同 exponent，却仍支持同一个工程结论？
 10. “20 tokens per parameter”从哪里来，为什么不能把它当普适常数？
 11. 70B / 1.4T Chinchilla 对 280B / ~300B Gopher 到底验证了什么？
-12. 为什么这个对照并不是纯粹的单变量 \(N/D\) ablation？
+12. 为什么这个对照并不是纯粹的单变量 $N/D$ ablation？
 13. 为什么更小、训练更充分的模型还会降低 inference 成本？
 14. 为什么现代 LLM 往往又远远超过 Chinchilla token ratio？
 15. training-compute optimal、inference-optimal、data-limited optimal 到底怎样区分？
@@ -151,7 +151,7 @@ $$
 C\approx6ND.
 $$
 
-所以给定 \(C\) 后：
+所以给定 $C$ 后：
 
 $$
 D
@@ -161,7 +161,7 @@ $$
 
 这意味着：
 
-> \(N\) 和 \(D\) 不是两个可以同时免费增大的变量。
+> $N$ 和 $D$ 不是两个可以同时免费增大的变量。
 
 模型越大，每个 token 越贵。
 
@@ -182,7 +182,7 @@ $$
 
 ## 2. 固定 compute 后为什么天然存在一个“太大”和“太小”？
 
-假设 \(C\) 固定。
+假设 $C$ 固定。
 
 ### 模型太小
 
@@ -365,19 +365,19 @@ $$
 
 问：
 
-> 我已经训练了很多不同大小、不同 schedule 长度的模型。在任意 compute 预算 \(C\) 上，哪条训练曲线此时 loss 最低？
+> 我已经训练了很多不同大小、不同 schedule 长度的模型。在任意 compute 预算 $C$ 上，哪条训练曲线此时 loss 最低？
 
 ### Approach 2：IsoFLOP Profiles
 
 问：
 
-> 固定某个最终 FLOP budget \(C\)，改变模型参数量 \(N\)，并让 token 数自动满足 \(D=C/(6N)\)。哪一个 \(N\) 的最终 loss 最低？
+> 固定某个最终 FLOP budget $C$，改变模型参数量 $N$，并让 token 数自动满足 $D=C/(6N)$。哪一个 $N$ 的最终 loss 最低？
 
 ### Approach 3：Parametric Loss Model
 
 问：
 
-> 能否把所有实验点拟合成一个显式 \(L(N,D)\)，然后直接解约束优化问题？
+> 能否把所有实验点拟合成一个显式 $L(N,D)$，然后直接解约束优化问题？
 
 三者不是同一图重复三遍。
 
@@ -419,7 +419,7 @@ $$
 
 对应的模型大小就是该 compute 下的经验最优模型。
 
-将不同 \(C_i\) 的最低点连起来，就是：
+将不同 $C_i$ 的最低点连起来，就是：
 
 > training-curve envelope。
 
@@ -553,7 +553,7 @@ $$
 C=C_0.
 $$
 
-对于不同 \(N\)，令：
+对于不同 $N$，令：
 
 $$
 D=\frac{C_0}{6N}.
@@ -593,15 +593,15 @@ $$
 
 ## 12. IsoFLOP curve 为什么应该有谷底？
 
-固定 \(C\)。
+固定 $C$。
 
-当 \(N\) 很小时：
+当 $N$ 很小时：
 
 $$
 \text{capacity error}\uparrow.
 $$
 
-当 \(N\) 很大时：
+当 $N$ 很大时：
 
 $$
 D=\frac{C}{6N}
@@ -635,7 +635,7 @@ $$
 
 ![Chinchilla Approach 2：IsoFLOP Profiles](../../../figures/A010/fig-approach2-isoflop.svg)
 
-*原论文 IsoFLOP 图。左图在每个固定 FLOP budget 下扫描不同模型参数量，能看到清晰的 loss valley；中、右图再用这些 valley 的位置拟合 optimal \(N\) 与 \(D\) 随 compute 的变化。*
+*原论文 IsoFLOP 图。左图在每个固定 FLOP budget 下扫描不同模型参数量，能看到清晰的 loss valley；中、右图再用这些 valley 的位置拟合 optimal $N$ 与 $D$ 随 compute 的变化。*
 
 Approach 2 得到：
 
@@ -689,7 +689,7 @@ $$
 
 ---
 
-## 15. Approach 3：为什么还要拟合显式 \(L(N,D)\)？
+## 15. Approach 3：为什么还要拟合显式 $L(N,D)$？
 
 Approach 1/2 都依赖直接实验曲线。
 
@@ -825,7 +825,7 @@ $$
 
 ![Chinchilla Approach 3：Parametric Loss Fit](../../../figures/A010/fig-approach3-parametric.svg)
 
-*左图展示拟合的 \(L(N,D)\) 等高线与 compute-efficient frontier；右图展示固定 FLOPs 的切片。蓝色前沿经过每条 iso-loss contour 上所需 FLOPs 最少的位置。*
+*左图展示拟合的 $L(N,D)$ 等高线与 compute-efficient frontier；右图展示固定 FLOPs 的切片。蓝色前沿经过每条 iso-loss contour 上所需 FLOPs 最少的位置。*
 
 如果 loss contour 表示：
 
@@ -845,7 +845,7 @@ $$
 
 最优点就是：
 
-> 在这条 quality contour 上，让 \(ND\) 最小。
+> 在这条 quality contour 上，让 $ND$ 最小。
 
 反过来固定 compute，等价于找到：
 
@@ -853,7 +853,7 @@ $$
 
 ---
 
-## 19. 现在开始完整推导：固定 \(C\) 下怎样最小化 \(\hat L(N,D)\)？
+## 19. 现在开始完整推导：固定 $C$ 下怎样最小化 $\hat L(N,D)$？
 
 目标：
 
@@ -888,7 +888,7 @@ $$
 
 ---
 
-## 20. 对 \(N\) 求偏导
+## 20. 对 $N$ 求偏导
 
 $$
 \frac{\partial\mathcal J}{\partial N}
@@ -918,7 +918,7 @@ $$
 }
 $$
 
-两边乘 \(N\)：
+两边乘 $N$：
 
 $$
 \boxed{
@@ -930,7 +930,7 @@ $$
 
 ---
 
-## 21. 对 \(D\) 求偏导
+## 21. 对 $D$ 求偏导
 
 $$
 \frac{\partial\mathcal J}{\partial D}
@@ -948,7 +948,7 @@ $$
 6\lambda N.
 $$
 
-两边乘 \(D\)：
+两边乘 $D$：
 
 $$
 \boxed{
@@ -1010,7 +1010,7 @@ $$
 
 ---
 
-## 23. 为什么这里出现 \(\alpha\) 和 \(\beta\)？
+## 23. 为什么这里出现 $\alpha$ 和 $\beta$？
 
 因为：
 
@@ -1027,11 +1027,11 @@ $$
 
 > **多投入一点参数 / token 能带来多少 marginal loss reduction。**
 
-这就是 \(\alpha,\beta\) 进入平衡条件的原因。
+这就是 $\alpha,\beta$ 进入平衡条件的原因。
 
 ---
 
-## 24. 用约束消掉 \(D\)
+## 24. 用约束消掉 $D$
 
 约束：
 
@@ -1157,7 +1157,7 @@ $$
 
 ---
 
-## 25. 再推出 \(D_{\rm opt}(C)\)
+## 25. 再推出 $D_{\rm opt}(C)$
 
 因为：
 
@@ -1325,7 +1325,7 @@ $$
 
 论文 Table 2：
 
-| 方法 | \(N_{\rm opt}\propto C^a\) | \(D_{\rm opt}\propto C^b\) |
+| 方法 | $N_{\rm opt}\propto C^a$ | $D_{\rm opt}\propto C^b$ |
 |---|---:|---:|
 | Approach 1 · training-curve envelope | 0.50 | 0.50 |
 | Approach 2 · IsoFLOP | 0.49 | 0.51 |
@@ -1498,7 +1498,7 @@ $$
 a=b=0.5,
 $$
 
-那么比例才与 \(C\) 无关。
+那么比例才与 $C$ 无关。
 
 但方法三：
 
@@ -1508,7 +1508,7 @@ $$
 
 比例会随 compute 改变。
 
-另外 \(G\) 依赖：
+另外 $G$ 依赖：
 
 $$
 A,B,\alpha,\beta.
@@ -1532,7 +1532,7 @@ $$
 
 更准确的记忆是：
 
-> **在 Chinchilla 的 dense Transformer / MassiveText / 训练 recipe / 实验 scale 下，compute-optimal frontier 大致落在几十 tokens per parameter、且 \(N\) 与 \(D\) 近似等比例随 compute 扩展。**
+> **在 Chinchilla 的 dense Transformer / MassiveText / 训练 recipe / 实验 scale 下，compute-optimal frontier 大致落在几十 tokens per parameter、且 $N$ 与 $D$ 近似等比例随 compute 扩展。**
 
 ---
 
@@ -1608,7 +1608,7 @@ $$
 
 Chinchilla 问：
 
-> 如果 \(C\) 固定，我能不能把 \(N\) 减少，同时把 \(D\) 大幅增加？
+> 如果 $C$ 固定，我能不能把 $N$ 减少，同时把 $D$ 大幅增加？
 
 最终：
 
@@ -1704,8 +1704,8 @@ Chinchilla 沿用 Gopher 的 dense Transformer 主线。
 - 80 layers；
 - 64 attention heads；
 - key/value size 128；
-- \(d_{\rm model}=8192\)；
-- FFN size = \(4d_{\rm model}\)。
+- $d_{\rm model}=8192$；
+- FFN size = $4d_{\rm model}$。
 
 所以论文的核心因果变量不是：
 
@@ -1723,7 +1723,7 @@ allocation。
 
 ---
 
-## 37. 但是 Chinchilla 和 Gopher 又不只差 \(N,D\)
+## 37. 但是 Chinchilla 和 Gopher 又不只差 $N,D$
 
 这点必须非常严格。
 
@@ -1762,7 +1762,7 @@ forward/backward 用 bfloat16，但 optimizer state 中保存 float32 weight cop
 
 所以：
 
-> **Chinchilla vs Gopher 并不是一个严格只改变 \(N,D\) 的单变量实验。**
+> **Chinchilla vs Gopher 并不是一个严格只改变 $N,D$ 的单变量实验。**
 
 ---
 
@@ -1788,7 +1788,7 @@ forward/backward 用 bfloat16，但 optimizer state 中保存 float32 weight cop
 
 ![Chinchilla：在固定 FLOPs 下与 Kaplan 预测模型尺寸直接比较](../../../figures/A010/fig-kaplan-head-to-head.svg)
 
-*原论文 appendix 在 \(10^{21}\) FLOPs 附近直接训练了 Chinchilla Approach 1 与 Kaplan scaling law 分别预测的模型规模。论文报告 Chinchilla 方法预测的较小模型取得更低最终 loss。*
+*原论文 appendix 在 $10^{21}$ FLOPs 附近直接训练了 Chinchilla Approach 1 与 Kaplan scaling law 分别预测的模型规模。论文报告 Chinchilla 方法预测的较小模型取得更低最终 loss。*
 
 这是很重要的证据。
 
@@ -1832,7 +1832,7 @@ $$
 N\propto C^{0.5}.
 $$
 
-当 \(C\) 很大时：
+当 $C$ 很大时：
 
 $$
 C^{0.73}
@@ -2051,7 +2051,7 @@ C_{\rm train}
 Q\,C_{\rm infer},
 $$
 
-其中 \(Q\) 是未来 inference query/token 规模。
+其中 $Q$ 是未来 inference query/token 规模。
 
 如果：
 
@@ -2080,7 +2080,7 @@ $$
 
 ## 46. 为什么数据质量会让 Chinchilla ratio 再次改变？
 
-Chinchilla 的 \(D\) 是：
+Chinchilla 的 $D$ 是：
 
 > processed token count。
 
@@ -2136,7 +2136,7 @@ $$
 4.0\ \text{chars/token}.
 $$
 
-同样原始文本字符量 \(C_{\rm chars}\)：
+同样原始文本字符量 $C_{\rm chars}$：
 
 $$
 D_A
@@ -2220,7 +2220,7 @@ $$
 
 ---
 
-## 49. 为什么 context length 也会破坏简单 \(6ND\)？
+## 49. 为什么 context length 也会破坏简单 $6ND$？
 
 如果 sequence length：
 
@@ -2391,7 +2391,7 @@ $$
 
 附近，
 
-多个不同 \(N,D\) 配置 loss 很接近。
+多个不同 $N,D$ 配置 loss 很接近。
 
 这意味着：
 
@@ -2721,8 +2721,8 @@ $$
 
 具身模型的训练资源至少包括：
 
-- policy parameters \(N\)；
-- offline trajectories \(D\)；
+- policy parameters $N$；
+- offline trajectories $D$；
 - simulation steps；
 - real robot data；
 - image/video tokens；
@@ -2816,7 +2816,7 @@ Chinchilla 提供的是方法范式，而不是直接公式。
 
 ## 65. 为什么“训练数据越多越好”仍然不是 Chinchilla 的结论？
 
-固定 \(N\) 时，增加 \(D\) 通常降低：
+固定 $N$ 时，增加 $D$ 通常降低：
 
 $$
 B/D^\beta.
@@ -2830,7 +2830,7 @@ $$
 C=6ND.
 $$
 
-无限增加 \(D\) 必然迫使：
+无限增加 $D$ 必然迫使：
 
 $$
 N\downarrow.
@@ -2942,7 +2942,7 @@ D_{\rm effective}
 D_{\rm available}.
 $$
 
-这时最优 \(N\) 可能需要重新变大。
+这时最优 $N$ 可能需要重新变大。
 
 所以 data acquisition 是 scaling strategy 的一部分。
 
@@ -2991,7 +2991,7 @@ data。
 - contamination；
 - mode collapse。
 
-因此 raw \(D\) 不再充分。
+因此 raw $D$ 不再充分。
 
 可能需要：
 
@@ -3022,7 +3022,7 @@ $$
 
 ### 第一层：Controlled scaling runs
 
-大量 \(N,D,C\) 组合。
+大量 $N,D,C$ 组合。
 
 这是最直接证据。
 
@@ -3050,7 +3050,7 @@ $$
 
 错误。
 
-### 72.2 所有模型都应该严格 \(N,D\propto C^{0.5}\)
+### 72.2 所有模型都应该严格 $N,D\propto C^{0.5}$
 
 错误。
 
@@ -3094,7 +3094,7 @@ $$
 
 所以完整表述应该是：
 
-> 在指定训练目标、数据与架构族下，对固定 pretraining FLOPs 的经验最优 \(N,D\) allocation。
+> 在指定训练目标、数据与架构族下，对固定 pretraining FLOPs 的经验最优 $N,D$ allocation。
 
 这才严谨。
 
@@ -3159,7 +3159,7 @@ Recalibrate law
 
 Chinchilla：
 
-> 固定 compute，直接找 \(N,D\) optimum。
+> 固定 compute，直接找 $N,D$ optimum。
 
 Llama 3：
 
@@ -3288,7 +3288,7 @@ $$
 C_1<C_2<\dots<C_k.
 $$
 
-### Step 3：每个 budget 扫不同 \(N\)
+### Step 3：每个 budget 扫不同 $N$
 
 自动令：
 
@@ -3316,7 +3316,7 @@ $$
 N_{\rm opt}(C).
 $$
 
-### Step 7：由 constraint 得 \(D_{\rm opt}(C)\)
+### Step 7：由 constraint 得 $D_{\rm opt}(C)$
 
 ### Step 8：留一个更大 compute 做外推验证
 
@@ -3356,13 +3356,13 @@ Scaling law 本来的目的就是：
 
 不是，测量与拟合路径不同。
 
-### 错法 4：\(E+A/N^\alpha+B/D^\beta\) 是理论定律
+### 错法 4：$E+A/N^\alpha+B/D^\beta$ 是理论定律
 
 不是，是 empirical ansatz。
 
 ### 错法 5：最优点要求两个 error term 相等
 
-只有 \(\alpha=\beta\) 时才成立。
+只有 $\alpha=\beta$ 时才成立。
 
 一般是：
 
@@ -3384,7 +3384,7 @@ $$
 
 不能。
 
-### 错法 9：MoE 应该直接拿 total params 套 \(6ND\)
+### 错法 9：MoE 应该直接拿 total params 套 $6ND$
 
 不合理，要考虑 active compute。
 
@@ -3399,9 +3399,9 @@ $$
 比较稳妥的结论：
 
 1. 在论文研究的 dense autoregressive Transformer regime 内，当固定训练 FLOPs 时，存在明显的 model-size / token-count trade-off；
-2. 三种不同方法都估计 \(N\) 与 \(D\) 应比 Kaplan 2020 的建议更接近同步扩展；
+2. 三种不同方法都估计 $N$ 与 $D$ 应比 Kaplan 2020 的建议更接近同步扩展；
 3. 直接 IsoFLOP experiments 能观察到 loss valley；
-4. parametric \(L(N,D)\) fit 能给出可解析的 constrained optimum；
+4. parametric $L(N,D)$ fit 能给出可解析的 constrained optimum；
 5. 一个按新前沿选择的 70B/1.4T 模型在旗舰尺度上表现强，支持此前许多大型模型相对 training compute 而言训练 token 偏少的判断；
 6. 更小的 compute-optimal model 还具有 inference / fine-tuning 成本优势。
 
@@ -3511,11 +3511,11 @@ $$
 
 Qwen2.5 不是只问：
 
-> \(N,D\) 怎么分。
+> $N,D$ 怎么分。
 
 它问：
 
-> 当 \(N,D,\text{architecture}\) 变化时，optimal LR / batch 又怎么变？
+> 当 $N,D,\text{architecture}$ 变化时，optimal LR / batch 又怎么变？
 
 所以：
 
@@ -3575,7 +3575,7 @@ Dual Chunk Attention
 读完 Chinchilla，至少应该能回答：
 
 1. Chinchilla 的主优化问题如何写？
-2. 为什么 \(C\approx6ND\) 让 \(N,D\) 互相竞争？
+2. 为什么 $C\approx6ND$ 让 $N,D$ 互相竞争？
 3. 模型太小与模型太大分别受什么瓶颈？
 4. Kaplan 的 0.73/0.27 意味着什么？
 5. Chinchilla 为什么怀疑当时大型模型 undertrained？
@@ -3586,33 +3586,33 @@ Dual Chunk Attention
 10. 为什么 IsoFLOP curve 会有 valley？
 11. Approach 2 得到的 0.49/0.51 怎样解释？
 12. Approach 3 为什么拟合：
-    $$
+    :::{math}
     E+A/N^\alpha+B/D^\beta?
-    $$
-13. \(E\) 的意义是什么？
+    :::
+13. $E$ 的意义是什么？
 14. 为什么这个 loss 是 empirical ansatz？
 15. 怎样完整写出 Lagrangian？
-16. 对 \(N,D\) 求导后为什么得到：
-    $$
+16. 对 $N,D$ 求导后为什么得到：
+    :::{math}
     \alpha A N^{-\alpha}
     =
     \beta B D^{-\beta}?
-    $$
+    :::
 17. 为什么最优点不一定要求两个 error term 相等？
 18. 怎样推出：
-    $$
+    :::{math}
     a=\frac{\beta}{\alpha+\beta},
     \quad
     b=\frac{\alpha}{\alpha+\beta}?
-    $$
-19. 为什么 \(a+b=1\)？
+    :::
+19. 为什么 $a+b=1$？
 20. 方法三为什么是约 0.46/0.54，而不是严格 0.5/0.5？
 21. 三种方法 exponent 不同为什么仍支持同一结论？
 22. 20 tokens/parameter 从哪里来？
 23. 为什么 20 不是 universal constant？
 24. undertrained 在本文里是什么相对含义？
 25. 70B/1.4T 与 280B/~300B 的 compute trade-off 是什么？
-26. 为什么旗舰 Chinchilla vs Gopher 不是纯 \(N,D\) ablation？
+26. 为什么旗舰 Chinchilla vs Gopher 不是纯 $N,D$ ablation？
 27. 哪一层 evidence 对 compute-allocation 因果更强？
 28. 为什么更小 compute-optimal model 还能降低 inference 成本？
 29. 为什么今天小模型会训练远超 Chinchilla ratio？
@@ -3620,8 +3620,8 @@ Dual Chunk Attention
 31. 为什么 inference-heavy workload 可能进一步偏向 smaller-overtrained model？
 32. data quality 为什么会改变 raw token optimum？
 33. tokenizer 为什么影响 tokens/parameter 可比性？
-34. MoE 为什么不能直接用 total params 套 \(6ND\)？
-35. long context 为什么让 \(6ND\) 变得更粗糙？
+34. MoE 为什么不能直接用 total params 套 $6ND$？
+35. long context 为什么让 $6ND$ 变得更粗糙？
 36. 为什么 Llama 3 需要重新做自己的 IsoFLOPs？
 37. Qwen2.5 怎样把 scaling law 扩展到 hyperparameters？
 38. “compute-optimal”这个词为什么必须同时说明约束与 model family？

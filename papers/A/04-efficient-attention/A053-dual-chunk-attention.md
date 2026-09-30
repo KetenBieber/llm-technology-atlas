@@ -47,28 +47,28 @@ $$
 建议先掌握：
 
 - [Transformer](../03-transformer/A013-transformer-attention-is-all-you-need.md)：标准 causal self-attention；
-- [RoPE](../03-transformer/A014-roformer-rope.md)：为什么 \(q_i^\top k_j\) 中位置只依赖相对距离；
+- [RoPE](../03-transformer/A014-roformer-rope.md)：为什么 $q_i^\top k_j$ 中位置只依赖相对距离；
 - [YaRN](../03-transformer/A018-yarn.md)：PI / NTK / YaRN 如何修改 RoPE frequency；
 - [Qwen2.5](../../B/05-moe-complete-llm/B012-qwen2.5.md)：DCA 在真实 128K / 1M pipeline 中的位置。
 
 本文重点回答：
 
-1. 为什么 DCA 从 relative-position matrix \(M\) 而不是 RoPE frequency 开始？
+1. 为什么 DCA 从 relative-position matrix $M$ 而不是 RoPE frequency 开始？
 2. 标准 RoPE 超出训练长度时，矩阵里究竟出现了什么“没见过的数”？
 3. 为什么把长序列分 chunk 后，单纯循环 position id 仍然不够？
 4. Intra-Chunk Attention 精确保留了什么？
 5. 为什么跨 chunk 直接用循环 position id 会出现负相对位置？
-6. Inter-Chunk 为什么把 query position 固定到 \(c-1\)？
+6. Inter-Chunk 为什么把 query position 固定到 $c-1$？
 7. 这样做为什么能把远距离关系压回训练范围？
 8. Inter-Chunk 为什么会破坏相邻 chunk 边界的 locality？
-9. Successive-Chunk 的 \(w=c-s\) 从哪里来？
+9. Successive-Chunk 的 $w=c-s$ 从哪里来？
 10. 三种 attention 怎样拼成一个 piecewise relative-position matrix？
 11. 为什么 DCA 会故意牺牲远距离的精确位置分辨率？
 12. DCA 是否仍然让 query 访问所有历史 token？
 13. 三次 attention 为什么不能简单把三个 output 相加？
 14. 怎样严格恢复一个全局 softmax？
 15. FlashAttention 中应该保存什么统计量才能合并？
-16. DCA 的复杂度是否真的从 \(O(L^2)\) 降下来了？
+16. DCA 的复杂度是否真的从 $O(L^2)$ 降下来了？
 17. 为什么论文仍能报告接近 FlashAttention 的速度与显存？
 18. DCA 对 KV cache 有什么特殊要求？
 19. ablation 为什么必须同时看 PPL 和 passkey？
@@ -156,7 +156,7 @@ $$
 
 ---
 
-## 2. 为什么把 RoPE 看成矩阵 \(M\) 很有用？
+## 2. 为什么把 RoPE 看成矩阵 $M$ 很有用？
 
 假设 sequence length：
 
@@ -210,7 +210,7 @@ $$
 
 因此 context extrapolation 可以重新表达成：
 
-> **测试时 \(M\) 是否出现了训练时没有出现过的 relative-position value？**
+> **测试时 $M$ 是否出现了训练时没有出现过的 relative-position value？**
 
 这比只说“position 超出 max length”更具体。
 
@@ -296,7 +296,7 @@ $$
 
 # 二、已有方法：统一缩放 Relative Position
 
-## 5. Position Interpolation 在矩阵 \(M\) 视角下是什么？
+## 5. Position Interpolation 在矩阵 $M$ 视角下是什么？
 
 PI 令：
 
@@ -396,10 +396,10 @@ DCA 的设计目标更激进：
 
 定义：
 
-- \(l\)：当前输入长度；
-- \(c\)：pretraining context length；
-- \(s\)：chunk size；
-- \(w\)：successive local window。
+- $l$：当前输入长度；
+- $c$：pretraining context length；
+- $s$：chunk size；
+- $w$：successive local window。
 
 要求：
 
@@ -548,7 +548,7 @@ P_k
 }
 $$
 
-如果 query \(i\) 与 key \(j\) 在同一 chunk：
+如果 query $i$ 与 key $j$ 在同一 chunk：
 
 $$
 \left\lfloor\frac is\right\rfloor
@@ -770,7 +770,7 @@ $$
 
 ---
 
-## 15. 为什么 DCA 保持 \(P_k\) 不动，主要改 query position？
+## 15. 为什么 DCA 保持 $P_k$ 不动，主要改 query position？
 
 论文给出的工程考虑之一是：
 
@@ -793,9 +793,9 @@ $$
 
 再构造：
 
-- \(P_q^{\text{Intra}}\)；
-- \(P_q^{\text{Inter}}\)；
-- \(P_q^{\text{Succ}}\)。
+- $P_q^{\text{Intra}}$；
+- $P_q^{\text{Inter}}$；
+- $P_q^{\text{Succ}}$。
 
 ---
 
@@ -1217,7 +1217,7 @@ $$
 
 ---
 
-## 26. 为什么 \(w\le c-s\)？
+## 26. 为什么 $w\le c-s$？
 
 Successive query 的最大精确 position：
 
@@ -1303,7 +1303,7 @@ g(i)
 }
 $$
 
-query \(i\) 与 key \(j\) 的 chunk distance：
+query $i$ 与 key $j$ 的 chunk distance：
 
 $$
 \Delta g
@@ -1367,7 +1367,7 @@ $$
 
 注意：
 
-> 它不是先算一个统一 \(M\)，再事后切 chunk。
+> 它不是先算一个统一 $M$，再事后切 chunk。
 
 而是：
 
@@ -1383,7 +1383,7 @@ $$
 f(q,p)
 $$
 
-表示对 query \(q\) 使用 position \(p\) 做旋转。
+表示对 query $q$ 使用 position $p$ 做旋转。
 
 那么：
 
@@ -1626,7 +1626,7 @@ $$
 
 ---
 
-# 十、一个完整手算例子：\(c=8,s=4,l=12\)
+# 十、一个完整手算例子：$c=8,s=4,l=12$
 
 ## 35. Key Position
 
@@ -1876,7 +1876,7 @@ $$
 
 ## 40. 为什么需要分三次算？
 
-对当前 query \(q_i\)，key 被分成三个 disjoint groups：
+对当前 query $q_i$，key 被分成三个 disjoint groups：
 
 $$
 \mathcal K_1
@@ -2022,11 +2022,11 @@ $$
 
 ![DCA 三组 attention 的全局 softmax 合并](../../../figures/explainers/A053-global-softmax-merge.svg)
 
-*教学解释图。三个 group 各自做局部 softmax 后，必须带回各自 partition mass \(Z_g\) 重新合并；直接相加会改变原全局概率分布。*
+*教学解释图。三个 group 各自做局部 softmax 后，必须带回各自 partition mass $Z_g$ 重新合并；直接相加会改变原全局概率分布。*
 
 ---
 
-## 43. 实际实现为什么不能直接计算 \(Z_g=\sum e^{z}\)？
+## 43. 实际实现为什么不能直接计算 $Z_g=\sum e^{z}$？
 
 因为长序列 logits 可能很大。
 
@@ -2036,11 +2036,11 @@ FlashAttention 使用 numerically stable online softmax。
 
 每个 block / group 通常维护：
 
-- maximum logit \(m_g\)；
+- maximum logit $m_g$；
 - exp-sum / log-sum-exp statistic；
 - normalized partial output。
 
-如果 group \(a,b\) 要合并，思想是先找到：
+如果 group $a,b$ 要合并，思想是先找到：
 
 $$
 m
@@ -3048,7 +3048,7 @@ DCA training-free，使作者可以直接在 Llama2 70B 上做实验。
 
 因为三次不是都看完整 history。
 
-对于 query \(i\)：
+对于 query $i$：
 
 - Intra：current chunk 部分；
 - Successive：one previous chunk；
@@ -3608,7 +3608,7 @@ $$
 
 新 token 到来时：
 
-1. content \(q,k,v\) projection；
+1. content $q,k,v$ projection；
 2. 新 K 用 modulo position 旋转后加入 cache；
 3. current q 生成三种 rotated variant；
 4. 按 key range 分成 current / previous / old；
@@ -3743,7 +3743,7 @@ DCA 会 alias far distance。
 
 ### 需要百万级 full attention 低 TTFT
 
-它不降 \(O(L^2)\)。
+它不降 $O(L^2)$。
 
 ### 需要真正新增长程 reasoning skill
 
@@ -3911,7 +3911,7 @@ content K/V 都保留。
 
 三个 key group 基本互斥，总 coverage 接近一次 full history。
 
-## 错法 8：DCA 解决 \(O(L^2)\)
+## 错法 8：DCA 解决 $O(L^2)$
 
 错误。
 
@@ -4087,7 +4087,7 @@ long-context pre-training
 
 而是：
 
-> **当 prompt 真有几十万甚至一百万 token 时，full attention prefill 的 \(O(L^2)\) 怎么办？**
+> **当 prompt 真有几十万甚至一百万 token 时，full attention prefill 的 $O(L^2)$ 怎么办？**
 
 这会把我们从：
 
@@ -4107,37 +4107,37 @@ long-context pre-training
 
 读完 DCA，至少应该能回答：
 
-1. 为什么 DCA 用 relative-position matrix \(M\) 表述 RoPE？
-2. 标准 RoPE 的 \(M[i][j]\) 是什么？
-3. 为什么测试长度超过 \(c\) 后会出现训练没见过的 relative offset？
-4. PI 在 \(M\) 视角下做了什么？
+1. 为什么 DCA 用 relative-position matrix $M$ 表述 RoPE？
+2. 标准 RoPE 的 $M[i][j]$ 是什么？
+3. 为什么测试长度超过 $c$ 后会出现训练没见过的 relative offset？
+4. PI 在 $M$ 视角下做了什么？
 5. DCA 为什么不想统一压缩所有 relative distance？
-6. chunk size \(s\) 为什么必须小于 pretraining context \(c\)？
-7. \(P_k=i\bmod s\) 的作用是什么？
+6. chunk size $s$ 为什么必须小于 pretraining context $c$？
+7. $P_k=i\bmod s$ 的作用是什么？
 8. 不同 chunk 的相同 key position 为什么不会让 content key 相同？
-9. Intra-Chunk 的 \(P_q\) 怎样定义？
-10. 为什么同 chunk 内 \(M=i-j\) 完全精确？
+9. Intra-Chunk 的 $P_q$ 怎样定义？
+10. 为什么同 chunk 内 $M=i-j$ 完全精确？
 11. 为什么直接拿循环 position 跨 chunk 会出现负 relative distance？
 12. 为什么 DCA 更愿意固定 K 而修改 Q？
-13. Inter query 为什么取 \(c-1\)？
-14. 为什么 Inter relative distance 一定落在 \([c-s,c-1]\)？
+13. Inter query 为什么取 $c-1$？
+14. 为什么 Inter relative distance 一定落在 $[c-s,c-1]$？
 15. Inter 牺牲了什么 positional information？
 16. 为什么 adjacent chunk 不能直接用 Inter？
 17. Successive query position 怎样定义？
-18. 为什么 \(w\le c-s\)？
-19. 为什么常取 \(w=c-s\)？
-20. DCA 的最终 piecewise \(M[i][j]\) 怎么写？
+18. 为什么 $w\le c-s$？
+19. 为什么常取 $w=c-s$？
+20. DCA 的最终 piecewise $M[i][j]$ 怎么写？
 21. 同一个 query 为什么要有三种 RoPE 版本？
-22. 为什么所有 DCA offset 都不超过 \(c-1\)？
+22. 为什么所有 DCA offset 都不超过 $c-1$？
 23. DCA 与 PI 的信息压缩策略有什么根本不同？
 24. 三个 attention group 为什么不能独立 softmax 后直接相加？
-25. \(o=(\sum Z_go_g)/(\sum Z_g)\) 怎么推出来？
+25. $o=(\sum Z_go_g)/(\sum Z_g)$ 怎么推出来？
 26. FlashAttention 怎样用 LSE statistics 做稳定 merge？
-27. 三个 key group 的 token 数相加为什么仍约等于 \(i\)？
+27. 三个 key group 的 token 数相加为什么仍约等于 $i$？
 28. 为什么 DCA 不是 sparse-attention acceleration？
-29. 为什么整体复杂度仍是 \(O(L^2)\)？
+29. 为什么整体复杂度仍是 $O(L^2)$？
 30. 为什么 DCA 可以复用 KV cache？
-31. KV cache 为什么仍然是 \(O(L)\)？
+31. KV cache 为什么仍然是 $O(L)$？
 32. Intra-only ablation 为什么低 PPL 却 retrieval 差？
 33. 加 Inter 后为什么 retrieval 提升但 PPL 可能恶化？
 34. Successive 为什么能同时修两个指标？

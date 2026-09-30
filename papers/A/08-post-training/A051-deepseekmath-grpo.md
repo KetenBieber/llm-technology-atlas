@@ -1248,26 +1248,26 @@ DeepSeekMath 的 iterative GRPO 因此做：
 - 起点：DeepSeekMath-Instruct 7B；
 - RL prompts：SFT 数据中 GSM8K / MATH 相关 CoT questions，约 144K；
 - policy learning rate：
-  $$
+  :::{math}
   10^{-6};
-  $$
+  :::
 - KL coefficient：
-  $$
+  :::{math}
   \beta=0.04;
-  $$
+  :::
 - 每个 question 采样：
-  $$
+  :::{math}
   G=64
-  $$
+  :::
   个 outputs；
 - max generation length：
-  $$
+  :::{math}
   1024;
-  $$
+  :::
 - training batch size：
-  $$
+  :::{math}
   1024;
-  $$
+  :::
 - 该主实验设置中，每次 exploration stage 后 policy 只做一次 update。
 
 这里有一个很值得注意的工程现实：

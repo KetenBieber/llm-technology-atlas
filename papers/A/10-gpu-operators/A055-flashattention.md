@@ -2,17 +2,17 @@
 
 > **论文**：Tri Dao et al., [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135)，NeurIPS 2022。  
 > **类型**：A · 原始方法 / GPU 系统论文；Exact Attention + IO-aware Algorithm。  
-> **一句话定位**：FlashAttention 没有改变 Self-Attention 的数学定义，也没有把 dense attention 近似成 sparse / low-rank。它重新设计的是**计算顺序与存储层级**：把 \(Q,K,V\) 分块搬入高速片上 SRAM，在 SRAM 中完成 \(QK^\top\)、mask、softmax、\(PV\) 的局部计算，只把最终输出与少量 softmax 统计量写回 HBM，从而避免反复读写 \(N\times N\) 的 score/probability matrix。Backward 甚至主动**重新计算**这些中间量，用更多 FLOPs 换更少 HBM traffic，最终反而更快。
+> **一句话定位**：FlashAttention 没有改变 Self-Attention 的数学定义，也没有把 dense attention 近似成 sparse / low-rank。它重新设计的是**计算顺序与存储层级**：把 $Q,K,V$ 分块搬入高速片上 SRAM，在 SRAM 中完成 $QK^\top$、mask、softmax、$PV$ 的局部计算，只把最终输出与少量 softmax 统计量写回 HBM，从而避免反复读写 $N\times N$ 的 score/probability matrix。Backward 甚至主动**重新计算**这些中间量，用更多 FLOPs 换更少 HBM traffic，最终反而更快。
 
 如果刚读完 [MInference](../04-efficient-attention/A054-minference.md)，FlashAttention 是必须补上的系统基础。
 
 MInference 的核心问题是：
 
-> **哪些 \(QK\) pair 根本不用算？**
+> **哪些 $QK$ pair 根本不用算？**
 
 FlashAttention 的核心问题则是：
 
-> **即使所有 dense \(QK\) pair 都必须算，怎样让它们尽量留在快 SRAM 中，不把巨大中间矩阵来回搬 HBM？**
+> **即使所有 dense $QK$ pair 都必须算，怎样让它们尽量留在快 SRAM 中，不把巨大中间矩阵来回搬 HBM？**
 
 因此两者的优化轴完全不同：
 
@@ -29,27 +29,27 @@ FlashAttention
 
 这篇论文真正值得掌握的不是某段 CUDA，而是一个非常普适的系统观：
 
-\[
+$$
 \boxed{\text{Wall-clock time}\neq\text{FLOPs alone}}
-\]
+$$
 
 一个算法完全可能：
 
-\[
+$$
 \text{FLOPs}\uparrow
-\]
+$$
 
 但因为：
 
-\[
+$$
 \text{memory traffic}\downarrow\downarrow
-\]
+$$
 
 最终：
 
-\[
+$$
 \text{runtime}\downarrow.
-\]
+$$
 
 ---
 
@@ -57,7 +57,7 @@ FlashAttention
 
 建议先掌握：
 
-- [Transformer](../03-transformer/A013-transformer-attention-is-all-you-need.md)：\(QK^\top\)、row-wise softmax 与 \(PV\)；
+- [Transformer](../03-transformer/A013-transformer-attention-is-all-you-need.md)：$QK^\top$、row-wise softmax 与 $PV$；
 - [MInference](../04-efficient-attention/A054-minference.md)：为什么 sparse Attention 也要依赖 FlashAttention-style online softmax；
 - [Dual Chunk Attention](../04-efficient-attention/A053-dual-chunk-attention.md)：为什么分块 attention output 合并同样需要 softmax statistics；
 - [Qwen2.5](../../B/05-moe-complete-llm/B012-qwen2.5.md)：现代长上下文系统里 kernel/runtime 为什么会成为产品能力的一部分。
@@ -68,23 +68,23 @@ FlashAttention
 2. 为什么矩阵乘法常常 compute-bound，而 softmax 更容易 memory-bound？
 3. arithmetic intensity 是什么？
 4. 为什么“FLOPs 少”不等于“运行快”？
-5. 标准 Attention 为什么会把 \(S\) 和 \(P\) 写进 HBM？
-6. \(N\times N\) 中间矩阵到底造成多少额外 IO？
+5. 标准 Attention 为什么会把 $S$ 和 $P$ 写进 HBM？
+6. $N\times N$ 中间矩阵到底造成多少额外 IO？
 7. 为什么简单 kernel fusion 仍然不够？
 8. Softmax 为什么一开始看起来阻止了 tiling？
-9. 怎样只用 running max \(m\) 与 running sum \(\ell\) 精确合并两个 softmax block？
-10. output \(O\) 为什么也必须在全局 max 变化时重新缩放？
+9. 怎样只用 running max $m$ 与 running sum $\ell$ 精确合并两个 softmax block？
+10. output $O$ 为什么也必须在全局 max 变化时重新缩放？
 11. FlashAttention forward 为什么是 exact？
-12. 为什么外层遍历 \(K,V\) block、内层遍历 \(Q\) block？
-13. SRAM size \(M\) 怎样决定 block size？
-14. FlashAttention 的 HBM IO 为什么是 \(\Theta(N^2d^2/M)\)？
-15. standard attention 的 HBM IO 为什么是 \(\Theta(Nd+N^2)\)？
+12. 为什么外层遍历 $K,V$ block、内层遍历 $Q$ block？
+13. SRAM size $M$ 怎样决定 block size？
+14. FlashAttention 的 HBM IO 为什么是 $\Theta(N^2d^2/M)$？
+15. standard attention 的 HBM IO 为什么是 $\Theta(Nd+N^2)$？
 16. 论文 lower bound 到底证明了多强的结论？
-17. Backward 为什么通常需要 \(P\)？
-18. FlashAttention 为什么不保存 \(P\)，反而 backward 重算？
+17. Backward 为什么通常需要 $P$？
+18. FlashAttention 为什么不保存 $P$，反而 backward 重算？
 19. “recomputation 用更多 FLOPs 却更快”怎样从 roofline 角度理解？
-20. 为什么 dropout mask 也没必要存成 \(N^2\)？
-21. \(D_i=dO_i^\top O_i\) 这个恒等式为什么重要？
+20. 为什么 dropout mask 也没必要存成 $N^2$？
+21. $D_i=dO_i^\top O_i$ 这个恒等式为什么重要？
 22. FlashAttention 为什么是 exact，而 MInference 不是？
 23. 线性 memory 到底指什么，不指什么？
 24. 原论文 66.6→75.2 GFLOPs、40.3→4.4 GB HBM、41.7→7.3 ms 应该怎样读？
@@ -145,9 +145,9 @@ FlashAttention 原论文以 A100 为例：
 
 数量级上：
 
-\[
+$$
 \text{SRAM bandwidth}\gg\text{HBM bandwidth}.
-\]
+$$
 
 但 SRAM 小得多。
 
@@ -168,31 +168,31 @@ FlashAttention 原论文以 A100 为例：
 
 所以总时间不是：
 
-\[
+$$
 T=T_{\text{compute}}.
-\]
+$$
 
 而更接近：
 
-\[
+$$
 T\approx\max(T_{\text{compute}},T_{\text{memory}})
-\]
+$$
 
 再加调度、同步等开销。
 
 如果 compute 非常多：
 
-\[
+$$
 T_{\text{compute}}\gg T_{\text{memory}},
-\]
+$$
 
 称为 compute-bound。
 
 如果搬数据更慢：
 
-\[
+$$
 T_{\text{memory}}\gg T_{\text{compute}},
-\]
+$$
 
 称为 memory-bound。
 
@@ -202,19 +202,19 @@ T_{\text{memory}}\gg T_{\text{compute}},
 
 定义：
 
-\[
+$$
 \boxed{
 I=\frac{\text{FLOPs}}{\text{Bytes transferred}}
 }
-\]
+$$
 
 称为 arithmetic intensity。
 
 如果一次从 HBM 搬入一块数据后，能在片上重复利用很多次：
 
-\[
+$$
 I\uparrow.
-\]
+$$
 
 例如大矩阵 GEMM：同一 tile 的元素会参与大量 multiply-add，所以矩阵乘法很容易达到高 arithmetic intensity。
 
@@ -238,35 +238,35 @@ Softmax 还包含 max reduction、exp、sum reduction、divide；如果中间结
 
 单 head：
 
-\[
+$$
 Q,K,V\in\mathbb R^{N\times d}.
-\]
+$$
 
 第一步：
 
-\[
+$$
 S=QK^\top\in\mathbb R^{N\times N}.
-\]
+$$
 
 第二步：
 
-\[
+$$
 P=\operatorname{softmax}(S)\in\mathbb R^{N\times N}.
-\]
+$$
 
 第三步：
 
-\[
+$$
 O=PV\in\mathbb R^{N\times d}.
-\]
+$$
 
 数学上就是：
 
-\[
+$$
 \boxed{
 O=\operatorname{softmax}(QK^\top)V.
 }
-\]
+$$
 
 ---
 
@@ -276,39 +276,39 @@ O=\operatorname{softmax}(QK^\top)V.
 
 ### Kernel 1
 
-\[
+$$
 QK^\top\rightarrow S.
-\]
+$$
 
 写：
 
-\[
+$$
 S\rightarrow\text{HBM}.
-\]
+$$
 
 ### Kernel 2
 
-从 HBM 读 \(S\)，计算：
+从 HBM 读 $S$，计算：
 
-\[
+$$
 P=\operatorname{softmax}(S),
-\]
+$$
 
 再写：
 
-\[
+$$
 P\rightarrow\text{HBM}.
-\]
+$$
 
 ### Kernel 3
 
-读 \(P,V\)，计算：
+读 $P,V$，计算：
 
-\[
+$$
 O=PV,
-\]
+$$
 
-写 \(O\)。
+写 $O$。
 
 也就是：
 
@@ -330,49 +330,49 @@ P ──write→ HBM
 
 真正昂贵的地方：
 
-\[
+$$
 S,P\in\mathbb R^{N\times N}.
-\]
+$$
 
 ---
 
-## 6. 为什么 \(N\times N\) 特别可怕？
+## 6. 为什么 $N\times N$ 特别可怕？
 
 如果：
 
-\[
+$$
 N=4096,
-\]
+$$
 
 则：
 
-\[
+$$
 N^2=16{,}777{,}216.
-\]
+$$
 
 FP16/BF16 每元素 2 bytes，单个矩阵约：
 
-\[
+$$
 32\text{ MB}.
-\]
+$$
 
 如果：
 
-\[
+$$
 N=16K,
-\]
+$$
 
 则：
 
-\[
+$$
 N^2=268{,}435{,}456,
-\]
+$$
 
 单矩阵 BF16 约：
 
-\[
+$$
 512\text{ MB}.
-\]
+$$
 
 这是单个 attention matrix 的数量级直觉，还没算 batch、heads、backward、dropout、其他 layers。
 
@@ -382,9 +382,9 @@ N^2=268{,}435{,}456,
 
 很多介绍只说 Attention matrix 占：
 
-\[
+$$
 O(N^2)
-\]
+$$
 
 memory。
 
@@ -407,9 +407,9 @@ read P
 
 所以优化目标从 peak memory 升级为：
 
-\[
+$$
 \boxed{\text{number of HBM reads/writes}.}
-\]
+$$
 
 ---
 
@@ -417,7 +417,7 @@ read P
 
 ![教学解释图：Standard Attention 与 FlashAttention 的 HBM 路径](../../../figures/explainers/A055-hbm-vs-tiling.svg)
 
-*教学解释图。Standard Attention 会把完整 \(S\) 与 \(P\) materialize 到 HBM；FlashAttention 则让 score/probability tile 只在 SRAM 中短暂存在。它改变的是数据流，不是 Attention 数学定义。*
+*教学解释图。Standard Attention 会把完整 $S$ 与 $P$ materialize 到 HBM；FlashAttention 则让 score/probability tile 只在 SRAM 中短暂存在。它改变的是数据流，不是 Attention 数学定义。*
 
 ---
 
@@ -427,13 +427,13 @@ read P
 
 你可能会说：
 
-> 那把 \(QK^\top\)、Softmax、\(PV\) 放进一个 CUDA kernel，不就不用中间写 HBM 了吗？
+> 那把 $QK^\top$、Softmax、$PV$ 放进一个 CUDA kernel，不就不用中间写 HBM 了吗？
 
 问题是：
 
-\[
+$$
 S\in\mathbb R^{N\times N}
-\]
+$$
 
 根本放不进 SRAM。
 
@@ -447,29 +447,29 @@ SRAM 只有 hundreds of KB / SM，而 S 可能 hundreds of MB / GB。
 
 矩阵乘法：
 
-\[
+$$
 C=AB
-\]
+$$
 
 可以自然分块累加。
 
 但 row softmax：
 
-\[
+$$
 p_j=\frac{e^{s_j}}{\sum_k e^{s_k}}
-\]
+$$
 
 分母需要整行。
 
 为了数值稳定：
 
-\[
+$$
 p_j
 =
 \frac{e^{s_j-m}}{\sum_k e^{s_k-m}},
 \qquad
 m=\max_k s_k.
-\]
+$$
 
 全局 max 和 sum 都依赖所有 block。
 
@@ -487,39 +487,39 @@ m=\max_k s_k.
 
 给：
 
-\[
+$$
 x=(x_1,\dots,x_n).
-\]
+$$
 
 定义：
 
-\[
+$$
 m=\max_i x_i.
-\]
+$$
 
 然后：
 
-\[
+$$
 \tilde p_i=e^{x_i-m}.
-\]
+$$
 
 normalizer：
 
-\[
+$$
 \ell=\sum_i e^{x_i-m}.
-\]
+$$
 
 最终：
 
-\[
+$$
 p_i=\frac{\tilde p_i}{\ell}.
-\]
+$$
 
 所以如果能维护：
 
-\[
+$$
 (m,\ell),
-\]
+$$
 
 就能恢复 softmax normalization。
 
@@ -529,31 +529,31 @@ p_i=\frac{\tilde p_i}{\ell}.
 
 设：
 
-\[
+$$
 x=[x^{(1)},x^{(2)}].
-\]
+$$
 
 第一块：
 
-\[
+$$
 m_1=\max x^{(1)},
 \qquad
 \ell_1=\sum_j e^{x_j^{(1)}-m_1}.
-\]
+$$
 
 第二块：
 
-\[
+$$
 m_2=\max x^{(2)},
 \qquad
 \ell_2=\sum_j e^{x_j^{(2)}-m_2}.
-\]
+$$
 
 全局 max：
 
-\[
+$$
 \boxed{m=\max(m_1,m_2).}
-\]
+$$
 
 ---
 
@@ -561,42 +561,42 @@ m_2=\max x^{(2)},
 
 原来：
 
-\[
+$$
 \ell_1
 =
 \sum_j e^{x_j^{(1)}-m_1}.
-\]
+$$
 
 现在：
 
-\[
+$$
 x_j^{(1)}-m
 =
 (x_j^{(1)}-m_1)+(m_1-m).
-\]
+$$
 
 所以：
 
-\[
+$$
 e^{x_j^{(1)}-m}
 =
 e^{m_1-m}
 e^{x_j^{(1)}-m_1}.
-\]
+$$
 
 求和：
 
-\[
+$$
 \sum_j e^{x_j^{(1)}-m}
 =
 e^{m_1-m}\ell_1.
-\]
+$$
 
 第二块同理。
 
 因此：
 
-\[
+$$
 \boxed{
 \ell
 =
@@ -604,13 +604,13 @@ e^{m_1-m}\ell_1
 +
 e^{m_2-m}\ell_2.
 }
-\]
+$$
 
 这意味着不需要保存第一块所有 logits，只需要：
 
-\[
+$$
 m_1,\ell_1.
-\]
+$$
 
 ---
 
@@ -618,28 +618,28 @@ m_1,\ell_1.
 
 处理第 k 个 block 前维护：
 
-\[
+$$
 m^{(k-1)},\ell^{(k-1)}.
-\]
+$$
 
 当前 block：
 
-\[
+$$
 \tilde m^{(k)},\tilde\ell^{(k)}.
-\]
+$$
 
 更新：
 
-\[
+$$
 m^{(k)}
 =
 \max(
 m^{(k-1)},
 \tilde m^{(k)}
 ).
-\]
+$$
 
-\[
+$$
 \ell^{(k)}
 =
 e^{m^{(k-1)}-m^{(k)}}
@@ -647,19 +647,19 @@ e^{m^{(k-1)}-m^{(k)}}
 +
 e^{\tilde m^{(k)}-m^{(k)}}
 \tilde\ell^{(k)}.
-\]
+$$
 
 扫描所有 block 后，与一次性全局 stable softmax 等价。
 
 ---
 
-# 五、Attention 最后还需要 \(PV\)：Output 也必须 Online Merge
+# 五、Attention 最后还需要 $PV$：Output 也必须 Online Merge
 
-## 15. 只维护 \((m,\ell)\) 还不够
+## 15. 只维护 $(m,\ell)$ 还不够
 
 Attention output：
 
-\[
+$$
 o
 =
 \sum_jp_jv_j
@@ -669,30 +669,30 @@ o
 }{
 \ell
 }.
-\]
+$$
 
 定义 numerator：
 
-\[
+$$
 u
 =
 \sum_j e^{s_j-m}v_j.
-\]
+$$
 
 则：
 
-\[
+$$
 o=\frac u\ell.
-\]
+$$
 
 因此每个 block 还贡献：
 
-\[
+$$
 u_b
 =
 \sum_{j\in b}
 e^{s_j-m_b}v_j.
-\]
+$$
 
 ---
 
@@ -700,13 +700,13 @@ e^{s_j-m_b}v_j.
 
 全局 max：
 
-\[
+$$
 m=\max(m_1,m_2).
-\]
+$$
 
 于是：
 
-\[
+$$
 \boxed{
 u
 =
@@ -714,11 +714,11 @@ e^{m_1-m}u_1
 +
 e^{m_2-m}u_2.
 }
-\]
+$$
 
 最终：
 
-\[
+$$
 \boxed{
 o
 =
@@ -732,55 +732,55 @@ e^{m_1-m}\ell_1
 e^{m_2-m}\ell_2
 }.
 }
-\]
+$$
 
 ---
 
-## 17. 如果保存的是 normalized \(O_{\text{old}}\)
+## 17. 如果保存的是 normalized $O_{\text{old}}$
 
 已有：
 
-\[
+$$
 O_{\text{old}}
 =
 \frac{u_{\text{old}}}{\ell_{\text{old}}},
-\]
+$$
 
 所以：
 
-\[
+$$
 u_{\text{old}}
 =
 \ell_{\text{old}}O_{\text{old}}.
-\]
+$$
 
 定义：
 
-\[
+$$
 m_{\text{new}}
 =
 \max(m_{\text{old}},\tilde m),
-\]
+$$
 
-\[
+$$
 \alpha=e^{m_{\text{old}}-m_{\text{new}}},
 \qquad
 \gamma=e^{\tilde m-m_{\text{new}}}.
-\]
+$$
 
 则：
 
-\[
+$$
 \ell_{\text{new}}
 =
 \alpha\ell_{\text{old}}
 +
 \gamma\tilde\ell.
-\]
+$$
 
 output：
 
-\[
+$$
 \boxed{
 O_{\text{new}}
 =
@@ -792,7 +792,7 @@ O_{\text{new}}
 \ell_{\text{new}}
 }.
 }
-\]
+$$
 
 这就是论文算法里看似复杂的 output update，本质只是全局 softmax normalization 的代数展开。
 
@@ -802,7 +802,7 @@ O_{\text{new}}
 
 ![教学解释图：Online Softmax 怎样合并 block](../../../figures/explainers/A055-online-softmax.svg)
 
-*教学解释图。真正必须跨 block 保存的不是完整 logits，而是 running max \(m\)、running denominator \(\ell\) 与当前 normalized output \(O\)。新 block 加入时统一重标定旧状态，最终结果与全局 softmax 一致。*
+*教学解释图。真正必须跨 block 保存的不是完整 logits，而是 running max $m$、running denominator $\ell$ 与当前 normalized output $O$。新 block 加入时统一重标定旧状态，最终结果与全局 softmax 一致。*
 
 ---
 
@@ -812,9 +812,9 @@ O_{\text{new}}
 
 FlashAttention 仍计算所有合法 causal pair 的：
 
-\[
+$$
 q_i^\top k_j.
-\]
+$$
 
 只是一次算一个 tile。
 
@@ -826,13 +826,13 @@ q_i^\top k_j.
 
 因此数学上：
 
-\[
+$$
 \boxed{
 O_{\text{Flash}}
 =
 \operatorname{softmax}(QK^\top)V.
 }
-\]
+$$
 
 与标准 attention 相同，只存在浮点运算重排带来的正常数值差异。
 
@@ -846,21 +846,21 @@ O_{\text{Flash}}
 
 MInference：
 
-\[
+$$
 \mathcal S_i
 \subset
 \{0,\dots,i\},
-\]
+$$
 
 只计算 sparse subset，相对于 dense 是 approximate。
 
 FlashAttention：
 
-\[
+$$
 \mathcal S_i
 =
 \{0,\dots,i\},
-\]
+$$
 
 所有合法 pair 都算，所以 exact。
 
@@ -872,31 +872,31 @@ MInference 可以把自己选中的 sparse tiles 用 FlashAttention-style online
 
 ## 21. 输入分块
 
-\[
+$$
 Q\rightarrow Q_1,\dots,Q_{T_r}.
-\]
+$$
 
 每块：
 
-\[
+$$
 Q_i\in\mathbb R^{B_r\times d}.
-\]
+$$
 
 K/V：
 
-\[
+$$
 K_j,V_j\in\mathbb R^{B_c\times d}.
-\]
+$$
 
 原论文理论设置：
 
-\[
+$$
 B_c
 =
 \left\lceil\frac{M}{4d}\right\rceil,
-\]
+$$
 
-\[
+$$
 B_r
 =
 \min
@@ -904,9 +904,9 @@ B_r
 \left\lceil\frac{M}{4d}\right\rceil,
 d
 \right),
-\]
+$$
 
-其中 \(M\) 是 SRAM capacity 的抽象。
+其中 $M$ 是 SRAM capacity 的抽象。
 
 ---
 
@@ -914,19 +914,19 @@ d
 
 对：
 
-\[
+$$
 j=1,\dots,T_c
-\]
+$$
 
 加载一次：
 
-\[
+$$
 K_j,V_j
-\]
+$$
 
 到 SRAM。
 
-然后内层遍历所有 \(Q_i\)。
+然后内层遍历所有 $Q_i$。
 
 原因：
 
@@ -940,57 +940,57 @@ loop order 本身就是 IO optimization。
 
 对：
 
-\[
+$$
 (Q_i,K_j,V_j)
-\]
+$$
 
 在 SRAM 内：
 
-\[
+$$
 S_{ij}=Q_iK_j^\top.
-\]
+$$
 
 应用 causal/padding mask 后，算：
 
-\[
+$$
 \tilde m_{ij}
 =
 \operatorname{rowmax}(S_{ij}),
-\]
+$$
 
-\[
+$$
 \tilde P_{ij}
 =
 e^{S_{ij}-\tilde m_{ij}},
-\]
+$$
 
-\[
+$$
 \tilde\ell_{ij}
 =
 \operatorname{rowsum}(\tilde P_{ij}).
-\]
+$$
 
 再用上一轮：
 
-\[
+$$
 m_i,\ell_i,O_i
-\]
+$$
 
 和当前：
 
-\[
+$$
 \tilde m_{ij},
 \tilde\ell_{ij},
 \tilde P_{ij}V_j
-\]
+$$
 
 更新 state。
 
 然后：
 
-\[
+$$
 S_{ij},\tilde P_{ij}
-\]
+$$
 
 直接丢弃，不写入 HBM。
 
@@ -1000,7 +1000,7 @@ S_{ij},\tilde P_{ij}
 
 ![FlashAttention 原论文 IO-aware tiling overview](../../../figures/A055/fig1-io-overview.svg)
 
-*原论文主图。左侧真正要看的是 loop/dataflow：K/V block 从 HBM 搬入 SRAM 后，被多个 Q block 复用；巨大的 \(N\times N\) attention matrix 不再 materialize 到 HBM。右侧给出相对 PyTorch attention 的速度提升。*
+*原论文主图。左侧真正要看的是 loop/dataflow：K/V block 从 HBM 搬入 SRAM 后，被多个 Q block 复用；巨大的 $N\times N$ attention matrix 不再 materialize 到 HBM。右侧给出相对 PyTorch attention 的速度提升。*
 
 不要把 block 误解成 local attention window。
 
@@ -1022,59 +1022,59 @@ block 是：
 
 至少处理：
 
-- \(Q,K,V\)：\(O(Nd)\)；
-- \(S\)：\(O(N^2)\)；
-- \(P\)：\(O(N^2)\)。
+- $Q,K,V$：$O(Nd)$；
+- $S$：$O(N^2)$；
+- $P$：$O(N^2)$。
 
 所以：
 
-\[
+$$
 \boxed{
 \Theta(Nd+N^2)
 }
-\]
+$$
 
 HBM accesses。
 
 ---
 
-## 25. FlashAttention 不写 \(S,P\)，但会重复读 Q
+## 25. FlashAttention 不写 $S,P$，但会重复读 Q
 
 K/V block 大约：
 
-\[
+$$
 B_c\sim\frac{M}{d}.
-\]
+$$
 
 K/V block 数：
 
-\[
+$$
 T_c
 \sim
 \frac{N}{B_c}
 \sim
 \frac{Nd}{M}.
-\]
+$$
 
 每次完整扫描 Q 约：
 
-\[
+$$
 Nd
-\]
+$$
 
 元素。
 
 所以 Q 读取量级：
 
-\[
+$$
 \frac{Nd}{M}\times Nd
 =
 \frac{N^2d^2}{M}.
-\]
+$$
 
 因此：
 
-\[
+$$
 \boxed{
 \text{HBM IO}_{\text{Flash}}
 =
@@ -1083,63 +1083,63 @@ Nd
 \frac{N^2d^2}{M}
 \right).
 }
-\]
+$$
 
 ---
 
-## 26. 为什么这比 \(N^2\) 小很多？
+## 26. 为什么这比 $N^2$ 小很多？
 
 比例：
 
-\[
+$$
 \frac{N^2}{N^2d^2/M}
 =
 \frac{M}{d^2}.
-\]
+$$
 
 典型：
 
-\[
+$$
 d=64\sim128.
-\]
+$$
 
-而有效 SRAM capacity 对应的元素量通常远大于 \(d^2\)，因此 HBM traffic 可以下降很多倍。
+而有效 SRAM capacity 对应的元素量通常远大于 $d^2$，因此 HBM traffic 可以下降很多倍。
 
 ---
 
 # 十、重要边界：FlashAttention 没把时间复杂度变成线性
 
-## 27. Forward 仍然计算 Dense \(QK^\top\)
+## 27. Forward 仍然计算 Dense $QK^\top$
 
 FLOPs：
 
-\[
+$$
 O(N^2d).
-\]
+$$
 
 仍然 quadratic。
 
 所以：
 
-> “FlashAttention 把 Attention 从 \(O(N^2)\) 降到 \(O(N)\)”
+> “FlashAttention 把 Attention 从 $O(N^2)$ 降到 $O(N)$”
 
 是错误的。
 
 正确说法：
 
-\[
+$$
 \boxed{
 \text{Arithmetic complexity remains quadratic;}
 }
-\]
+$$
 
 但：
 
-\[
+$$
 \boxed{
 \text{HBM IO is substantially reduced.}
 }
-\]
+$$
 
 ---
 
@@ -1147,17 +1147,17 @@ O(N^2d).
 
 当 kernel 在 memory-bound region：
 
-\[
+$$
 T\approx T_{\text{HBM}}.
-\]
+$$
 
 HBM traffic 大幅降低，即使 FLOPs 不变，runtime 也会降。
 
 甚至 backward FLOPs 增加，只要节约的 IO 时间更大，最终仍：
 
-\[
+$$
 T_{\text{total}}\downarrow.
-\]
+$$
 
 ---
 
@@ -1167,18 +1167,18 @@ T_{\text{total}}\downarrow.
 
 对：
 
-\[
+$$
 d\le M\le Nd,
-\]
+$$
 
 论文说明不存在一个 exact attention algorithm 能在整个 M 范围上实现：
 
-\[
+$$
 o
 \left(
 \frac{N^2d^2}{M}
 \right)
-\]
+$$
 
 HBM accesses。
 
@@ -1212,35 +1212,35 @@ HBM accesses。
 
 # 十二、Backward：为什么训练更能体现 FlashAttention 的反直觉价值？
 
-## 31. Standard Backward 为什么需要 \(P\)？
+## 31. Standard Backward 为什么需要 $P$？
 
 Forward：
 
-\[
+$$
 P=\operatorname{softmax}(S),
 \qquad
 O=PV.
-\]
+$$
 
 给上游：
 
-\[
+$$
 dO.
-\]
+$$
 
 有：
 
-\[
+$$
 dV=P^\top dO,
-\]
+$$
 
-\[
+$$
 dP=dO\,V^\top.
-\]
+$$
 
 Softmax backward：
 
-\[
+$$
 dS_{ij}
 =
 P_{ij}
@@ -1249,23 +1249,23 @@ dP_{ij}
 -
 \sum_kP_{ik}dP_{ik}
 \right).
-\]
+$$
 
 然后：
 
-\[
+$$
 dQ=dSK,
 \qquad
 dK=dS^\top Q.
-\]
+$$
 
-所以 standard implementation 很自然会在 forward 保存 \(P\)。
+所以 standard implementation 很自然会在 forward 保存 $P$。
 
 但：
 
-\[
+$$
 P\in\mathbb R^{N\times N}.
-\]
+$$
 
 ---
 
@@ -1275,49 +1275,49 @@ P\in\mathbb R^{N\times N}.
 
 不保存：
 
-\[
+$$
 S,P.
-\]
+$$
 
 只保存：
 
-- \(O\in\mathbb R^{N\times d}\)；
-- \(m\in\mathbb R^N\)；
-- \(\ell\in\mathbb R^N\)；
+- $O\in\mathbb R^{N\times d}$；
+- $m\in\mathbb R^N$；
+- $\ell\in\mathbb R^N$；
 - dropout PRNG state（若启用）。
 
-额外 state 不再是 \(O(N^2)\)。
+额外 state 不再是 $O(N^2)$。
 
 ---
 
-## 33. Backward 需要 \(P_{ij}\) 时怎么办？
+## 33. Backward 需要 $P_{ij}$ 时怎么办？
 
 重新 load：
 
-\[
+$$
 Q_i,K_j.
-\]
+$$
 
 重算：
 
-\[
+$$
 S_{ij}=Q_iK_j^\top.
-\]
+$$
 
 利用保存的：
 
-\[
+$$
 m_i,\ell_i
-\]
+$$
 
 恢复：
 
-\[
+$$
 P_{ij}
 =
 \operatorname{diag}(\ell_i)^{-1}
 e^{S_{ij}-m_i}.
-\]
+$$
 
 P 变成：
 
@@ -1364,25 +1364,25 @@ GPT-2 medium attention，A100：
 
 注意：
 
-\[
+$$
 75.2>66.6.
-\]
+$$
 
 FlashAttention 算得更多。
 
 但：
 
-\[
+$$
 4.4\ll40.3.
-\]
+$$
 
 HBM traffic 约少 9 倍。
 
 最终：
 
-\[
+$$
 7.3\ll41.7\text{ ms}.
-\]
+$$
 
 这组数据几乎就是整篇论文最重要的系统证据。
 
@@ -1396,66 +1396,66 @@ HBM traffic 约少 9 倍。
 
 ---
 
-# 十五、Softmax Backward 的 \(D_i\)：为什么不用整行 Reduction？
+# 十五、Softmax Backward 的 $D_i$：为什么不用整行 Reduction？
 
 ## 37. Standard Softmax Gradient
 
 一行：
 
-\[
+$$
 p=\operatorname{softmax}(s).
-\]
+$$
 
 给：
 
-\[
+$$
 dp.
-\]
+$$
 
 有：
 
-\[
+$$
 ds_j
 =
 p_j
 \left(
 dp_j-\sum_kp_kdp_k
 \right).
-\]
+$$
 
 定义：
 
-\[
+$$
 D_i
 =
 \sum_kP_{ik}dP_{ik}.
-\]
+$$
 
 看起来仍需要整行 P、dP。
 
 ---
 
-## 38. 恒等式 \(D_i=dO_i^\top O_i\)
+## 38. 恒等式 $D_i=dO_i^\top O_i$
 
 因为：
 
-\[
+$$
 O_i
 =
 \sum_jP_{ij}V_j.
-\]
+$$
 
 又：
 
-\[
+$$
 dP_{ij}
 =
 dO_i^\top V_j.
-\]
+$$
 
 所以：
 
-\[
+$$
 D_i
 =
 \sum_jP_{ij}dO_i^\top V_j
@@ -1464,63 +1464,63 @@ dO_i^\top
 \left(
 \sum_jP_{ij}V_j
 \right).
-\]
+$$
 
-括号就是 \(O_i\)。
+括号就是 $O_i$。
 
 因此：
 
-\[
+$$
 \boxed{
 D_i=dO_i^\top O_i.
 }
-\]
+$$
 
 原来需要 size N 的整行 reduction，现在只需要两个 d 维向量的 dot product。
 
 ---
 
-## 39. Backward Tile 内就能计算 \(dS\)
+## 39. Backward Tile 内就能计算 $dS$
 
-恢复 \(P_{ij}\)，计算：
+恢复 $P_{ij}$，计算：
 
-\[
+$$
 dP_{ij}
 =
 dO_iV_j^\top.
-\]
+$$
 
 然后：
 
-\[
+$$
 dS_{ij}
 =
 P_{ij}
 \circ
 (dP_{ij}-D_i).
-\]
+$$
 
 再累加：
 
-\[
+$$
 dQ_i
 \mathrel{+}=
 dS_{ij}K_j,
-\]
+$$
 
-\[
+$$
 dK_j
 \mathrel{+}=
 dS_{ij}^\top Q_i,
-\]
+$$
 
-\[
+$$
 dV_j
 \mathrel{+}=
 P_{ij}^\top dO_i.
-\]
+$$
 
-都以 tile 为单位，不需要 materialize 全局 \(dP,dS\)。
+都以 tile 为单位，不需要 materialize 全局 $dP,dS$。
 
 ---
 
@@ -1530,13 +1530,13 @@ P_{ij}^\top dO_i.
 
 Forward 生成：
 
-\[
+$$
 Z\in\left\{0,\frac1{1-p}\right\}^{N\times N}.
-\]
+$$
 
 Backward 需要相同 mask，直觉上会保存 Z。
 
-又是 \(O(N^2)\) state。
+又是 $O(N^2)$ state。
 
 ---
 
@@ -1544,9 +1544,9 @@ Backward 需要相同 mask，直觉上会保存 Z。
 
 Forward 保存随机数生成器状态：
 
-\[
+$$
 \mathcal R.
-\]
+$$
 
 Backward reset 到相同状态，然后按相同次序重建 tile-level dropout mask。
 
@@ -1562,21 +1562,21 @@ Backward reset 到相同状态，然后按相同次序重建 tile-level dropout 
 
 Standard：
 
-\[
+$$
 O(N^2).
-\]
+$$
 
 FlashAttention 不保存 S/P，主要保存：
 
-\[
+$$
 O(Nd)
-\]
+$$
 
 input/output 与：
 
-\[
+$$
 O(N)
-\]
+$$
 
 softmax stats。
 
@@ -1608,11 +1608,11 @@ softmax stats。
 
 因为 exact：
 
-\[
+$$
 f_{\text{Flash}}(x)
 =
 f_{\text{standard}}(x)
-\]
+$$
 
 在数学定义上相同。
 
@@ -1624,9 +1624,9 @@ f_{\text{standard}}(x)
 
 例如 GPT-2 FlashAttention 4K context 仍比 Megatron 1K context 更快约 30%，同时 PPL：
 
-\[
+$$
 18.2\rightarrow17.5.
-\]
+$$
 
 因果链是：
 
@@ -1706,13 +1706,13 @@ PPL 近似一致。
 
 # 二十一、IO Optimization 不能战胜所有 Arithmetic Scaling
 
-## 49. FlashAttention 仍是 \(O(N^2d)\)
+## 49. FlashAttention 仍是 $O(N^2d)$
 
 当 N 非常大，即使 HBM 优化非常好：
 
-\[
+$$
 N^2d
-\]
+$$
 
 FLOPs 最终仍会成为 bottleneck。
 
@@ -1720,15 +1720,15 @@ FLOPs 最终仍会成为 bottleneck。
 
 这说明：
 
-\[
+$$
 \text{IO optimization}
-\]
+$$
 
 和：
 
-\[
+$$
 \text{algorithmic complexity reduction}
-\]
+$$
 
 是两个不同优化轴。
 
@@ -1754,9 +1754,9 @@ FlashAttention-style kernel
 
 给 sparse block mask：
 
-\[
+$$
 M_{ij}\in\{0,1\},
-\]
+$$
 
 只计算部分 blocks，arithmetic 也减少。
 
@@ -1776,7 +1776,7 @@ M_{ij}\in\{0,1\},
 
 ## 52. 真实 GPU 不只执行数学公式
 
-理论 \(O(N)\) 方法可能包含：
+理论 $O(N)$ 方法可能包含：
 
 - irregular memory access；
 - many small kernels；
@@ -1786,19 +1786,19 @@ M_{ij}\in\{0,1\},
 - extra materialization；
 - poor tensor-core utilization。
 
-而一个 \(O(N^2)\) kernel 可能执行高度规则的 GEMM tile 且 HBM IO 很少。
+而一个 $O(N^2)$ kernel 可能执行高度规则的 GEMM tile 且 HBM IO 很少。
 
 在实际长度范围，后者可能更快。
 
 因此：
 
-\[
+$$
 \boxed{
 \text{Asymptotic FLOPs}
 \neq
 \text{Hardware efficiency}.
 }
-\]
+$$
 
 ---
 
@@ -1828,7 +1828,7 @@ HBM → y → opB → HBM
 
 所以真正链条是：
 
-\[
+$$
 \boxed{
 \text{Tiling}
 \rightarrow
@@ -1836,7 +1836,7 @@ HBM → y → opB → HBM
 \rightarrow
 \text{Kernel Fusion}.
 }
-\]
+$$
 
 ---
 
@@ -1844,11 +1844,11 @@ HBM → y → opB → HBM
 
 ## 55. GEMM Tile 只需要 Partial Sum
 
-\[
+$$
 C_{ij}
 =
 \sum_kA_{ik}B_{kj}.
-\]
+$$
 
 不同 k block 的 partial sum 可以直接相加。
 
@@ -1858,19 +1858,19 @@ C_{ij}
 
 如果每块各自：
 
-\[
+$$
 P^{(1)}=\operatorname{softmax}(S^{(1)}),
-\]
+$$
 
-\[
+$$
 P^{(2)}=\operatorname{softmax}(S^{(2)}),
-\]
+$$
 
 然后：
 
-\[
+$$
 P^{(1)}V^{(1)}+P^{(2)}V^{(2)},
-\]
+$$
 
 是错的，因为两块 denominator 不同。
 
@@ -1886,9 +1886,9 @@ DCA 将 attention relation 分组，最后需要把 partial attention 合并成�
 
 依赖：
 
-\[
+$$
 m,\ell,O.
-\]
+$$
 
 ## 58. MInference
 
@@ -1900,7 +1900,7 @@ MInference 遍历 sparse blocks / columns，也需要 selected set 上的全局 
 
 它提供：
 
-\[
+$$
 \boxed{
 \text{Attention}
 =
@@ -1910,7 +1910,7 @@ MInference 遍历 sparse blocks / columns，也需要 selected set 上的全局 
 +
 \text{IO-aware traversal}.
 }
-\]
+$$
 
 后续系统只需改变：
 
@@ -1932,7 +1932,7 @@ MInference 遍历 sparse blocks / columns，也需要 selected set 上的全局 
 
 ## 61. “Linear memory”能证明什么？
 
-说明不 materialize \(N^2\) attention intermediates。
+说明不 materialize $N^2$ attention intermediates。
 
 不说明整个 Transformer training memory 很小或完全线性。
 
@@ -1946,11 +1946,11 @@ MInference 遍历 sparse blocks / columns，也需要 selected set 上的全局 
 
 只在：
 
-\[
+$$
 \text{saved memory traffic cost}
 >
 \text{added recompute cost}
-\]
+$$
 
 时成立。
 
@@ -2008,11 +2008,11 @@ FlashAttention-2
 
 技术依赖实际是：
 
-\[
+$$
 \text{FlashAttention}
 \rightarrow
 \text{MInference sparse kernel}.
-\]
+$$
 
 我们之所以先读 MInference 再回补 FlashAttention，是按“阻塞理解”而非论文年代组织。
 
@@ -2034,9 +2034,9 @@ FlashAttention-2
 
 实际可能：
 
-\[
+$$
 T_B<T_A.
-\]
+$$
 
 FlashAttention 是经典反例：更多 arithmetic 不一定慢。
 
@@ -2046,19 +2046,19 @@ FlashAttention 是经典反例：更多 arithmetic 不一定慢。
 
 传统分析只写：
 
-\[
+$$
 O(N^2).
-\]
+$$
 
 硬件实际还需要：
 
-\[
+$$
 \text{compute complexity}
 +
 \text{IO complexity}
 +
 \text{parallel schedule}.
-\]
+$$
 
 对 GPU、NPU、embedded accelerator、CPU cache 都如此。
 
@@ -2072,11 +2072,11 @@ O(N^2).
 
 真正比较的是：
 
-\[
+$$
 T_{\text{load/store}}
 \quad\text{vs}\quad
 T_{\text{recompute}}.
-\]
+$$
 
 ---
 
@@ -2088,33 +2088,33 @@ T_{\text{recompute}}.
 
 ## Claim 2：Softmax 可以 block-wise exact aggregation
 
-证据：\((m,\ell)\) 代数合并公式。
+证据：$(m,\ell)$ 代数合并公式。
 
-## Claim 3：不 materialize \(S,P\) 可显著减少 HBM accesses
+## Claim 3：不 materialize $S,P$ 可显著减少 HBM accesses
 
 理论：
 
-\[
+$$
 \Theta(Nd+N^2)
 \rightarrow
 \Theta(N^2d^2/M).
-\]
+$$
 
 ## Claim 4：Recomputation 可以同时省 memory 并加速 backward
 
 证据：
 
-\[
+$$
 66.6\rightarrow75.2\text{ GFLOPs},
-\]
+$$
 
-\[
+$$
 40.3\rightarrow4.4\text{ GB HBM},
-\]
+$$
 
-\[
+$$
 41.7\rightarrow7.3\text{ ms}.
-\]
+$$
 
 ## Claim 5：Kernel efficiency 能转化成 end-to-end model benefit
 
@@ -2125,7 +2125,7 @@ BERT、GPT-2、LRA、long-context experiments 支撑，但幅度受 Amdahl's law
 # 三十二、最容易学错的十二个地方
 
 1. **FlashAttention 是 Sparse Attention**：错，FA1 主算法是 exact dense attention。
-2. **复杂度从 \(O(N^2)\) 变 \(O(N)\)**：错，FLOPs 仍 quadratic。
+2. **复杂度从 $O(N^2)$ 变 $O(N)$**：错，FLOPs 仍 quadratic。
 3. **主要因为 CUDA 比 PyTorch 快**：太浅，核心是 IO-aware dataflow。
 4. **Kernel Fusion 就是全部**：错，还需要 tiling + online softmax。
 5. **每个 block 单独 Softmax 后相加**：错，必须全局 rescale。
@@ -2157,7 +2157,7 @@ flowchart TD
 
 如果只记一句：
 
-> **FlashAttention 的突破不是减少 Attention 的数学工作，而是认识到现代 GPU 上“把数据搬错地方”可能比“多算几次”更贵，于是用 tiling、online softmax 与 recomputation 把 \(N\times N\) 中间状态限制在 SRAM 的短暂 tile 生命周期里。**
+> **FlashAttention 的突破不是减少 Attention 的数学工作，而是认识到现代 GPU 上“把数据搬错地方”可能比“多算几次”更贵，于是用 tiling、online softmax 与 recomputation 把 $N\times N$ 中间状态限制在 SRAM 的短暂 tile 生命周期里。**
 
 ---
 
@@ -2192,29 +2192,29 @@ FlashAttention-2 会继续研究：
 1. HBM 和 SRAM 的容量/带宽为什么形成矛盾？
 2. arithmetic intensity 是什么？
 3. compute-bound 与 memory-bound 怎样区分？
-4. Standard Attention 为什么 materialize \(S,P\)？
-5. \(S,P\) 为什么造成 \(O(N^2)\) HBM state？
+4. Standard Attention 为什么 materialize $S,P$？
+5. $S,P$ 为什么造成 $O(N^2)$ HBM state？
 6. 为什么显存放得下仍然可能很慢？
 7. kernel fusion 为什么必要但不充分？
 8. Softmax 为什么看起来阻止普通 tiling？
 9. stable softmax 为什么需要 row max？
 10. 两个 block 的 max 怎样合并？
 11. 两个 block 的 normalizer 怎样合并？
-12. 为什么旧 block 要乘 \(e^{m_{\text{old}}-m_{\text{new}}}\)？
+12. 为什么旧 block 要乘 $e^{m_{\text{old}}-m_{\text{new}}}$？
 13. output numerator 怎样重标定？
 14. 为什么 online softmax 与全局 softmax exact 等价？
 15. FlashAttention block 是 execution tile 还是 attention window？
 16. 为什么 K/V block 放外循环能增加 reuse？
 17. SRAM size M 怎样影响 block size？
-18. Standard Attention HBM IO 为什么是 \(\Theta(Nd+N^2)\)？
-19. FlashAttention HBM IO 为什么是 \(\Theta(N^2d^2/M)\)？
+18. Standard Attention HBM IO 为什么是 $\Theta(Nd+N^2)$？
+19. FlashAttention HBM IO 为什么是 $\Theta(N^2d^2/M)$？
 20. 为什么这不代表 compute complexity 变 subquadratic？
 21. lower bound 的准确含义是什么？
 22. standard backward 为什么需要 P？
 23. FlashAttention backward 为什么重算 P？
 24. 为什么更多 FLOPs 可以更快？
 25. 66.6/75.2 GFLOPs、40.3/4.4 GB、41.7/7.3 ms 各说明什么？
-26. \(D_i=dO_i^\top O_i\) 怎样推出来？
+26. $D_i=dO_i^\top O_i$ 怎样推出来？
 27. 为什么 dropout mask 可用 PRNG state 重建？
 28. FlashAttention 的 linear memory 指什么？
 29. 为什么 exact kernel 本身不会直接提升能力？
@@ -2228,7 +2228,7 @@ FlashAttention-2 会继续研究：
 
 如果这些问题都能回答，FlashAttention 就不再是“一个很快的 Attention CUDA 库”，而是一套更重要的硬件算法观：
 
-\[
+$$
 \boxed{
 \text{算法复杂度}
 +
@@ -2238,6 +2238,6 @@ FlashAttention-2 会继续研究：
 +
 \text{并行执行}
 }
-\]
+$$
 
 必须一起设计。

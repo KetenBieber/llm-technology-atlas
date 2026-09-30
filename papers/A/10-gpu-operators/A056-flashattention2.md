@@ -6,7 +6,7 @@
 
 上一站 [FlashAttention-1](A055-flashattention.md) 解决的是：
 
-> **Attention 为什么不应该把 \(N\times N\) 的 \(S,P\) 反复写入 HBM？**
+> **Attention 为什么不应该把 $N\times N$ 的 $S,P$ 反复写入 HBM？**
 
 这一站继续追问：
 
@@ -30,11 +30,11 @@ FlashAttention-2
 
 因此 FA2 最值得学的不是“比 FA1 快 2×”这个结果，而是：
 
-\[
+$$
 \boxed{
 \text{一个瓶颈被解决后，优化目标会向下一层硬件约束迁移。}
 }
-\]
+$$
 
 ---
 
@@ -55,12 +55,12 @@ FlashAttention-2
 4. 为什么长序列反而可能让 FA1 的 GPU occupancy 更差？
 5. 为什么 FP32 non-matmul FLOP 比 Tensor Core matmul FLOP“贵”很多？
 6. FA2 怎样减少 online softmax 中的非 matmul 操作？
-7. 为什么只保存 logsumexp \(L=m+\log\ell\) 就够 backward 恢复 \(P\)？
+7. 为什么只保存 logsumexp $L=m+\log\ell$ 就够 backward 恢复 $P$？
 8. FA1 的 thread-block parallelism 为什么主要只有 batch × heads？
 9. FA2 怎样把 sequence length 也变成并行维度？
 10. 为什么 forward 可以按 Q row blocks embarrassingly parallel？
 11. 为什么 backward 选择按 K/V column blocks 并行？
-12. backward 为什么需要 atomic add 更新 \(dQ\)？
+12. backward 为什么需要 atomic add 更新 $dQ$？
 13. FA1 的 split-K warp partition 到底哪里浪费？
 14. 为什么 split-K 会产生跨 warp partial-output reduction？
 15. FA2 的 split-Q 为什么不需要这次 reduction？
@@ -95,17 +95,17 @@ FlashAttention-2
 
 FA1 做了三件大事：
 
-\[
+$$
 \text{Tiling}
 +
 \text{Online Softmax}
 +
 \text{Backward Recomputation}.
-\]
+$$
 
 结果：
 
-- 不 materialize \(S,P\in\mathbb R^{N\times N}\)；
+- 不 materialize $S,P\in\mathbb R^{N\times N}$；
 - Attention auxiliary memory 由 quadratic 降到 linear；
 - HBM traffic 显著减少；
 - 相对 standard attention 得到 2–4× wall-clock speedup。
@@ -118,9 +118,9 @@ FA1 做了三件大事：
 
 大约只达到：
 
-\[
+$$
 30\%\sim50\%
-\]
+$$
 
 theoretical max FLOPs/s。
 
@@ -128,15 +128,15 @@ theoretical max FLOPs/s。
 
 更低：
 
-\[
+$$
 25\%\sim35\%.
-\]
+$$
 
 而 optimized GEMM：
 
-\[
+$$
 80\%\sim90\%
-\]
+$$
 
 是可能的。
 
@@ -183,17 +183,17 @@ kernel 启动后会创建大量 threads。
 
 threads 再组织成：
 
-\[
+$$
 \text{thread block}.
-\]
+$$
 
 thread block 被调度到某个 SM。
 
 一个 block 中 threads 再按：
 
-\[
+$$
 32\text{ threads}
-\]
+$$
 
 组成 warp。
 
@@ -217,15 +217,15 @@ NVIDIA GPU 以 warp 为基本调度粒度。
 
 因此：
 
-\[
+$$
 \text{intra-warp communication}
-\]
+$$
 
 和：
 
-\[
+$$
 \text{inter-warp communication}
-\]
+$$
 
 成本完全不同。
 
@@ -268,15 +268,15 @@ block 太大可能吃掉全部 register/SRAM resource，导致：
 
 论文例子：
 
-\[
+$$
 108\ \text{SMs}.
-\]
+$$
 
 假设 kernel 只产生：
 
-\[
+$$
 32
-\]
+$$
 
 个 independent thread blocks。
 
@@ -292,31 +292,31 @@ block 太大可能吃掉全部 register/SRAM resource，导致：
 
 论文指出，FA1 主要 parallelize：
 
-\[
+$$
 \text{batch size}
 \times
 \text{number of heads}.
-\]
+$$
 
 近似一个 attention head 对应一个 thread block。
 
 因此可并行 block 数：
 
-\[
+$$
 B\times H.
-\]
+$$
 
 如果：
 
-\[
+$$
 B=8,\quad H=32,
-\]
+$$
 
 则：
 
-\[
+$$
 256
-\]
+$$
 
 blocks。
 
@@ -326,15 +326,15 @@ blocks。
 
 例如：
 
-\[
+$$
 B=1,\quad H=16.
-\]
+$$
 
 只有：
 
-\[
+$$
 16
-\]
+$$
 
 blocks。
 
@@ -354,23 +354,23 @@ blocks。
 
 FP16/BF16 Tensor Core matmul theoretical peak：
 
-\[
+$$
 312\ \text{TFLOPs/s}.
-\]
+$$
 
 FP32 non-matmul peak：
 
-\[
+$$
 19.5\ \text{TFLOPs/s}.
-\]
+$$
 
 比例：
 
-\[
+$$
 \frac{312}{19.5}
 =
 16.
-\]
+$$
 
 也就是说从 throughput 角度：
 
@@ -378,11 +378,11 @@ FP32 non-matmul peak：
 
 当然真实 kernel 不能机械按“每个 FLOP 16 倍”换算，但它揭示方向：
 
-\[
+$$
 \boxed{
 \text{FLOP type matters.}
 }
-\]
+$$
 
 ---
 
@@ -390,15 +390,15 @@ FP32 non-matmul peak：
 
 ### Matmul
 
-\[
+$$
 QK^\top
-\]
+$$
 
 与：
 
-\[
+$$
 PV.
-\]
+$$
 
 Tensor Core 很擅长。
 
@@ -424,7 +424,7 @@ Tensor Core 很擅长。
 
 回忆 FA1 merge：
 
-\[
+$$
 O_{\text{new}}
 =
 \frac{
@@ -434,7 +434,7 @@ O_{\text{new}}
 }{
 \ell_{\text{new}}
 }.
-\]
+$$
 
 其中包含：
 
@@ -449,19 +449,19 @@ FA2 的想法：
 
 维护：
 
-\[
+$$
 \tilde O
-\]
+$$
 
 这个 unscaled numerator。
 
 最后所有 K/V blocks 扫完，再统一除：
 
-\[
+$$
 O
 =
 \frac{\tilde O}{\ell}.
-\]
+$$
 
 ---
 
@@ -469,7 +469,7 @@ O
 
 假设全局：
 
-\[
+$$
 O
 =
 \frac{
@@ -477,34 +477,34 @@ O
 }{
 \sum_j e^{s_j-m}
 }.
-\]
+$$
 
 定义：
 
-\[
+$$
 \tilde O
 =
 \sum_j e^{s_j-m}v_j.
-\]
+$$
 
 只要扫描过程中每次 global max 变化时正确 rescale：
 
-\[
+$$
 \tilde O_{\text{old}}
 \leftarrow
 e^{m_{\text{old}}-m_{\text{new}}}
 \tilde O_{\text{old}},
-\]
+$$
 
 就可以一直维护 numerator。
 
 最后：
 
-\[
+$$
 O
 =
 \frac{\tilde O}{\ell}.
-\]
+$$
 
 因此中间不用每轮执行完整 normalization。
 
@@ -520,15 +520,15 @@ O
 
 系统优化里常见：
 
-\[
+$$
 \text{只占总 FLOPs 5%的算子}
-\]
+$$
 
 可能占：
 
-\[
+$$
 20\%\text{ wall-clock}
-\]
+$$
 
 甚至更多。
 
@@ -544,19 +544,19 @@ O
 
 通常保存：
 
-\[
+$$
 m_i
-\]
+$$
 
 和：
 
-\[
+$$
 \ell_i.
-\]
+$$
 
 因为：
 
-\[
+$$
 P_{ij}
 =
 \frac{
@@ -564,7 +564,7 @@ e^{S_{ij}-m_i}
 }{
 \ell_i
 }.
-\]
+$$
 
 ---
 
@@ -572,44 +572,44 @@ e^{S_{ij}-m_i}
 
 定义：
 
-\[
+$$
 L_i
 =
 m_i+\log\ell_i.
-\]
+$$
 
 也就是：
 
-\[
+$$
 \boxed{
 L_i
 =
 \log
 \sum_j e^{S_{ij}}
 }
-\]
+$$
 
 这就是 row-wise logsumexp。
 
 那么：
 
-\[
+$$
 P_{ij}
 =
 e^{S_{ij}-L_i}.
-\]
+$$
 
 所以 backward 根本不需要分别知道：
 
-\[
+$$
 m_i,\ell_i.
-\]
+$$
 
 只需要：
 
-\[
+$$
 L_i.
-\]
+$$
 
 ---
 
@@ -617,17 +617,17 @@ L_i.
 
 原来每 row 保存：
 
-\[
+$$
 (m_i,\ell_i)
-\]
+$$
 
 两个 scalar。
 
 现在：
 
-\[
+$$
 L_i
-\]
+$$
 
 一个。
 
@@ -663,9 +663,9 @@ for each K/V block j:
 
 但这种组织与 FA1 CUDA scheduling 配合后，主要 parallel dimension 是：
 
-\[
+$$
 B\times H.
-\]
+$$
 
 sequence blocks 在一个 head 的 worker 内串行处理。
 
@@ -687,19 +687,19 @@ for each Q block i:       ← independent worker / thread block
 
 这样不同：
 
-\[
+$$
 Q_i
-\]
+$$
 
 之间完全独立。
 
 因此：
 
-\[
+$$
 \boxed{
 \text{sequence row blocks}
 }
-\]
+$$
 
 成为新的 parallel dimension。
 
@@ -709,45 +709,45 @@ Q_i
 
 ## 18. Attention 每一行的输出互不依赖
 
-对于 query \(i\)：
+对于 query $i$：
 
-\[
+$$
 O_i
 =
 \operatorname{softmax}
 (
 Q_iK^\top
 )V.
-\]
+$$
 
-另一行 \(r\)：
+另一行 $r$：
 
-\[
+$$
 O_r
 =
 \operatorname{softmax}
 (
 Q_rK^\top
 )V.
-\]
+$$
 
 两者共享：
 
-\[
+$$
 K,V,
-\]
+$$
 
 但：
 
-\[
+$$
 O_i
-\]
+$$
 
 不依赖：
 
-\[
+$$
 O_r.
-\]
+$$
 
 所以 row blocks 之间：
 
@@ -761,53 +761,53 @@ O_r.
 
 设 row block size：
 
-\[
+$$
 B_r=128.
-\]
+$$
 
 sequence：
 
-\[
+$$
 N=8192.
-\]
+$$
 
 则一个 head 可以产生：
 
-\[
+$$
 \frac{8192}{128}
 =
 64
-\]
+$$
 
 个 row-block workers。
 
 原来一个 head 只有：
 
-\[
+$$
 1
-\]
+$$
 
 个 coarse worker。
 
 现在变成：
 
-\[
+$$
 64.
-\]
+$$
 
 即使：
 
-\[
+$$
 B=1,\ H=16,
-\]
+$$
 
 thread blocks 近似：
 
-\[
+$$
 1\times16\times64
 =
 1024.
-\]
+$$
 
 108 SM 很容易被填满。
 
@@ -827,9 +827,9 @@ thread blocks 近似：
 
 worker owns：
 
-\[
+$$
 Q_i
-\]
+$$
 
 对应的 row block。
 
@@ -837,9 +837,9 @@ Q_i
 
 worker owns：
 
-\[
+$$
 K_j,V_j
-\]
+$$
 
 对应的 column block。
 
@@ -851,35 +851,35 @@ K_j,V_j
 
 # 十、Backward 为什么按 Column Block 并行？
 
-## 20. \(dK_j,dV_j\) 可以局部累加
+## 20. $dK_j,dV_j$ 可以局部累加
 
-固定 K/V column block \(j\)。
+固定 K/V column block $j$。
 
 它需要遍历所有 query row blocks：
 
-\[
+$$
 i=1,\dots,T_r.
-\]
+$$
 
 然后：
 
-\[
+$$
 dV_j
 =
 \sum_i
 P_{ij}^\top dO_i.
-\]
+$$
 
-\[
+$$
 dK_j
 =
 \sum_i
 dS_{ij}^\top Q_i.
-\]
+$$
 
-所以一个 worker owning \(j\)：
+所以一个 worker owning $j$：
 
-> 可以在本地完成整个 \(dK_j,dV_j\) reduction。
+> 可以在本地完成整个 $dK_j,dV_j$ reduction。
 
 最后一次性写回。
 
@@ -887,22 +887,22 @@ dS_{ij}^\top Q_i.
 
 ---
 
-## 21. 但 \(dQ_i\) 会被多个 Column Workers 同时贡献
+## 21. 但 $dQ_i$ 会被多个 Column Workers 同时贡献
 
 因为：
 
-\[
+$$
 dQ_i
 =
 \sum_j
 dS_{ij}K_j.
-\]
+$$
 
-如果每个 worker 负责不同 \(j\)，那么多个 workers 都需要更新同一个：
+如果每个 worker 负责不同 $j$，那么多个 workers 都需要更新同一个：
 
-\[
+$$
 dQ_i.
-\]
+$$
 
 因此出现跨 thread-block accumulation。
 
@@ -912,11 +912,11 @@ FA2 使用：
 
 即：
 
-\[
+$$
 dQ_i
 \mathrel{+}=
 dS_{ij}K_j
-\]
+$$
 
 需要原子地累加。
 
@@ -949,7 +949,7 @@ dS_{ij}K_j
 
 代价：
 
-- \(dQ\) atomic accumulation。
+- $dQ$ atomic accumulation。
 
 FA2 实验说明：
 
@@ -963,21 +963,21 @@ FA2 实验说明：
 
 例如：
 
-\[
+$$
 4
-\]
+$$
 
 或：
 
-\[
+$$
 8
-\]
+$$
 
 warps。
 
 问题：
 
-> 一个 \(Q_i,K_j,V_j\) tile 的工作，怎样分给这些 warps？
+> 一个 $Q_i,K_j,V_j$ tile 的工作，怎样分给这些 warps？
 
 FA1 的 forward 采用类似：
 
@@ -997,26 +997,26 @@ FA1 的 forward 采用类似：
 
 Warp 0：
 
-\[
+$$
 P^{(0)}V^{(0)}.
-\]
+$$
 
 Warp 1：
 
-\[
+$$
 P^{(1)}V^{(1)}.
-\]
+$$
 
 ...
 
 但最终同一组 query rows 的输出：
 
-\[
+$$
 O
 =
 \sum_w
 P^{(w)}V^{(w)}.
-\]
+$$
 
 所以每个 warp 只产生：
 
@@ -1042,11 +1042,11 @@ P^{(w)}V^{(w)}.
 
 所以：
 
-\[
+$$
 \text{split-K}
 \Rightarrow
 \text{inter-warp communication}.
-\]
+$$
 
 这增加：
 
@@ -1074,9 +1074,9 @@ FA1 已经努力减少 HBM IO，但这里：
 
 例如一个 Q block 有：
 
-\[
+$$
 128
-\]
+$$
 
 rows。
 
@@ -1095,23 +1095,23 @@ K/V tile 对所有 warps 可见。
 
 对自己负责的 query rows：
 
-\[
+$$
 Q^{(w)}K^\top
-\]
+$$
 
 覆盖完整 key dimension。
 
 接着：
 
-\[
+$$
 P^{(w)}V.
-\]
+$$
 
 得到：
 
-\[
+$$
 O^{(w)}.
-\]
+$$
 
 这些输出属于不同 row slices。
 
@@ -1121,11 +1121,11 @@ O^{(w)}.
 
 因此：
 
-\[
+$$
 \boxed{
 \text{no cross-warp output reduction}.
 }
-\]
+$$
 
 ---
 
@@ -1203,15 +1203,15 @@ FA2 的结论是针对常见 Attention shape 和 GPU architecture 优化。
 
 例如：
 
-\[
+$$
 128\times128
-\]
+$$
 
 相比：
 
-\[
+$$
 64\times64.
-\]
+$$
 
 可能带来：
 
@@ -1248,42 +1248,42 @@ register spill 到 local memory，实际通常落到更慢 memory hierarchy。
 
 单 block 占 SRAM：
 
-\[
+$$
 S_{\text{block}}.
-\]
+$$
 
 SM 总 SRAM：
 
-\[
+$$
 S_{\text{SM}}.
-\]
+$$
 
 理论驻留 block 数：
 
-\[
+$$
 \le
 \left\lfloor
 \frac{S_{\text{SM}}}{S_{\text{block}}}
 \right\rfloor.
-\]
+$$
 
 block 越大：
 
-\[
+$$
 S_{\text{block}}\uparrow
 \Rightarrow
 \text{resident blocks}\downarrow.
-\]
+$$
 
 所以 tile size 存在 Pareto point。
 
 FA2 常见选择：
 
-\[
+$$
 \{64,128\}
 \times
 \{64,128\}.
-\]
+$$
 
 并根据：
 
@@ -1300,7 +1300,7 @@ FA2 常见选择：
 
 它依赖：
 
-\[
+$$
 f(
 d,
 N,
@@ -1310,7 +1310,7 @@ N,
 \text{shared memory},
 \text{warp count}
 ).
-\]
+$$
 
 因此论文明确提到：
 
@@ -1326,17 +1326,17 @@ N,
 
 合法条件：
 
-\[
+$$
 j\le i.
-\]
+$$
 
 Attention matrix 只有下三角有效。
 
 如果 tile 完全落在上三角：
 
-\[
+$$
 j_{\min}>i_{\max},
-\]
+$$
 
 整个 tile 都是 masked。
 
@@ -1352,27 +1352,27 @@ j_{\min}>i_{\max},
 
 dense square matrix：
 
-\[
+$$
 N^2.
-\]
+$$
 
 lower triangle 约：
 
-\[
+$$
 \frac{N^2}{2}.
-\]
+$$
 
 所以 ideal speedup 接近：
 
-\[
+$$
 2\times.
-\]
+$$
 
 论文实测：
 
-\[
+$$
 1.7\sim1.8\times.
-\]
+$$
 
 为什么不是 2×？
 
@@ -1387,11 +1387,11 @@ lower triangle 约：
 
 这再次说明：
 
-\[
+$$
 \text{FLOP reduction}
 \neq
 \text{wall-clock reduction}.
-\]
+$$
 
 ---
 
@@ -1413,21 +1413,21 @@ lower triangle 约：
 
 合法 attention pair：
 
-\[
+$$
 (i,j)
-\]
+$$
 
 仍然全部计算。
 
 所以：
 
-\[
+$$
 \boxed{
 O_{\text{FA2}}
 =
 \operatorname{softmax}(QK^\top)V.
 }
-\]
+$$
 
 与 FA1 / standard dense Attention 数学等价。
 
@@ -1439,17 +1439,17 @@ O_{\text{FA2}}
 
 Forward FLOPs：
 
-\[
+$$
 O(N^2d).
-\]
+$$
 
 Backward 同数量级。
 
 Attention auxiliary memory：
 
-\[
+$$
 O(N).
-\]
+$$
 
 FA2 的提升来自：
 
@@ -1476,15 +1476,15 @@ A100 Tensor Core 针对：
 
 所以：
 
-\[
+$$
 312\ \text{TFLOPs/s}.
-\]
+$$
 
 而普通 FP32 ALU 非 matmul：
 
-\[
+$$
 19.5\ \text{TFLOPs/s}.
-\]
+$$
 
 因此 kernel optimization 的目标不是：
 
@@ -1504,43 +1504,43 @@ A100 Tensor Core 针对：
 
 每 head：
 
-\[
+$$
 QK^\top
-\]
+$$
 
 约：
 
-\[
+$$
 2N^2d
-\]
+$$
 
 FLOPs。
 
-\(PV\)：
+$PV$：
 
-\[
+$$
 2N^2d.
-\]
+$$
 
 合计：
 
-\[
+$$
 4N^2d.
-\]
+$$
 
 乘 heads：
 
-\[
+$$
 \boxed{
 4N^2dH.
 }
-\]
+$$
 
 causal 时理论上约一半 entries：
 
-\[
+$$
 \approx2N^2dH.
-\]
+$$
 
 ---
 
@@ -1548,32 +1548,32 @@ causal 时理论上约一半 entries：
 
 Forward 有 2 个主要 matmuls：
 
-- \(QK^\top\)；
-- \(PV\)。
+- $QK^\top$；
+- $PV$。
 
 Backward 包含约 5 个 matmul-equivalent：
 
-- recompute \(QK^\top\)；
-- \(dO V^\top\)；
-- \(P^\top dO\)；
-- \(dS K\)；
-- \(dS^\top Q\)。
+- recompute $QK^\top$；
+- $dO V^\top$；
+- $P^\top dO$；
+- $dS K$；
+- $dS^\top Q$。
 
 所以 matmul FLOP 粗比：
 
-\[
+$$
 \frac52
 =
 2.5.
-\]
+$$
 
 因此论文以：
 
-\[
+$$
 \text{backward FLOPs}
 \approx
 2.5\times\text{forward FLOPs}.
-\]
+$$
 
 ---
 
@@ -1583,22 +1583,22 @@ Backward 包含约 5 个 matmul-equivalent：
 
 达到最高约：
 
-\[
+$$
 230\ \text{TFLOPs/s}.
-\]
+$$
 
 A100 FP16/BF16 theoretical matmul peak：
 
-\[
+$$
 312\ \text{TFLOPs/s}.
-\]
+$$
 
 比例：
 
-\[
+$$
 \frac{230}{312}
 \approx73.7\%.
-\]
+$$
 
 论文报告：
 
@@ -1612,9 +1612,9 @@ A100 FP16/BF16 theoretical matmul peak：
 
 最高约：
 
-\[
+$$
 63\%
-\]
+$$
 
 theoretical peak。
 
@@ -1625,7 +1625,7 @@ backward 更复杂：
 - 更多 matmuls；
 - more operands；
 - gradient accumulation；
-- atomic \(dQ\)；
+- atomic $dQ$；
 - dependency；
 - synchronization；
 - recomputation。
@@ -1673,9 +1673,9 @@ backward 更复杂：
 
 Sequence length：
 
-\[
+$$
 N\uparrow
-\]
+$$
 
 会增加：
 
@@ -1685,15 +1685,15 @@ N\uparrow
 
 于是 batch size：
 
-\[
+$$
 B\downarrow.
-\]
+$$
 
 FA1 parallel blocks：
 
-\[
+$$
 B\times H
-\]
+$$
 
 因此下降。
 
@@ -1703,27 +1703,27 @@ B\times H
 
 现在：
 
-\[
+$$
 B\times H\times T_r.
-\]
+$$
 
 其中：
 
-\[
+$$
 T_r
 =
 \left\lceil
 \frac{N}{B_r}
 \right\rceil.
-\]
+$$
 
 当：
 
-\[
+$$
 N\uparrow,
-\]
+$$
 
-\(T_r\) 反而增加。
+$T_r$ 反而增加。
 
 这会抵消 batch 下降导致的 parallelism shortage。
 
@@ -1749,17 +1749,17 @@ N\uparrow,
 
 所以即使 Attention kernel：
 
-\[
+$$
 2\times
-\]
+$$
 
 更快，
 
 end-to-end 不可能自动：
 
-\[
+$$
 2\times.
-\]
+$$
 
 这就是 Amdahl's law。
 
@@ -1776,15 +1776,15 @@ end-to-end 不可能自动：
 
 最高：
 
-\[
+$$
 225\ \text{TFLOPs/s/GPU}.
-\]
+$$
 
 约：
 
-\[
+$$
 72\%
-\]
+$$
 
 model FLOPs utilization。
 
@@ -1798,9 +1798,9 @@ FA1 已经很快。
 
 所以：
 
-\[
+$$
 189\rightarrow196
-\]
+$$
 
 提升有限。
 
@@ -1810,9 +1810,9 @@ FA1 已经很快。
 
 于是：
 
-\[
+$$
 170\rightarrow220.
-\]
+$$
 
 这再次体现：
 
@@ -1847,29 +1847,29 @@ FA2 通过 index mapping：
 
 因为多个 Q heads 都使用同一个：
 
-\[
+$$
 K_h,V_h.
-\]
+$$
 
 所以每个 Q group 会贡献：
 
-\[
+$$
 dK,dV.
-\]
+$$
 
 最终必须：
 
-\[
+$$
 dK_h
 =
 \sum_g dK_{h,g},
-\]
+$$
 
-\[
+$$
 dV_h
 =
 \sum_g dV_{h,g}.
-\]
+$$
 
 这是共享参数梯度的自然结果。
 
@@ -1883,9 +1883,9 @@ FA2 implementation 直接运行：
 
 最高约：
 
-\[
+$$
 335\ \text{TFLOPs/s}.
-\]
+$$
 
 但没有特意使用：
 
@@ -1923,15 +1923,15 @@ Hopper 新增：
 
 因此：
 
-\[
+$$
 \text{algorithm unchanged}
-\]
+$$
 
 不代表：
 
-\[
+$$
 \text{kernel unchanged}.
-\]
+$$
 
 ---
 
@@ -1941,9 +1941,9 @@ Hopper 新增：
 
 目标：
 
-\[
+$$
 \text{HBM traffic}.
-\]
+$$
 
 手段：
 
@@ -1958,9 +1958,9 @@ Hopper 新增：
 
 目标转成：
 
-\[
+$$
 \text{GPU utilization}.
-\]
+$$
 
 手段：
 
@@ -1976,9 +1976,9 @@ Hopper 新增：
 
 进一步：
 
-\[
+$$
 \text{asynchronous hardware pipeline}.
-\]
+$$
 
 手段：
 
@@ -1995,15 +1995,15 @@ Hopper 新增：
 
 ## 55. FA1 与 FA2 都是
 
-\[
+$$
 O(N^2d).
-\]
+$$
 
 也都是 exact。
 
 但 GPU runtime 近似受：
 
-\[
+$$
 T
 =
 f(
@@ -2015,7 +2015,7 @@ f(
 \text{sync},
 \text{warp partition}
 )
-\]
+$$
 
 共同决定。
 
@@ -2041,9 +2041,9 @@ Big-O 只描述：
 
 减少：
 
-\[
+$$
 |\mathcal S|
-\]
+$$
 
 即实际 attention pairs。
 
@@ -2067,13 +2067,13 @@ Big-O 只描述：
 
 因此：
 
-\[
+$$
 \boxed{
 \text{Sparsity}
 \neq
 \text{Parallelism}.
 }
-\]
+$$
 
 两者可以继续叠加。
 
@@ -2109,11 +2109,11 @@ FA2 则是在：
 
 两个层次的基本问题其实一样：
 
-\[
+$$
 \boxed{
 \text{把 workload 拆给并行执行单元，同时最小化通信。}
 }
-\]
+$$
 
 ---
 
@@ -2247,13 +2247,13 @@ flowchart TD
 
 ## 继续 GPU kernel
 
-\[
+$$
 \text{FA1}
 \rightarrow
 \text{FA2}
 \rightarrow
 \text{FA3}.
-\]
+$$
 
 可以继续进入 Hopper：
 
@@ -2265,11 +2265,11 @@ flowchart TD
 
 ## 转入 Distributed Training
 
-\[
+$$
 \text{single-GPU work partition}
 \rightarrow
 \text{multi-GPU work partition}.
-\]
+$$
 
 进入：
 
@@ -2295,13 +2295,13 @@ FA3 可以作为 GPU kernel 主线的后续扩展。
 5. 为什么 non-matmul FLOPs 比 Tensor Core matmul FLOPs 贵？
 6. 312 TFLOPs/s vs 19.5 TFLOPs/s 说明什么？
 7. FA2 怎样减少 online softmax 的 non-matmul work？
-8. 为什么可以只保存 \(L=m+\log\ell\)？
-9. backward 怎样用 \(P=e^{S-L}\) 重建 probability？
+8. 为什么可以只保存 $L=m+\log\ell$？
+9. backward 怎样用 $P=e^{S-L}$ 重建 probability？
 10. FA1 主要 parallelize 哪两个维度？
 11. FA2 为什么可以 parallelize query row blocks？
 12. row blocks 为什么无需彼此通信？
 13. backward 为什么选择 column blocks？
-14. 多 column workers 为什么会共同写 \(dQ\)？
+14. 多 column workers 为什么会共同写 $dQ$？
 15. atomic add 为什么在这里是合理 trade-off？
 16. FA1 split-K 到底把哪部分工作分给 warps？
 17. 为什么 split-K 产生 partial output？
@@ -2331,7 +2331,7 @@ FA3 可以作为 GPU kernel 主线的后续扩展。
 
 如果这些问题都能回答，FA2 就不再只是“FlashAttention 又快了 2×”，而是一节完整的 GPU workload decomposition 课程：
 
-\[
+$$
 \boxed{
 \text{并行度}
 +
@@ -2341,6 +2341,6 @@ FA3 可以作为 GPU kernel 主线的后续扩展。
 +
 \text{硬件专用单元利用率}
 }
-\]
+$$
 
 必须一起优化。

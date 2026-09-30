@@ -647,8 +647,8 @@ $$
 
 其中：
 
-- \(N\)：model size；
-- \(D\)：pre-training data size；
+- $N$：model size；
+- $D$：pre-training data size；
 - architecture：dense 或 MoE。
 
 实验覆盖：
@@ -1037,7 +1037,7 @@ $$
 
 - 2 epochs；
 - sequence length = 32,768；
-- learning rate 从 \(7\times10^{-6}\) 降到 \(7\times10^{-7}\)；
+- learning rate 从 $7\times10^{-6}$ 降到 $7\times10^{-7}$；
 - weight decay = 0.1；
 - gradient norm clip = 1.0。
 
@@ -1572,7 +1572,7 @@ $$
 
 > query 的训练顺序由不同 response reward score 的 variance 决定，高 variance query 优先。
 
-设一个 query \(x\) 采样 8 个 response：
+设一个 query $x$ 采样 8 个 response：
 
 $$
 y_1,\dots,y_8.

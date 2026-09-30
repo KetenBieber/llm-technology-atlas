@@ -162,21 +162,21 @@ MoE 把问题从：
 论文给出：
 
 - Transformer 层数：
-  $$
+  :::{math}
   L=61;
-  $$
+  :::
 - hidden dimension：
-  $$
+  :::{math}
   d=7168;
-  $$
+  :::
 - attention heads：
-  $$
+  :::{math}
   n_h=128;
-  $$
+  :::
 - 每个普通 attention head 内容维：
-  $$
+  :::{math}
   d_h=128.
-  $$
+  :::
 
 一个 token 的主干可以抽象成：
 
@@ -660,17 +660,17 @@ $$
 V3 中：
 
 - shared experts：
-  $$
+  :::{math}
   N_s=1;
-  $$
+  :::
 - routed experts：
-  $$
+  :::{math}
   N_r=256;
-  $$
+  :::
 - 每 token 选：
-  $$
+  :::{math}
   K_r=8.
-  $$
+  :::
 
 shared expert 总是执行。
 
@@ -966,13 +966,13 @@ V3 的设计和“每个 hidden state 上挂 D 个平行分类头”不同。
 第 $k$ 个 MTP module 会把：
 
 1. 上一深度的 hidden representation：
-   $$
+   :::{math}
    h_i^{k-1};
-   $$
+   :::
 2. 真值未来 token embedding：
-   $$
+   :::{math}
    \operatorname{Emb}(t_{i+k})
-   $$
+   :::
 
 拼接：
 
@@ -1062,13 +1062,13 @@ $$
 V3 的 $\lambda$ 不是固定常数：
 
 - 前 10T tokens：
-  $$
+  :::{math}
   \lambda=0.3;
-  $$
+  :::
 - 后 4.8T tokens：
-  $$
+  :::{math}
   \lambda=0.1.
-  $$
+  :::
 
 这说明作者把 MTP 当作：
 
@@ -1096,17 +1096,17 @@ V3 的 $\lambda$ 不是固定常数：
 例如 large MoE：
 
 - HumanEval：
-  $$
+  :::{math}
   44.5\rightarrow53.7;
-  $$
+  :::
 - GSM8K：
-  $$
+  :::{math}
   72.3\rightarrow74.0;
-  $$
+  :::
 - MATH：
-  $$
+  :::{math}
   38.6\rightarrow39.8.
-  $$
+  :::
 
 但 MMLU：
 
@@ -1456,9 +1456,9 @@ tokenizer：
 
 - byte-level BPE；
 - vocabulary：
-  $$
+  :::{math}
   128K.
-  $$
+  :::
 
 新 pretokenizer 还合并部分 punctuation + line break token，但作者发现这可能导致 multiline prompt 的 token-boundary bias，因此训练时会随机拆分一部分组合 token。
 
@@ -1660,11 +1660,11 @@ SFT：
 
 - 2 epochs；
 - cosine LR：
-  $$
+  :::{math}
   5\times10^{-6}
   \rightarrow
   1\times10^{-6}.
-  $$
+  :::
 
 sequence 会 pack 多个 sample，但采用 sample masking，让不同 sample 互相不可见。
 
@@ -1951,17 +1951,17 @@ $$
 其中：
 
 - pre-training：
-  $$
+  :::{math}
   2.664\text{M};
-  $$
+  :::
 - context extension：
-  $$
+  :::{math}
   0.119\text{M};
-  $$
+  :::
 - post-training：
-  $$
+  :::{math}
   0.005\text{M}.
-  $$
+  :::
 
 按作者假设：
 
