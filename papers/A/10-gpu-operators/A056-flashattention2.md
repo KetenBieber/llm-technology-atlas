@@ -1894,7 +1894,7 @@ FA2 implementation 直接运行：
 
 > 真正针对 Hopper 重写还能再提升 1.5–2×。
 
-这正是后来 FlashAttention-3 的方向。
+这正是后来 [FlashAttention-3](A057-flashattention3.md) 的方向：不再只优化 work partition，而是显式利用 Hopper 的 TMA / WGMMA 异步执行、warp specialization 与 FP8。
 
 ---
 

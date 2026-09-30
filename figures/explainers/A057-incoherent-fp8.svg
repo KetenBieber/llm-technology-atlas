@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="860" viewBox="0 0 1500 860">
+<rect width="1500" height="860" fill="white"/>
+<text x="750" y="55" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" font-weight="700">FP8 Incoherent Processing：不改 QKᵀ，却把 outlier 摊平</text>
+<text x="750" y="94" text-anchor="middle" font-family="Arial,sans-serif" font-size="21">对 Q、K 同乘一个正交矩阵 M；几何关系保持不变，但单个坐标上的极端值被混合到更多维度</text>
+
+<rect x="80" y="165" width="360" height="190" rx="18" fill="#f7f7f7" stroke="#222" stroke-width="2"/>
+<text x="260" y="208" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700">原始 Q / K</text>
+<text x="260" y="248" text-anchor="middle" font-family="Arial" font-size="20">少数 feature 含大 outlier</text>
+<text x="260" y="292" text-anchor="middle" font-family="Arial" font-size="23">[ 0.7, -0.4, 38.0, 0.2, ... ]</text>
+<text x="260" y="328" text-anchor="middle" font-family="Arial" font-size="18">per-tensor FP8 scale 被极端值牵着走</text>
+
+<rect x="570" y="165" width="360" height="190" rx="18" fill="#fafafa" stroke="#222" stroke-width="2"/>
+<text x="750" y="208" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700">随机正交变换</text>
+<text x="750" y="250" text-anchor="middle" font-family="Arial" font-size="23">Q' = QM，K' = KM</text>
+<text x="750" y="290" text-anchor="middle" font-family="Arial" font-size="20">M Mᵀ = I</text>
+<text x="750" y="328" text-anchor="middle" font-family="Arial" font-size="18">实际可用随机符号 × Hadamard，O(d log d)</text>
+
+<rect x="1060" y="165" width="360" height="190" rx="18" fill="#f7f7f7" stroke="#222" stroke-width="2"/>
+<text x="1240" y="208" text-anchor="middle" font-family="Arial" font-size="25" font-weight="700">变换后的 Q' / K'</text>
+<text x="1240" y="248" text-anchor="middle" font-family="Arial" font-size="20">outlier 能量扩散到多个 feature</text>
+<text x="1240" y="292" text-anchor="middle" font-family="Arial" font-size="23">[ 4.8, -5.3, 3.9, 6.1, ... ]</text>
+<text x="1240" y="328" text-anchor="middle" font-family="Arial" font-size="18">block scale 更能覆盖正常动态范围</text>
+
+<path d="M440 260 L555 260" stroke="#222" stroke-width="4" marker-end="url(#arr2)"/>
+<path d="M930 260 L1045 260" stroke="#222" stroke-width="4" marker-end="url(#arr2)"/>
+
+<rect x="180" y="440" width="1140" height="145" rx="18" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="750" y="485" text-anchor="middle" font-family="Arial" font-size="27" font-weight="700">Attention score 完全不变</text>
+<text x="750" y="535" text-anchor="middle" font-family="Arial" font-size="28">Q'K'ᵀ = (QM)(KM)ᵀ = QMMᵀKᵀ = QKᵀ</text>
+<text x="750" y="568" text-anchor="middle" font-family="Arial" font-size="18">这是 exact algebraic invariance；误差只来自后续 FP8 quantization，而不是正交变换本身</text>
+
+<rect x="250" y="650" width="1000" height="120" rx="18" fill="#f7f7f7" stroke="#222" stroke-width="2"/>
+<text x="750" y="692" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700">FA3 再叠加 block quantization</text>
+<text x="750" y="731" text-anchor="middle" font-family="Arial" font-size="20">每个 Q/K/V tile 使用自己的 scale → 进一步缩小局部 dynamic range → 降低 FP8 量化误差</text>
+<defs><marker id="arr2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#222"/></marker></defs>
+</svg>

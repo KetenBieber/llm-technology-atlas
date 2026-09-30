@@ -92,4 +92,10 @@ FA1 把 HBM traffic 压下去以后，新的瓶颈变成 GPU utilization。本�
 这一阶段把 Llama 3 中已经出现的 4D parallelism 真正展开：从训练显存账本出发，分别理解 TP 切 layer 内 tensor、PP 切 layer depth、CP 切 sequence、DP/FSDP 切 data replica 与 model states；再推导 pipeline bubble、global batch、process group、all-gather / reduce-scatter 与 topology-aware placement。读完后，就可以继续进入 Hopper 上的 FlashAttention-3，或继续下钻通信 overlap 与大规模训练 runtime。
 
 
+## 第十五阶段：Hopper Asynchrony 与低精度 Attention
+
+30. {doc}`FlashAttention-3 <generated/papers/A/10-gpu-operators/A057-flashattention3>`
+
+FA2 解决 work partition 后，H100 上的新瓶颈转向 heterogeneous execution units 的同步等待。本阶段重点理解 TMA / WGMMA、warpgroup、producer-consumer specialization、circular SMEM buffer、ping-pong 与 2/3-stage GEMM-softmax pipeline，并进一步理解 FP8 的 k-major layout、in-kernel transpose、block quantization 与 incoherent processing。到这里，FlashAttention 主线形成 IO → Parallelism → Asynchrony → Low Precision 的完整硬件演化链。
+
 读到 V3 / R1 时不需要把所有方法重新推一遍；直接使用文章中的站内链接回到 MLA、MoE 或 GRPO 专题，再返回模型主线即可。
