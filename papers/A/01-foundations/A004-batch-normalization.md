@@ -121,6 +121,13 @@ BN 的关键简化是：**不试图消掉不同 feature 之间的协方差，只
 
 BN 与 LayerNorm/RMSNorm 不能只说成“公式差不多”。最关键的分歧首先是**统计轴和样本间耦合**。
 
+
+## 总结架构图
+
+![教学总结图：A004-batch-normalization](../../../figures/explainers/A004-batch-normalization-summary.svg)
+
+> **教学总结图**：对照 BatchNorm 在训练期使用 batch statistics、推理期使用 running statistics 的两条路径。
+
 # 输入、输出与任务
 
 ## 1. 全连接场景：对哪个轴统计？

@@ -134,6 +134,13 @@ Adam ──逐坐标预条件─────────────────
 
 这里“后续广泛采用”是历史影响，不是本文实验本身。
 
+
+## 总结架构图
+
+![教学总结图：A003-adamw](../../../figures/explainers/A003-adamw-summary.svg)
+
+> **教学总结图**：对比 coupled L2 与 AdamW：后者把 weight decay 从 Adam 的 m/v 状态中解耦出来。
+
 # 输入、输出与任务
 
 ## 1. 一步 AdamW 的精确接口

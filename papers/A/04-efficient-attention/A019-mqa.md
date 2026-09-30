@@ -47,6 +47,13 @@ Transformer
         └── GQA
 ~~~
 
+
+## 总结架构图
+
+![教学总结图：A019-mqa](../../../figures/explainers/A019-mqa-summary.svg)
+
+> **教学总结图**：MQA 保留多 Query heads，但共享一组 K/V，从而显著压缩 Decode 阶段 KV Cache 与 HBM 读取。
+
 # 输入、输出与任务
 
 输入：

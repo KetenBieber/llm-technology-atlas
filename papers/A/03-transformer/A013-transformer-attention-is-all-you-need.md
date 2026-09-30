@@ -29,6 +29,13 @@ BERT Encoder / GPT Decoder-only / ViT / VLM / VLA 的后续技术谱系
 
 **为什么需要出现：** RNN 的隐藏状态 `h_t=f(h_{t-1},x_t)` 导致同一层的第 `t` 步必须等第 `t-1` 步结束，训练一个长句存在跨时间递推串行依赖。CNN 可并行但若局部卷积核宽有限，远距离信息要穿过多层或使用 dilation。Self-attention 在单层中允许任意两个位置建立直接数据依赖，使整条序列在一次批量矩阵计算中共同更新。代价是所有位置两两相关时计算与中间注意力矩阵随 `T^2` 增长，而不是「注意力完全消除了长序列成本」。[原文 `1–2 Table 1](https://ar5iv.labs.arxiv.org/html/1706.03762)
 
+
+## 总结架构图
+
+![教学总结图：A013-transformer-attention-is-all-you-need](../../../figures/explainers/A013-transformer-attention-is-all-you-need-summary.svg)
+
+> **教学总结图**：Transformer 用多头注意力、残差归一化和逐位置 FFN 取代循环序列建模。
+
 # 输入、输出与任务
 
 ## 首先区分翻译模型与今天的纯 Decoder 语言模型

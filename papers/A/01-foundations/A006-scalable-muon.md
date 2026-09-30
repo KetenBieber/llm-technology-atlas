@@ -30,6 +30,13 @@
 
 主要技术路径 `训练 → 参数优化 → 矩阵整体梯度变换 → 动量正交化 → Muon → Scalable Muon（本篇）`；分支路径 `分布式训练 → Optimizer State Sharding → ZeRO-1 → Distributed Muon`。不要把「正交化矩阵梯度」与 LoRA 的「低秩限制参数改变量」混同：前者操纵更新矩阵的奇异值尺度，后者约束可训练参数化的秩。
 
+
+## 总结架构图
+
+![教学总结图：A006-scalable-muon](../../../figures/explainers/A006-scalable-muon-summary.svg)
+
+> **教学总结图**：Muon 从矩阵梯度出发，经 momentum、Newton–Schulz 正交化与尺度校准形成结构化更新。
+
 # 输入、输出与任务
 
 ## Muon 处理的是**二维参数矩阵**，不是 token

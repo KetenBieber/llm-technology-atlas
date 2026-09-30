@@ -42,6 +42,13 @@
 
 「反向传播」负责求 $\nabla_\theta L$，「SGD/Adam」负责利用梯度更新 $\theta$；不能把优化器与求导算法混为一谈。模型的前向架构也不同于训练算法：Transformer 的 Attention 并不是「反向传播的一种」。
 
+
+## 总结架构图
+
+![教学总结图：A001-backpropagation](../../../figures/explainers/A001-backpropagation-summary.svg)
+
+> **教学总结图**：从前向计算、loss 到隐藏层梯度和参数更新的完整信用分配闭环。
+
 # 输入、输出与任务
 
 ## 从论文的逐样本网络转为现代张量记号

@@ -144,6 +144,13 @@ Bottleneck → ResNet-50/101/152
 
 BatchNorm、ReLU、SGD 都是本文 **ADOPTS** 的技术，不是本文提出。
 
+
+## 总结架构图
+
+![教学总结图：A005-resnet](../../../figures/explainers/A005-resnet-summary.svg)
+
+> **教学总结图**：Residual block 通过 identity shortcut 将主路目标从完整映射改写为残差映射。
+
 # 输入、输出与任务
 
 ## 1. ImageNet 输入输出
