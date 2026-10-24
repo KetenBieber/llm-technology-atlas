@@ -149,4 +149,34 @@ FA2 解决 work partition 后，H100 上的新瓶颈转向 heterogeneous executi
 
 将训练系统的状态管理与 decode 服务阶段分开：推导每 token KV 容量与 block 内部碎片上界，解释 block table、按需分配、prefix sharing、Copy-on-write 与 continuous batching 如何影响请求吞吐。
 
+## 第二十四阶段：Orca 与 Sarathi-Serve——动态请求与 Prefill 时间切分
+
+42. {doc}`Orca：按 Decode Iteration 调度与 Selective Batching <generated/papers/C/02-inference-serving/C013-orca>`
+43. {doc}`Sarathi-Serve：Decode 优先的 Chunked Prefill <generated/papers/C/02-inference-serving/C014-sarathi-serve>`
+
+沿 vLLM 的动态 KV 管理进入在线调度：先弄清请求为何不能当作一次静态推理，再研究怎样限制每轮 Prefill Token Budget，避免长 Prompt 造成生成 Token 的等待抖动。
+
+## 第二十五阶段：DistServe 与 Splitwise——阶段分离的 SLO 与硬件成本
+
+44. {doc}`DistServe：Goodput 导向的 Prefill/Decode GPU 分离 <generated/papers/C/02-inference-serving/C015-distserve>`
+45. {doc}`Splitwise：为何 Prefill/Decode 应匹配不同类型 GPU <generated/papers/C/02-inference-serving/C016-splitwise>`
+
+在同池调度之外引入网络状态交接，推导 KV Migration 的字节数量，区分吞吐与满足 TTFT/TPOT 条件的 Goodput；最后用 Roofline、硬件功率与预算说明分阶段异构部署的取舍。
+
+## 第二十六阶段：SGLang、FlashInfer、Punica——推理运行时的数据复用
+
+46. {doc}`SGLang：RadixAttention、公共 Prefix 与 LLM Program 执行 <generated/papers/C/02-inference-serving/C017-sglang>`
+47. {doc}`FlashInfer：KV Layout、负载均衡与 CUDA Graph <generated/papers/C/02-inference-serving/C018-flashinfer>`
+48. {doc}`Punica：共享 Base Weight 与多租户 LoRA Batching <generated/papers/C/02-inference-serving/C019-punica>`
+
+把逻辑 KV 与物理地址的关系延伸到跨请求前缀共享，再进入动态 Attention GPU Kernel，最后讨论不同 Adapter 的低秩路径如何与公共基础模型一起 Batch。
+
+## 第二十七阶段：Speculative Decoding、Medusa 与 EAGLE——严格采样与草稿模型
+
+49. {doc}`Speculative Decoding：接受–拒绝与残差分布的严格证明 <generated/papers/C/02-inference-serving/C020-speculative-decoding>`
+50. {doc}`Medusa：多头草稿候选树与 Tree Attention <generated/papers/C/02-inference-serving/C021-medusa>`
+51. {doc}`EAGLE：Feature Autoregression、Shifted Token 与 Target 验证 <generated/papers/C/02-inference-serving/C022-eagle>`
+
+由“每轮只产生一个 Token”推出 Speculation，证明目标分布不变性，再研究如何改造候选生成方式：独立 Draft、额外未来 Token Heads 与第二倒数层 Feature Predictor。严格区分原始模型分布不变、联合微调后的 Target 分布、Typical Acceptance 等不同正确性语义。
+
 读到 V3 / R1 时不需要把所有方法重新推一遍；直接使用文章中的站内链接回到 MLA、MoE 或 GRPO 专题，再返回模型主线即可。

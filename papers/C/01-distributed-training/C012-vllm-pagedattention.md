@@ -178,3 +178,5 @@ SOSP 2023 论文报告在其指定 workload、延迟约束和比较系统上，v
 > 静态模型参数的分片与训练状态迁移，不等于动态推理请求的 KV 空间管理。动态长度、分支共享、请求中止和调度，要求把“逻辑上的连续 KV”与“物理上的非连续显存”彻底分开。
 
 **来源**：[SOSP 2023 论文](https://arxiv.org/abs/2309.06180)、[ACM DOI](https://doi.org/10.1145/3600006.3613165)、[vLLM 官方机制说明](https://vllm-project.github.io/2023/06/20/vllm.html)。
+
+**推理系统后续阅读**：[Orca：Iteration-level Scheduling](../02-inference-serving/C013-orca.md) → [Sarathi-Serve：Chunked Prefill](../02-inference-serving/C014-sarathi-serve.md) → [SGLang：Prefix KV 共享](../02-inference-serving/C017-sglang.md) → [Speculative Decoding：一次验证多个 Token](../02-inference-serving/C020-speculative-decoding.md)。

@@ -18,6 +18,7 @@
 - {doc}`长上下文 <long-context/index>`：从 RoPE/YaRN → DCA → MInference，区分位置外推、Attention relation 与超长上下文 prefill runtime。
 - {doc}`GPU / 算子与编译 <gpu-kernels/index>`：从 FlashAttention 开始理解 HBM/SRAM、IO-aware exact attention 与后续 GPU work partition。
 - {doc}`分布式训练系统 <distributed-training/index>`：从 TP / PP / CP / FSDP 建立多 GPU 训练的 memory–communication–topology cost model。
+- {doc}`推理服务系统 <inference-serving/index>`：从 Orca/vLLM 进入 Prefill/Decode 分离、Prefix KV 共享、GPU kernel 与精确投机采样。
 - {doc}`Scaling Laws <scaling/index>`：从 Kaplan 到 Chinchilla，理解模型/数据/compute 的训练规划。
 - {doc}`完整模型主线 <models/index>`：从 DeepSeek V2/V3/R1 对照到 Llama 3 与 Qwen2.5。
 - {doc}`推理后训练 <post-training/index>`：从 PPO/GRPO 进入 reasoning RL。
@@ -39,6 +40,7 @@ transformer/index
 long-context/index
 gpu-kernels/index
 distributed-training/index
+inference-serving/index
 scaling/index
 moe/index
 models/index
