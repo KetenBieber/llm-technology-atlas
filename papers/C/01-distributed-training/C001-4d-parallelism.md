@@ -10,6 +10,10 @@
 - [FlashAttention：IO-aware exact attention](../../A/10-gpu-operators/A055-flashattention.md)
 - [FlashAttention-2：GPU 内 work partition](../../A/10-gpu-operators/A056-flashattention2.md)
 
+本篇后的系统机制下钻：[ZeRO 原始论文：optimizer / gradient / parameter 为什么按不同阶段分片](C002-zero.md)。阅读 FSDP 的 all-gather、reduce-scatter 和 model-state memory 账本遇到阻塞时，可直接跳转。
+
+另一条分支可依次阅读 [GPipe：micro-batch pipeline](C003-gpipe.md) → [Megatron-LM：TP/PP/DP 与 interleaved 1F1B](C004-megatron-lm.md) → [Ring Attention：分布式长上下文 Query/KV 数据流](C005-ring-attention.md)。
+
 本文讨论的是 **多 GPU distributed parallelism**。FlashAttention-2 中的 sequence-level parallelism 属于单 GPU kernel 内的 thread-block decomposition；本文的 CP / TP / PP / FSDP 属于集群级执行，两者层级不同。
 
 ---

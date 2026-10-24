@@ -98,4 +98,55 @@ FA1 把 HBM traffic 压下去以后，新的瓶颈变成 GPU utilization。本�
 
 FA2 解决 work partition 后，H100 上的新瓶颈转向 heterogeneous execution units 的同步等待。本阶段重点理解 TMA / WGMMA、warpgroup、producer-consumer specialization、circular SMEM buffer、ping-pong 与 2/3-stage GEMM-softmax pipeline，并进一步理解 FP8 的 k-major layout、in-kernel transpose、block quantization 与 incoherent processing。到这里，FlashAttention 主线形成 IO → Parallelism → Asynchrony → Low Precision 的完整硬件演化链。
 
+## 第十六阶段：ZeRO 与模型训练状态的存储所有权
+
+31. {doc}`ZeRO：为什么数据并行不需要每卡都永久复制全部训练状态 <generated/papers/C/01-distributed-training/C002-zero>`
+
+沿第十四阶段的 4D Parallelism 继续深入 DP/FSDP 分支：先用混合精度 Adam 的 16 bytes/parameter 建立训练内存账本，再从参数、梯度和优化器状态的不同生命周期推导 ZeRO-1/2/3。重点解释为什么 reduce-scatter + all-gather 在 ZeRO-2 的理论通信体积仍约为 $2\Psi$，而 ZeRO-3 必须在 forward/backward 各自临时收集权重，使体积约为 $3\Psi$；最后讨论 ZeRO-R 的 activation partitioning、临时 buffer、碎片管理，以及原论文已实现的百亿/千亿级训练和万亿参数理论容量之间的证据边界。
+
+## 第十七阶段：GPipe——层深度切分和同步 micro-batch
+
+32. {doc}`GPipe：把网络分到多张卡后，为什么还必须把一个 batch 切得更碎 <generated/papers/C/01-distributed-training/C003-gpipe>`
+
+这一阶段把 PP 从一个名字还原成可执行时间线。重点推导为什么 layer partition 本身无法提高单样本的串行依赖吞吐、为什么 micro-batches 可以填满流水线、为何整批梯度聚合后更新仍保留同步 SGD 语义；再区分相对 makespan 的 bubble fraction $(K-1)/(M+K-1)$ 与相对 ideal compute 的 overhead $(K-1)/M$，讨论 activation recomputation 与 BatchNorm 的边界。
+
+## 第十八阶段：Megatron-LM——TP/PP/DP 联合权衡
+
+33. {doc}`Megatron-LM：为什么组合并行维度仍然是一道优化题 <generated/papers/C/01-distributed-training/C004-megatron-lm>`
+
+先从 MLP 的列切与行切推导 GeLU 局部计算和归约语义，再把 layer 内高频 TP collective、stage 边界的 PP p2p 和 DP 梯度聚合放在统一成本模型里。比较 GPipe、PipeDream-Flush 1F1B 与论文的 interleaved chunks，推导 bubble overhead 下降约 $1/v$、通信量却上升的条件，并回到大模型集群实测与理论完整训练时长估计的区别。
+
+## 第十九阶段：Ring Attention——精确全局 Attention 的跨设备数据流
+
+34. {doc}`Ring Attention：固定 Query、环形传递 KV 的第一性推导 <generated/papers/C/01-distributed-training/C005-ring-attention>`
+
+在 FlashAttention 已避免保存完整 $S^2$ 矩阵之后，为什么超长序列的中间激活仍受单卡 HBM 约束？这一阶段推导 online softmax block statistics 的正确合并，解释 KV ring 传输的因果逻辑和 $c\gtrsim F/B$ 的通信隐藏门槛，并明确区分“容量随着设备数量扩展”与“总 Attention FLOPs 被减少”。
+
+## 第二十阶段：PipeDream 与 2BW——流水线中权重版本的正确性
+
+35. {doc}`PipeDream：为什么消除 flush 需要 Weight Stashing <generated/papers/C/01-distributed-training/C006-pipedream>`
+36. {doc}`PipeDream-2BW：限制两个权重版本的训练调度 <generated/papers/C/01-distributed-training/C007-pipedream-2bw>`
+
+先证明 backward 必须使用对应 forward 的权重，再区分梯度局部正确与同步 SGD 完全等价两种条件；理解 PipeDream 的 1F1B 无 flush/权重 stashing，以及 2BW 的梯度合并、双缓冲与更新滞后取舍。
+
+## 第二十一阶段：ZeRO-Offload 与 Infinity——从 GPU HBM 扩展到 CPU/NVMe
+
+37. {doc}`ZeRO-Offload：将 Adam 状态与 CPU 更新从 GPU 主干解耦 <generated/papers/C/01-distributed-training/C008-zero-offload>`
+38. {doc}`ZeRO-Infinity：NVMe、带宽分区、预取和异步传输 <generated/papers/C/01-distributed-training/C009-zero-infinity>`
+
+在 ZeRO-1/2/3 基础上，继续区分分片所有权、驻留层级和计算位置；推算 CPU/GPU 数据搬运量，分析为什么 Infinity 必须聚合多条 PCIe 链路并重叠 NVMe/PCIe/GPU 通信。
+
+## 第二十二阶段：Ulysses 与 DistFlashAttn——长上下文计算的跨设备资源平衡
+
+39. {doc}`DeepSpeed-Ulysses：两次 All-to-all 交换 sequence/head 分片 <generated/papers/C/01-distributed-training/C010-deepspeed-ulysses>`
+40. {doc}`DistFlashAttn：Causal workload balancing 与 checkpoint-aware KV 通信 <generated/papers/C/01-distributed-training/C011-distflashattn>`
+
+与 Ring Attention 比较三种解法：固定 Query/轮转 KV，按 heads 独立重分片，或针对 Causal Attention 的有效 pair 分配负载；分别证明计算语义并评估通信/重计算。
+
+## 第二十三阶段：vLLM / PagedAttention——推理服务的动态 KV Cache 管理
+
+41. {doc}`PagedAttention：逻辑连续而物理离散的 KV Cache <generated/papers/C/01-distributed-training/C012-vllm-pagedattention>`
+
+将训练系统的状态管理与 decode 服务阶段分开：推导每 token KV 容量与 block 内部碎片上界，解释 block table、按需分配、prefix sharing、Copy-on-write 与 continuous batching 如何影响请求吞吐。
+
 读到 V3 / R1 时不需要把所有方法重新推一遍；直接使用文章中的站内链接回到 MLA、MoE 或 GRPO 专题，再返回模型主线即可。

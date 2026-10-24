@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper Atlas 深度拆解"
+  short_description: "模型驱动、第一性原理、论文图与技术跳转的中文长文"
+  default_prompt: "使用 $paper-atlas-deep-dive，先检查当前论文库和前置节点，再将目标论文拆成问题驱动的可复原中文技术博客，补原图证据、自制解释图、公式推导和可用站内跳转，并给出实际校验结果。"

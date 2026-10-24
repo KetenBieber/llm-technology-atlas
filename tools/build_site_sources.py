@@ -29,6 +29,17 @@ ARTICLES = [
     {"path": "papers/A/10-gpu-operators/A056-flashattention2.md", "title": "FlashAttention-2", "paper": "FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning", "url": "https://arxiv.org/abs/2307.08691", "legacy": False},
     {"path": "papers/A/10-gpu-operators/A057-flashattention3.md", "title": "FlashAttention-3", "paper": "FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision", "url": "https://arxiv.org/abs/2407.08608", "legacy": False},
     {"path": "papers/C/01-distributed-training/C001-4d-parallelism.md", "title": "4D Parallelism", "paper": "System synthesis: Llama 3 / Megatron-LM / GPipe / ZeRO / Ring Attention", "url": "https://arxiv.org/abs/2407.21783", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C002-zero.md", "title": "ZeRO", "paper": "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models", "url": "https://arxiv.org/abs/1910.02054", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C003-gpipe.md", "title": "GPipe", "paper": "GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism", "url": "https://arxiv.org/abs/1811.06965", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C004-megatron-lm.md", "title": "Megatron-LM", "paper": "Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM", "url": "https://arxiv.org/abs/2104.04473", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C005-ring-attention.md", "title": "Ring Attention", "paper": "Ring Attention with Blockwise Transformers for Near-Infinite Context", "url": "https://arxiv.org/abs/2310.01889", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C006-pipedream.md", "title": "PipeDream", "paper": "PipeDream: Generalized Pipeline Parallelism for DNN Training", "url": "https://arxiv.org/abs/1806.03377", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C007-pipedream-2bw.md", "title": "PipeDream-2BW", "paper": "Memory-Efficient Pipeline-Parallel DNN Training", "url": "https://arxiv.org/abs/2006.09503", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C008-zero-offload.md", "title": "ZeRO-Offload", "paper": "ZeRO-Offload: Democratizing Billion-Scale Model Training", "url": "https://arxiv.org/abs/2101.06840", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C009-zero-infinity.md", "title": "ZeRO-Infinity", "paper": "ZeRO-Infinity: Breaking the GPU Memory Wall for Extreme Scale Deep Learning", "url": "https://arxiv.org/abs/2104.07857", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C010-deepspeed-ulysses.md", "title": "DeepSpeed-Ulysses", "paper": "DeepSpeed Ulysses: System Optimizations for Enabling Training of Extreme Long Sequence Transformer Models", "url": "https://arxiv.org/abs/2309.14509", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C011-distflashattn.md", "title": "DistFlashAttn", "paper": "DistFlashAttn: Distributed Memory-efficient Attention for Long-context LLMs Training", "url": "https://arxiv.org/abs/2310.03294", "legacy": False},
+    {"path": "papers/C/01-distributed-training/C012-vllm-pagedattention.md", "title": "PagedAttention / vLLM", "paper": "Efficient Memory Management for Large Language Model Serving with PagedAttention", "url": "https://arxiv.org/abs/2309.06180", "legacy": False},
     {"path": "papers/A/05-moe/A032-sparsely-gated-moe.md", "title": "Sparsely-Gated MoE：条件计算怎样扩大模型容量", "paper": "Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer", "url": "https://arxiv.org/abs/1701.06538", "legacy": True},
     {"path": "papers/A/05-moe/A033-switch-transformer.md", "title": "Switch Transformer：把 Top-K MoE 简化成 Top-1 路由", "paper": "Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity", "url": "https://arxiv.org/abs/2101.03961", "legacy": True},
     {"path": "papers/A/05-moe/A034-deepseekmoe.md", "title": "DeepSeekMoE", "paper": "DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models", "url": "https://arxiv.org/abs/2401.06066", "legacy": False},
@@ -150,6 +161,8 @@ def main() -> None:
     for md in (GENERATED / "papers").rglob("*.md"):
         content = md.read_text(encoding="utf-8")
         for raw_target in md_link.findall(content):
+            if raw_target.startswith(("http://", "https://", "mailto:")):
+                continue
             target = raw_target.split("#", 1)[0]
             resolved = (md.parent / target).resolve()
             if not resolved.exists():

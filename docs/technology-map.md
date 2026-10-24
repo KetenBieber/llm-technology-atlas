@@ -13,6 +13,19 @@ flowchart TD
   FA --> MINF
   FA --> FA2["FlashAttention-2"]
   FA2 --> SYS4D["4D Parallelism"]
+  SYS4D --> ZERO["ZeRO"]
+  SYS4D --> GPIPE["GPipe"]
+  GPIPE --> MEGA["Megatron-LM"]
+  MEGA --> RING["Ring Attention"]
+  FA2 --> RING
+  GPIPE --> PD["PipeDream"]
+  PD --> PD2["PipeDream-2BW"]
+  ZERO --> ZO["ZeRO-Offload"]
+  ZO --> ZI["ZeRO-Infinity"]
+  RING --> ULYSSES["DeepSpeed-Ulysses"]
+  ULYSSES --> DFA["DistFlashAttn"]
+  RING --> DFA
+  V2 --> VL["vLLM / PagedAttention"]
   T --> MQA["MQA"]
   MQA --> GQA["GQA"]
 
@@ -79,6 +92,14 @@ flowchart LR
 
 | 想解决的问题 | 推荐文章 |
 |---|---|
+| 数据并行下为什么要分片 Adam optimizer、gradient、parameter？ZeRO-1/2/3 与 FSDP 怎么联系？ | {doc}`ZeRO 原始论文 <generated/papers/C/01-distributed-training/C002-zero>` |
+| GPipe 为什么必须拆 micro-batch，怎样保留同步梯度与计算 bubble？ | {doc}`GPipe <generated/papers/C/01-distributed-training/C003-gpipe>` |
+| 张量并行为什么高频 all-reduce，interleaved 1F1B 怎样改变 bubble 和通信？ | {doc}`Megatron-LM <generated/papers/C/01-distributed-training/C004-megatron-lm>` |
+| FlashAttention 后为何还需要跨设备搬 KV，Ring Attention 如何保证精确与通信重叠？ | {doc}`Ring Attention <generated/papers/C/01-distributed-training/C005-ring-attention>` |
+| 为什么取消同步 flush 后需要 Weight Stashing？怎样将版本限制为两个？ | {doc}`PipeDream <generated/papers/C/01-distributed-training/C006-pipedream>` → {doc}`PipeDream-2BW <generated/papers/C/01-distributed-training/C007-pipedream-2bw>` |
+| CPU optimizer 与 NVMe 异步预取分别解决什么？ | {doc}`ZeRO-Offload <generated/papers/C/01-distributed-training/C008-zero-offload>` → {doc}`ZeRO-Infinity <generated/papers/C/01-distributed-training/C009-zero-infinity>` |
+| Ulysses 为什么做两次 All-to-all，DistFlashAttn 为什么要平衡 Causal workload？ | {doc}`DeepSpeed-Ulysses <generated/papers/C/01-distributed-training/C010-deepspeed-ulysses>` → {doc}`DistFlashAttn <generated/papers/C/01-distributed-training/C011-distflashattn>` |
+| 推理服务怎样减少动态 KV 碎片并共享 Prefix？ | {doc}`PagedAttention / vLLM <generated/papers/C/01-distributed-training/C012-vllm-pagedattention>` |
 | TP / PP / CP / FSDP 为什么要同时存在，4D process groups 怎样映射到网络拓扑 | {doc}`4D Parallelism <generated/papers/C/01-distributed-training/C001-4d-parallelism>` |
 | Attention 为什么能替代循环网络 | {doc}`Transformer <generated/papers/A/03-transformer/A013-transformer-attention-is-all-you-need>` |
 | 旋转位置编码到底改变了什么 | {doc}`RoPE <generated/papers/A/03-transformer/A014-roformer-rope>` |
