@@ -64,6 +64,15 @@
                 "A033",
                 "A034"
               ]
+            },
+            {
+              "id": "ssm",
+              "title": "状态空间序列模型：S4 → Mamba → Mamba-2",
+              "papers": [
+                "A058",
+                "A059",
+                "A060"
+              ]
             }
           ]
         },
@@ -622,6 +631,24 @@
               "papers": [
                 "B011",
                 "B012"
+              ]
+            },
+            {
+              "id": "memory-state",
+              "title": "长历史怎样压缩到固定状态",
+              "papers": [
+                "A013",
+                "A058",
+                "A059"
+              ]
+            },
+            {
+              "id": "selective-ssm",
+              "title": "按内容选择记忆与 SSM–Attention 对偶",
+              "papers": [
+                "A058",
+                "A059",
+                "A060"
               ]
             }
           ]

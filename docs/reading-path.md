@@ -277,3 +277,11 @@ QuIP# 通过随机正交变换降低单坐标集中性，再采用适合向量�
 88. {doc}`QServe：Progressive Group Quantization 与 W4A8KV4 INT8 Tensor Core <generated/papers/C/02-inference-serving/C059-qserve>`
 
 DuQuant 对照 QuaRot 的随机旋转，区分跨 Token 持续存在的 Normal Outliers 与只出现于少数位置的 Massive Outliers，解释为何缩放会将异常值转移到 Weight，以及第二次旋转为何依赖 Zigzag 的跨 Block 均衡。QServe 不再只讨论同位宽 PPL，转向真正的 Tensor Core 主循环：为什么 Reduction Dimension 的 Group Scale 会让 INT4 局部累加频繁反量化，如何采用 W4A8KV4 的 Packed Weight、INT8 Tensor Core、保护性编码、SmoothAttention 与 KV4 内核共同降低成本。前者的 W4A4 质量数据和后者的 W4A8KV4 Token/s 不属于同一项可直接排序的指标。
+
+## 第四十阶段：从线性时不变状态空间到具有内容选择能力的序列模型
+
+89. {doc}`S4：从连续状态方程、HiPPO 记忆到 DPLR/Cauchy 卷积核 <generated/papers/A/09-state-space/A058-s4>`
+90. {doc}`Mamba：S6 的 $\Delta,B,C$ 输入选择机制与 Selective Scan <generated/papers/A/09-state-space/A059-mamba>`
+91. {doc}`Mamba-2：Semiseparable Matrix 与 Structured State-Space Duality <generated/papers/A/09-state-space/A060-mamba2-ssd>`
+
+本阶段从 {doc}`Transformer <generated/papers/A/03-transformer/A013-transformer-attention-is-all-you-need>` 的显式历史读取出发，研究另一种根本不同的记忆观：将整个历史压缩成固定维度状态。S4 借 LTI 同时获得递推与卷积两种等价计算；Mamba 通过使离散步长和输入/输出投影依赖 Token，学会按内容选择历史，却失去固定卷积核；Mamba-2 再利用状态递推对应的 Semiseparable 结构矩阵，为一个特定子类恢复 Attention-like 矩阵形式。须始终区分 SSD 与标准 Softmax Attention 的数学边界，不能把“某些结构化 Attention 的对偶”称为所有 Transformer 的精确等价。

@@ -5,6 +5,9 @@
 ```{mermaid}
 flowchart TD
   T["Transformer"] --> R["RoPE"]
+  T -. "另一条序列模型路线" .-> S4["S4：固定 SSM / HiPPO / Cauchy"]
+  S4 --> MAMBA["Mamba：Selective State Space"]
+  MAMBA --> MAMBA2["Mamba-2：SSD / Semiseparable"]
   T --> N["RMSNorm"]
   R --> YARN["YaRN"]
   YARN --> DCA["Dual Chunk Attention"]
@@ -145,6 +148,9 @@ flowchart LR
 
 | 想解决的问题 | 推荐文章 |
 |---|---|
+| **不走 Infra 主线：为什么 S4 的状态递推等于卷积，HiPPO/DPLR/Cauchy 如何帮助长程建模？** | {doc}`S4 <generated/papers/A/09-state-space/A058-s4>` |
+| **为什么固定卷积不能按 Token 内容选择记忆？如何从 ZOH 推导门控并证明 Selective Scan？** | {doc}`Mamba <generated/papers/A/09-state-space/A059-mamba>` |
+| **SSM 和 Attention 到底哪里等价，Semiseparable Matrix 怎样导出 SSD 与 Mamba-2？** | {doc}`Mamba-2 <generated/papers/A/09-state-space/A060-mamba2-ssd>` |
 | 为什么量化策略、低成本蒸馏和 Integer Kernel 必须一起设计？ | {doc}`ZeroQuant <generated/papers/C/02-inference-serving/C045-zeroquant>` |
 | Channel 重排和校准学习分别怎样减少 Activation 与低 bit 误差？ | {doc}`RPTQ <generated/papers/C/02-inference-serving/C046-rptq>` → {doc}`OmniQuant <generated/papers/C/02-inference-serving/C047-omniquant>` |
 | 为什么少数权重例外存 FP16 能比全部权重提高位宽更划算？ | {doc}`SpQR <generated/papers/C/02-inference-serving/C048-spqr>` |

@@ -36,6 +36,7 @@
   <div class="atlas-fallback">
     <strong>技术分类快速入口（不依赖脚本）</strong>
     <a href="transformer/index.html">模型与注意力</a>
+    <a href="state-space/index.html">状态空间与序列模型</a>
     <a href="distributed-training/index.html">分布式训练</a>
     <a href="long-context/index.html">长上下文</a>
     <a href="inference-serving/index.html">推理、量化与部署</a>
@@ -52,6 +53,7 @@
 - {doc}`学习路线 <reading-path>`：按顺序建立完整知识链。
 - {doc}`技术图谱 <technology-map>`：按技术依赖快速跳转。
 - {doc}`长上下文 <long-context/index>`：从 RoPE/YaRN → DCA → MInference，区分位置外推、Attention relation 与超长上下文 prefill runtime。
+- {doc}`序列建模架构：S4 → Mamba → Mamba-2 <state-space/index>`：从状态方程、HiPPO/DPLR 到输入选择与 Structured State-Space Duality，主要拆解算法表达能力与数学等价，不以基础设施优化为主线。
 - {doc}`GPU / 算子与编译 <gpu-kernels/index>`：从 FlashAttention 开始理解 HBM/SRAM、IO-aware exact attention 与后续 GPU work partition。
 - {doc}`分布式训练系统 <distributed-training/index>`：从 TP / PP / CP / FSDP 建立多 GPU 训练的 memory–communication–topology cost model。
 - {doc}`推理服务系统 <inference-serving/index>`：从 Orca/vLLM 进入 Prefill/Decode 分离、Prefix KV 共享、GPU kernel 与精确投机采样。
@@ -80,6 +82,7 @@ technology-map
 
 foundations/index
 transformer/index
+state-space/index
 long-context/index
 gpu-kernels/index
 distributed-training/index
