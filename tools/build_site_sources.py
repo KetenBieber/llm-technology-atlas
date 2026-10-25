@@ -34,6 +34,7 @@ ARTICLES = [
     {"path": "papers/A/09-state-space/A061-retnet.md", "title": "RetNet", "paper": "Retentive Network: A Successor to Transformer for Large Language Models", "url": "https://arxiv.org/abs/2307.08621", "legacy": False},
     {"path": "papers/A/09-state-space/A062-rwkv.md", "title": "RWKV-4", "paper": "RWKV: Reinventing RNNs for the Transformer Era", "url": "https://aclanthology.org/2023.findings-emnlp.936/", "legacy": False},
     {"path": "papers/A/09-state-space/A063-xlstm.md", "title": "xLSTM", "paper": "xLSTM: Extended Long Short-Term Memory", "url": "https://papers.nips.cc/paper_files/paper/2024/hash/c2ce2f2701c10a2b2f2ea0bfa43cfaa3-Abstract-Conference.html", "legacy": False},
+    {"path": "papers/A/09-state-space/A064-griffin.md", "title": "Griffin / Hawk", "paper": "Griffin: Mixing Gated Linear Recurrences with Local Attention for Efficient Language Models", "url": "https://arxiv.org/abs/2402.19427", "legacy": False},
     {"path": "papers/C/01-distributed-training/C001-4d-parallelism.md", "title": "4D Parallelism", "paper": "System synthesis: Llama 3 / Megatron-LM / GPipe / ZeRO / Ring Attention", "url": "https://arxiv.org/abs/2407.21783", "legacy": False},
     {"path": "papers/C/01-distributed-training/C002-zero.md", "title": "ZeRO", "paper": "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models", "url": "https://arxiv.org/abs/1910.02054", "legacy": False},
     {"path": "papers/C/01-distributed-training/C003-gpipe.md", "title": "GPipe", "paper": "GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism", "url": "https://arxiv.org/abs/1811.06965", "legacy": False},
@@ -101,6 +102,8 @@ ARTICLES = [
     {"path": "papers/B/05-moe-complete-llm/B010-deepseek-r1.md", "title": "DeepSeek-R1", "paper": "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning", "url": "https://arxiv.org/abs/2501.12948", "legacy": False},
     {"path": "papers/B/05-moe-complete-llm/B011-llama3.md", "title": "Llama 3", "paper": "The Llama 3 Herd of Models", "url": "https://arxiv.org/abs/2407.21783", "legacy": False},
     {"path": "papers/B/05-moe-complete-llm/B012-qwen2.5.md", "title": "Qwen2.5", "paper": "Qwen2.5 Technical Report", "url": "https://arxiv.org/abs/2412.15115", "legacy": False},
+    {"path": "papers/B/05-moe-complete-llm/B013-jamba.md", "title": "Jamba-v0.1", "paper": "Jamba: A Hybrid Transformer-Mamba Language Model", "url": "https://arxiv.org/abs/2403.19887", "legacy": False},
+    {"path": "papers/B/05-moe-complete-llm/B014-zamba.md", "title": "Zamba-7B-v1", "paper": "Zamba: A Compact 7B SSM Hybrid Model", "url": "https://arxiv.org/abs/2405.16712", "legacy": False},
     {"path": "papers/A/08-post-training/A051-deepseekmath-grpo.md", "title": "DeepSeekMath / GRPO", "paper": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models", "url": "https://arxiv.org/abs/2402.03300", "legacy": False},
     {"path": "papers/A/08-post-training/A052-dpo.md", "title": "DPO", "paper": "Direct Preference Optimization: Your Language Model is Secretly a Reward Model", "url": "https://arxiv.org/abs/2305.18290", "legacy": False},
 ]

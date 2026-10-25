@@ -55,6 +55,7 @@
 - {doc}`长上下文 <long-context/index>`：从 RoPE/YaRN → DCA → MInference，区分位置外推、Attention relation 与超长上下文 prefill runtime。
 - {doc}`序列建模架构：S4 → Mamba → Mamba-2 <state-space/index>`：从状态方程、HiPPO/DPLR 到输入选择与 Structured State-Space Duality，主要拆解算法表达能力与数学等价，不以基础设施优化为主线。
 - {doc}`并行可训练的递推模型：RetNet、RWKV、xLSTM <state-space/index>`：从 {doc}`Retention 的三种等价表达 <generated/papers/A/09-state-space/A061-retnet>`、{doc}`RWKV 的指数加权记忆 <generated/papers/A/09-state-space/A062-rwkv>` 到 {doc}`xLSTM 的指数门控与矩阵 Cell <generated/papers/A/09-state-space/A063-xlstm>`，专注完整架构与记忆机制。
+- {doc}`混合架构：Griffin / Jamba / Zamba <state-space/index>`：{doc}`Griffin 的 RG-LRU + Local Attention <generated/papers/A/09-state-space/A064-griffin>`、{doc}`Jamba 的 Transformer–Mamba–MoE 组合 <generated/papers/B/05-moe-complete-llm/B013-jamba>`、{doc}`Zamba 的共享全局 Attention <generated/papers/B/05-moe-complete-llm/B014-zamba>`；聚焦模型能力、参数复用、状态表达和实验归因。
 - {doc}`GPU / 算子与编译 <gpu-kernels/index>`：从 FlashAttention 开始理解 HBM/SRAM、IO-aware exact attention 与后续 GPU work partition。
 - {doc}`分布式训练系统 <distributed-training/index>`：从 TP / PP / CP / FSDP 建立多 GPU 训练的 memory–communication–topology cost model。
 - {doc}`推理服务系统 <inference-serving/index>`：从 Orca/vLLM 进入 Prefill/Decode 分离、Prefix KV 共享、GPU kernel 与精确投机采样。

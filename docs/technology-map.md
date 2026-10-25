@@ -8,6 +8,11 @@ flowchart TD
   T -. "另一条序列模型路线" .-> S4["S4：固定 SSM / HiPPO / Cauchy"]
   S4 --> MAMBA["Mamba：Selective State Space"]
   MAMBA --> MAMBA2["Mamba-2：SSD / Semiseparable"]
+  MAMBA -. "门控状态的独立方法分支" .-> GRIFFIN["Griffin：RG-LRU + Local Attention"]
+  MAMBA --> JAMBA["Jamba：Attention + Mamba + MoE"]
+  MAMBA --> ZAMBA["Zamba：共享 Attention / MLP"]
+  T --> JAMBA
+  T --> ZAMBA
   T -. "并行训练／递推推理的另一种选择" .-> RETNET["RetNet：Multi-Scale Retention"]
   T -. "独立的语言模型骨干" .-> RWKV["RWKV-4：WKV + Receptance"]
   RETNET -. "矩阵状态与归一化的概念对照" .-> XLSTM["xLSTM：sLSTM / mLSTM"]
@@ -158,6 +163,9 @@ flowchart LR
 | **怎样从 $QK^\top V$ 的因果衰减推导 Retention 的 Parallel、Recurrent、Chunk 三种模式？** | {doc}`RetNet <generated/papers/A/09-state-space/A061-retnet>` |
 | **RWKV-4 的归一化 WKV、Token Shift、Receptance 为什么必须组合，怎样递推复现？** | {doc}`RWKV <generated/papers/A/09-state-space/A062-rwkv>` |
 | **LSTM 能否重新扩展为语言模型？sLSTM 的指数门控和 mLSTM 的矩阵记忆分别解决什么？** | {doc}`xLSTM <generated/papers/A/09-state-space/A063-xlstm>` |
+| **为什么 RG-LRU 的 Recurrence Gate 能近似冻结历史，Griffin 为什么还保留 Local Attention？** | {doc}`Griffin / Hawk <generated/papers/A/09-state-space/A064-griffin>` |
+| **为什么 Mamba 的状态压缩还需要少量全局 Attention，MoE 又是另一条独立容量轴？** | {doc}`Jamba <generated/papers/B/05-moe-complete-llm/B013-jamba>` |
+| **共享 Attention/MLP 的参数与每层独立的 KV Cache 有什么差别？** | {doc}`Zamba <generated/papers/B/05-moe-complete-llm/B014-zamba>` |
 | 为什么量化策略、低成本蒸馏和 Integer Kernel 必须一起设计？ | {doc}`ZeroQuant <generated/papers/C/02-inference-serving/C045-zeroquant>` |
 | Channel 重排和校准学习分别怎样减少 Activation 与低 bit 误差？ | {doc}`RPTQ <generated/papers/C/02-inference-serving/C046-rptq>` → {doc}`OmniQuant <generated/papers/C/02-inference-serving/C047-omniquant>` |
 | 为什么少数权重例外存 FP16 能比全部权重提高位宽更划算？ | {doc}`SpQR <generated/papers/C/02-inference-serving/C048-spqr>` |

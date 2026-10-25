@@ -82,6 +82,16 @@
                 "A062",
                 "A063"
               ]
+            },
+            {
+              "id": "hybrid-mixers",
+              "title": "混合序列骨干：Griffin / Jamba / Zamba",
+              "papers": [
+                "A059",
+                "A064",
+                "B013",
+                "B014"
+              ]
             }
           ]
         },
@@ -105,6 +115,14 @@
               "papers": [
                 "B011",
                 "B012"
+              ]
+            },
+            {
+              "id": "hybrid-model-reports",
+              "title": "完整混合模型报告：Jamba 与 Zamba",
+              "papers": [
+                "B013",
+                "B014"
               ]
             }
           ]
@@ -670,6 +688,23 @@
                 "A061",
                 "A062",
                 "A063"
+              ]
+            },
+            {
+              "id": "hybrid-memory",
+              "title": "压缩状态与显式 Attention 的混合比例",
+              "papers": [
+                "A064",
+                "B013",
+                "B014"
+              ]
+            },
+            {
+              "id": "reuse-vs-cache",
+              "title": "跨层权重复用、独立 KV 与 MoE 容量分配",
+              "papers": [
+                "B013",
+                "B014"
               ]
             }
           ]

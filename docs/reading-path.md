@@ -293,3 +293,11 @@ DuQuant 对照 QuaRot 的随机旋转，区分跨 Token 持续存在的 Normal O
 94. {doc}`xLSTM：指数门控的 sLSTM 与矩阵记忆的 mLSTM <generated/papers/A/09-state-space/A063-xlstm>`
 
 继 [S4 → Mamba → Mamba-2](state-space/index.md) 后，这三篇以**并行可训练且具有固定状态的序列模型骨干**为共同问题，却沿不同技术思路独立发展，不能被误写成严格的前后继承顺序。RetNet 的核心是具有 Query–Key 内容匹配和多尺度衰减的外积状态；RWKV-4 是逐通道归一化分子/分母与 Token Shift/Receptance 的组合；xLSTM 则比较 sLSTM 的 Hidden-to-Hidden Mixing 与 mLSTM 的输入相关 Gate 和 Matrix Memory。三篇都应明确区分“浮点数学表达等价”“训练的批处理方式”和“有限状态记忆能否精确检索历史”，不能把任意一篇的吞吐数直接推广到其他架构。
+
+## 第四十二阶段：混合模型架构中的显式读取、压缩状态与容量分配
+
+95. {doc}`Griffin：RG-LRU 的实数门控，Hawk 与 Local-Attention Hybrid 的区别 <generated/papers/A/09-state-space/A064-griffin>`
+96. {doc}`Jamba-v0.1：Attention/Mamba 层比例与 MoE 专家密度的独立组合 <generated/papers/B/05-moe-complete-llm/B013-jamba>`
+97. {doc}`Zamba-7B-v1：Mamba Backbone 与跨深度共享全局 Attention/MLP <generated/papers/B/05-moe-complete-llm/B014-zamba>`
+
+承接 S4、Mamba、Mamba-2、RetNet、RWKV 和 xLSTM，下一层问题不是“再发明一个固定状态”，而是**怎样在真实大模型里分配不同历史读取机制的执行次数与参数容量**。Griffin 设计具有输入相关遗忘门的 RG-LRU 并与 Local Attention 组合；Jamba 将 Attention/Mamba 的层比例与 MoE Expert 的稀疏激活正交拆开；Zamba 则允许重复调用一个共享 Attention/MLP，但各调用位置仍独立保存 KV。这三条架构**并非单线继承**。特别要区分 RG-LRU 的近似状态保护、Jamba 的 1:7 是层级而非 Head 比例、Zamba 的共享 Weight 不等于共享 KV；使用不同训练 Token、模型规模、数据和 Benchmark 的论文结论时不得直接排名。
