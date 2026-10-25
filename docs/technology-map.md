@@ -5,6 +5,9 @@
 ```{mermaid}
 flowchart TD
   T["Transformer"] --> R["RoPE"]
+  T -. "不再依靠从左到右的生成概率分解" .-> D3PM["D3PM：离散 Markov 扩散"]
+  D3PM --> MDLM["MDLM：吸收态 SUBS / 似然界"]
+  MDLM --> LLADA["LLaDA：8B 双向去噪语言模型"]
   T -. "另一条序列模型路线" .-> S4["S4：固定 SSM / HiPPO / Cauchy"]
   S4 --> MAMBA["Mamba：Selective State Space"]
   MAMBA --> MAMBA2["Mamba-2：SSD / Semiseparable"]
@@ -157,6 +160,9 @@ flowchart LR
 
 | 想解决的问题 | 推荐文章 |
 |---|---|
+| **离散 Token 不是连续像素，怎样定义类别扰动矩阵并用 Bayes 推出逆向后验？** | {doc}`D3PM <generated/papers/A/11-discrete-diffusion/A065-d3pm>` |
+| **为什么普通随机 Mask 训练还不等于扩散生成模型？怎样从吸收态得到 SUBS / 带 $1/t$ 权重的 CE？** | {doc}`MDLM <generated/papers/A/11-discrete-diffusion/A066-mdlm>` |
+| **为何不使用 Next-Token Prediction 也能训练 8B LLM，如何做 Prompt SFT 与反向采样？** | {doc}`LLaDA <generated/papers/B/05-moe-complete-llm/B015-llada>` |
 | **不走 Infra 主线：为什么 S4 的状态递推等于卷积，HiPPO/DPLR/Cauchy 如何帮助长程建模？** | {doc}`S4 <generated/papers/A/09-state-space/A058-s4>` |
 | **为什么固定卷积不能按 Token 内容选择记忆？如何从 ZOH 推导门控并证明 Selective Scan？** | {doc}`Mamba <generated/papers/A/09-state-space/A059-mamba>` |
 | **SSM 和 Attention 到底哪里等价，Semiseparable Matrix 怎样导出 SSD 与 Mamba-2？** | {doc}`Mamba-2 <generated/papers/A/09-state-space/A060-mamba2-ssd>` |

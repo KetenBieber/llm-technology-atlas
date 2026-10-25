@@ -37,6 +37,7 @@
     <strong>技术分类快速入口（不依赖脚本）</strong>
     <a href="transformer/index.html">模型与注意力</a>
     <a href="state-space/index.html">状态空间与序列模型</a>
+    <a href="diffusion-language/index.html">离散扩散语言模型</a>
     <a href="distributed-training/index.html">分布式训练</a>
     <a href="long-context/index.html">长上下文</a>
     <a href="inference-serving/index.html">推理、量化与部署</a>
@@ -56,6 +57,7 @@
 - {doc}`序列建模架构：S4 → Mamba → Mamba-2 <state-space/index>`：从状态方程、HiPPO/DPLR 到输入选择与 Structured State-Space Duality，主要拆解算法表达能力与数学等价，不以基础设施优化为主线。
 - {doc}`并行可训练的递推模型：RetNet、RWKV、xLSTM <state-space/index>`：从 {doc}`Retention 的三种等价表达 <generated/papers/A/09-state-space/A061-retnet>`、{doc}`RWKV 的指数加权记忆 <generated/papers/A/09-state-space/A062-rwkv>` 到 {doc}`xLSTM 的指数门控与矩阵 Cell <generated/papers/A/09-state-space/A063-xlstm>`，专注完整架构与记忆机制。
 - {doc}`混合架构：Griffin / Jamba / Zamba <state-space/index>`：{doc}`Griffin 的 RG-LRU + Local Attention <generated/papers/A/09-state-space/A064-griffin>`、{doc}`Jamba 的 Transformer–Mamba–MoE 组合 <generated/papers/B/05-moe-complete-llm/B013-jamba>`、{doc}`Zamba 的共享全局 Attention <generated/papers/B/05-moe-complete-llm/B014-zamba>`；聚焦模型能力、参数复用、状态表达和实验归因。
+- {doc}`离散扩散语言模型：D3PM → MDLM → LLaDA <diffusion-language/index>`：从 {doc}`D3PM 的离散 Markov 后验 <generated/papers/A/11-discrete-diffusion/A065-d3pm>` 到 {doc}`MDLM 的 Masked Diffusion ELBO <generated/papers/A/11-discrete-diffusion/A066-mdlm>`，再到 {doc}`LLaDA 8B 的预训练、SFT 与整段去噪生成 <generated/papers/B/05-moe-complete-llm/B015-llada>`。这一支是**生成范式与模型核心算法**，非推理 Infra。
 - {doc}`GPU / 算子与编译 <gpu-kernels/index>`：从 FlashAttention 开始理解 HBM/SRAM、IO-aware exact attention 与后续 GPU work partition。
 - {doc}`分布式训练系统 <distributed-training/index>`：从 TP / PP / CP / FSDP 建立多 GPU 训练的 memory–communication–topology cost model。
 - {doc}`推理服务系统 <inference-serving/index>`：从 Orca/vLLM 进入 Prefill/Decode 分离、Prefix KV 共享、GPU kernel 与精确投机采样。
@@ -85,6 +87,7 @@ technology-map
 foundations/index
 transformer/index
 state-space/index
+diffusion-language/index
 long-context/index
 gpu-kernels/index
 distributed-training/index

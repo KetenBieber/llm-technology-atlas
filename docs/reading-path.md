@@ -301,3 +301,11 @@ DuQuant 对照 QuaRot 的随机旋转，区分跨 Token 持续存在的 Normal O
 97. {doc}`Zamba-7B-v1：Mamba Backbone 与跨深度共享全局 Attention/MLP <generated/papers/B/05-moe-complete-llm/B014-zamba>`
 
 承接 S4、Mamba、Mamba-2、RetNet、RWKV 和 xLSTM，下一层问题不是“再发明一个固定状态”，而是**怎样在真实大模型里分配不同历史读取机制的执行次数与参数容量**。Griffin 设计具有输入相关遗忘门的 RG-LRU 并与 Local Attention 组合；Jamba 将 Attention/Mamba 的层比例与 MoE Expert 的稀疏激活正交拆开；Zamba 则允许重复调用一个共享 Attention/MLP，但各调用位置仍独立保存 KV。这三条架构**并非单线继承**。特别要区分 RG-LRU 的近似状态保护、Jamba 的 1:7 是层级而非 Head 比例、Zamba 的共享 Weight 不等于共享 KV；使用不同训练 Token、模型规模、数据和 Benchmark 的论文结论时不得直接排名。
+
+## 第四十三阶段：从自回归语言模型转向离散扩散生成范式
+
+98. {doc}`D3PM：类别转移矩阵、Mask 吸收态与反向 Markov 后验 <generated/papers/A/11-discrete-diffusion/A065-d3pm>`
+99. {doc}`MDLM：SUBS、Rao-Blackwellized NELBO 与可生成文本的 Masked LM <generated/papers/A/11-discrete-diffusion/A066-mdlm>`
+100. {doc}`LLaDA：8B 双向 Transformer 的 Mask-Diffusion 预训练和指令微调 <generated/papers/B/05-moe-complete-llm/B015-llada>`
+
+这一阶段有别于之前的 S4/Mamba/RetNet 等状态空间与记忆架构。它首先追问：**为什么语言生成必须按从左到右的 Token 条件概率推进？** D3PM 为离散词表构造随机扰动矩阵并推导真实后验，MDLM 抓住 Mask 吸收态与不可逆拷贝性质消去不必要的 KL 项，LLaDA 则在 8B 规模重新组合双向 Transformer、全句去噪、Prompt-Response SFT 和低置信再遮盖采样。读这三篇要严格区分 D3PM 的 text8 bits/char 上界、MDLM 的 LM1B PPL 上界、LLaDA 的基准任务准确率和推理速度，不应把完全不同的指标跨论文直接计算收益率。

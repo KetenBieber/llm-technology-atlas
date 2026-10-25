@@ -92,6 +92,14 @@
                 "B013",
                 "B014"
               ]
+            },
+            {
+              "id": "discrete-diffusion",
+              "title": "替代自回归的离散扩散：D3PM → MDLM",
+              "papers": [
+                "A065",
+                "A066"
+              ]
             }
           ]
         },
@@ -123,6 +131,13 @@
               "papers": [
                 "B013",
                 "B014"
+              ]
+            },
+            {
+              "id": "diffusion-llm",
+              "title": "完整扩散语言模型：LLaDA 8B",
+              "papers": [
+                "B015"
               ]
             }
           ]
@@ -705,6 +720,24 @@
               "papers": [
                 "B013",
                 "B014"
+              ]
+            },
+            {
+              "id": "joint-generation",
+              "title": "如何让 Token 不再按左到右逐个生成",
+              "papers": [
+                "A065",
+                "A066",
+                "B015"
+              ]
+            },
+            {
+              "id": "diffusion-regularization",
+              "title": "随机 Mask 目标与合法生成似然界",
+              "papers": [
+                "A065",
+                "A066",
+                "B015"
               ]
             }
           ]
