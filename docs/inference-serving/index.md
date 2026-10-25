@@ -5,7 +5,9 @@
 - **动态调度**：Orca、Sarathi-Serve —— 请求会持续到达、结束，Prefill 与 Decode 的工作量完全不同。
 - **分阶段 GPU 池**：DistServe、Splitwise —— TTFT/TPOT 的 SLO、KV 跨卡转移、GPU 成本与功率。
 - **Serving Runtime / Kernel**：SGLang、FlashInfer、Punica —— 公共前缀、分页 KV、LoRA Adapter 多租户。
-- **单请求生成算法**：Speculative Decoding、Medusa、EAGLE —— 提前预测多个 Token，Target 验证，分布精确性与接受长度。
+- **候选与验证**：Speculative Decoding、Medusa、EAGLE 系列、Hydra、ReDrafter、SpecInfer、Sequoia —— 从分布校正进入候选网络、树形并行验证和动态预算。
+- **不依赖独立神经草稿的技术**：Lookahead、REST、Draft & Verify、LayerSkip；Ouroboros 则在保留 Draft 的基础上复用短语。
+- **近似大小模型协作**：BiLD 以回退和回滚权衡质量与延迟，不能与严格无损采样混称。
 
 推理系统不要用同一个“更快”概括四类指标：**TTFT、TPOT/TBT、带 SLO 的 Goodput、Token/Sec** 分别测量不同对象。系统能支持更长 Context 也不表示模型一定能理解该 Context。
 
@@ -23,4 +25,16 @@
 ../generated/papers/C/02-inference-serving/C020-speculative-decoding
 ../generated/papers/C/02-inference-serving/C021-medusa
 ../generated/papers/C/02-inference-serving/C022-eagle
+../generated/papers/C/02-inference-serving/C023-eagle2
+../generated/papers/C/02-inference-serving/C024-eagle3
+../generated/papers/C/02-inference-serving/C025-hydra
+../generated/papers/C/02-inference-serving/C026-redrafter
+../generated/papers/C/02-inference-serving/C027-specinfer
+../generated/papers/C/02-inference-serving/C028-sequoia
+../generated/papers/C/02-inference-serving/C029-lookahead-decoding
+../generated/papers/C/02-inference-serving/C030-rest
+../generated/papers/C/02-inference-serving/C031-ouroboros
+../generated/papers/C/02-inference-serving/C032-draft-and-verify
+../generated/papers/C/02-inference-serving/C033-layerskip
+../generated/papers/C/02-inference-serving/C034-bild
 ~~~

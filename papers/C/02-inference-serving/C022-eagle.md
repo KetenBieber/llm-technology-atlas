@@ -113,9 +113,9 @@ ICML 2024 论文在 Vicuna、LLaMA2-Chat、Mixtral 8x7B Instruct 等模型，以
 
 与 Medusa 的对照也要保持证据边界：EAGLE 不只是“多头更多/更少”，而是换了一个**逐步草稿生成的状态表示**。对比必须包括 Draft 算力、接受长度、验证树大小与 GPU 平均 Token 延迟。
 
-## 六、把本批 10 篇连成一张因果图
+## 六、把推理服务与投机生成连接起来
 
-本批技术分成四层，而不是 10 个互不相干的名字：
+相关技术分成四层，而不是多个互不相干的名字：
 
 $$
 \begin{aligned}
@@ -130,4 +130,4 @@ $$
 
 这也是你从模型研发走向推理系统工程时必须建立的分界：GPU Kernel 加速、Batching 速度、Goodput、Token Sampling Exactness，分别有不同的正确性和测量条件。
 
-**继续阅读**：[Speculative Decoding：概率修正证明](C020-speculative-decoding.md) → [Medusa：多头候选树](C021-medusa.md) → [EAGLE：特征草稿](C022-eagle.md)。[原论文 ICML 2024](https://proceedings.mlr.press/v235/li24bt.html)。
+**继续阅读**：[Speculative Decoding：概率修正证明](C020-speculative-decoding.md) → [Medusa：多头候选树](C021-medusa.md) → [EAGLE：特征草稿](C022-eagle.md) → [EAGLE-2：动态树](C023-eagle2.md) → [EAGLE-3：多步草稿训练](C024-eagle3.md)。[原论文 ICML 2024](https://proceedings.mlr.press/v235/li24bt.html)。

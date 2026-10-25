@@ -36,6 +36,18 @@ flowchart TD
   VL --> SPEC["Speculative Decoding"]
   SPEC --> MEDUSA["Medusa"]
   SPEC --> EAGLE["EAGLE"]
+  EAGLE --> EAGLE2["EAGLE-2：动态草稿树"]
+  EAGLE2 --> EAGLE3["EAGLE-3：训练时多步展开"]
+  MEDUSA --> HYDRA["Hydra：顺序依赖预测头"]
+  HYDRA --> REDRAFTER["ReDrafter：循环草稿"]
+  REDRAFTER --> SPECINFER["SpecInfer：树形验证"]
+  SPECINFER --> SEQUOIA["Sequoia：树形预算"]
+  SPEC --> LOOKAHEAD["Lookahead：Jacobi 候选"]
+  LOOKAHEAD --> REST["REST：语料检索"]
+  REST --> OUROBOROS["Ouroboros：短语草稿"]
+  SPEC --> DVERIFY["Draft & Verify：跳层草稿"]
+  DVERIFY --> LSKIP["LayerSkip：早退训练"]
+  SPEC --> BILD["BiLD：回退与回滚，非严格无损"]
   T --> MQA["MQA"]
   MQA --> GQA["GQA"]
 
@@ -102,6 +114,14 @@ flowchart LR
 
 | 想解决的问题 | 推荐文章 |
 |---|---|
+| 多头为何需顺序条件，循环草稿怎样结合 Beam？ | {doc}`Hydra <generated/papers/C/02-inference-serving/C025-hydra>` → {doc}`ReDrafter <generated/papers/C/02-inference-serving/C026-redrafter>` |
+| 多条路径怎样共享前缀，固定预算下怎么规划候选树？ | {doc}`SpecInfer <generated/papers/C/02-inference-serving/C027-specinfer>` → {doc}`Sequoia <generated/papers/C/02-inference-serving/C028-sequoia>` |
+| 不训练独立草稿网络能否用 Jacobi 或检索找 Token？ | {doc}`Lookahead <generated/papers/C/02-inference-serving/C029-lookahead-decoding>` → {doc}`REST <generated/papers/C/02-inference-serving/C030-rest>` |
+| 用短语加快 Draft 自身生成与延长候选的思路是什么？ | {doc}`Ouroboros <generated/papers/C/02-inference-serving/C031-ouroboros>` |
+| 不重新训练的跳层草稿，与专门训练的早退模型有何差别？ | {doc}`Draft & Verify <generated/papers/C/02-inference-serving/C032-draft-and-verify>` → {doc}`LayerSkip <generated/papers/C/02-inference-serving/C033-layerskip>` |
+| BiLD 何时回退回滚，为什么不自动等于严格分布不变？ | {doc}`BiLD <generated/papers/C/02-inference-serving/C034-bild>` |
+| 固定候选树为何浪费 Target 验证预算，置信度如何变成路径排序分数？ | {doc}`EAGLE-2 <generated/papers/C/02-inference-serving/C023-eagle2>` |
+| 为什么下一 Feature 的回归约束可能限制草稿效果，怎样训练多步自回灌的 Draft？ | {doc}`EAGLE-3 <generated/papers/C/02-inference-serving/C024-eagle3>` |
 | 数据并行下为什么要分片 Adam optimizer、gradient、parameter？ZeRO-1/2/3 与 FSDP 怎么联系？ | {doc}`ZeRO 原始论文 <generated/papers/C/01-distributed-training/C002-zero>` |
 | GPipe 为什么必须拆 micro-batch，怎样保留同步梯度与计算 bubble？ | {doc}`GPipe <generated/papers/C/01-distributed-training/C003-gpipe>` |
 | 张量并行为什么高频 all-reduce，interleaved 1F1B 怎样改变 bubble 和通信？ | {doc}`Megatron-LM <generated/papers/C/01-distributed-training/C004-megatron-lm>` |

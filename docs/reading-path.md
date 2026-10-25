@@ -179,4 +179,36 @@ FA2 解决 work partition 后，H100 上的新瓶颈转向 heterogeneous executi
 
 由“每轮只产生一个 Token”推出 Speculation，证明目标分布不变性，再研究如何改造候选生成方式：独立 Draft、额外未来 Token Heads 与第二倒数层 Feature Predictor。严格区分原始模型分布不变、联合微调后的 Target 分布、Typical Acceptance 等不同正确性语义。
 
+## 第二十八阶段：EAGLE 动态树与多步草稿训练
+
+52. {doc}`EAGLE-2：上下文感知的候选树扩展与重排 <generated/papers/C/02-inference-serving/C023-eagle2>`
+53. {doc}`EAGLE-3：多层特征融合、Token 预测与 Training-Time Test <generated/papers/C/02-inference-serving/C024-eagle3>`
+
+在 EAGLE 已经能够快速产生草稿之后，首先解释为什么固定树型会错配不同上下文的难度：EAGLE-2 使用 Draft 的条件置信度构造近似路径价值，分开执行“继续扩展哪些分支”和“Target 最终验证哪些节点”；它并不改动 Target 的接受–残差校正。接着分析 EAGLE-3 的另一重瓶颈：真实 Feature 上训练的 Draft，在多步推测时会读入自己的预测状态；该方法通过多层 Feature 融合、取消 Feature 预测约束、训练时模拟推测展开，改善多步草稿质量。两篇分别处理候选预算与草稿模型，两者的加速数字都不能脱离硬件、任务、采样设置和 Batch 直接搬用。
+
+## 第二十九阶段：候选网络、树形执行与预算优化
+
+54. {doc}`Hydra：顺序依赖的未来预测头 <generated/papers/C/02-inference-serving/C025-hydra>`
+55. {doc}`ReDrafter：循环草稿与动态树 <generated/papers/C/02-inference-serving/C026-redrafter>`
+56. {doc}`SpecInfer：Token Tree 并行验证 <generated/papers/C/02-inference-serving/C027-specinfer>`
+57. {doc}`Sequoia：动态规划与硬件感知的树预算 <generated/papers/C/02-inference-serving/C028-sequoia>`
+
+从 Medusa 的独立预测头改为 Hydra 的顺序依赖，再转到 ReDrafter 的循环草稿状态与 Beam Tree；SpecInfer 单独解释如何在 Target 中共享树前缀、保证祖先条件可见；Sequoia 进一步在预算限制下规划最有价值的树。必须区分候选模型预测质量、树形结构、并行执行正确性与整体系统时延。
+
+## 第三十阶段：候选的非传统来源与短语复用
+
+58. {doc}`Lookahead Decoding：Jacobi Window 与 n-gram <generated/papers/C/02-inference-serving/C029-lookahead-decoding>`
+59. {doc}`REST：检索后缀与 Trie 候选 <generated/papers/C/02-inference-serving/C030-rest>`
+60. {doc}`Ouroboros：短语辅助草稿与长候选 <generated/papers/C/02-inference-serving/C031-ouroboros>`
+
+Lookahead 的 n-gram 来自同一个模型的 Jacobi 迭代轨迹，REST 的候选来自外部语料数据存储，Ouroboros 则仍用小型 Draft 而在其生成环节利用短语池。三者不能因为都使用短语匹配而归为同一实现。
+
+## 第三十一阶段：自推测与质量—时延折中
+
+61. {doc}`Draft & Verify：不训练的跳层草稿 <generated/papers/C/02-inference-serving/C032-draft-and-verify>`
+62. {doc}`LayerSkip：训练时早退与共享预测头 <generated/papers/C/02-inference-serving/C033-layerskip>`
+63. {doc}`BiLD：大小模型的 Fallback 与 Rollback <generated/papers/C/02-inference-serving/C034-bild>`
+
+先比较单一模型跳过若干层的 Draft & Verify，与必须在训练时施加 Early Exit Loss / Layer Dropout 的 LayerSkip。最后用 BiLD 的回退和回滚策略区分两种优化命题：“输出分布严格等于 Target”与“允许任务质量差异换取时延改善”；speedup 都应附带真实质量、采样设置与硬件基线。
+
 读到 V3 / R1 时不需要把所有方法重新推一遍；直接使用文章中的站内链接回到 MLA、MoE 或 GRPO 专题，再返回模型主线即可。
