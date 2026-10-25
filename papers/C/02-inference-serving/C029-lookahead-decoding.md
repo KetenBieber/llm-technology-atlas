@@ -71,6 +71,29 @@ Lookahead 的关键是不用等整个 Jacobi Window 全部收敛，而是保留�
 
 ## 原论文报告、工程限制
 
+### 原论文 Figure 1/2 与 Algorithm 2：矩阵到底多大、有哪些位置必须 Mask？
+
+[ICML 2024 / arXiv:2402.02057v1 Figure 1（PDF 第 3 页）](https://arxiv.org/pdf/2402.02057) 给出 $W=5,N=3,G=2$ 的完整轮次；图例分别标记 Lookahead Branch、Verification Branch、N-gram Pool 与窗口更新。关键不是“一次预测 5 个 Token”，而是在一次 Target Forward 中**同时维护迭代轨迹和验证真实前缀的候选**：未验证的 3-gram 只是缓存中的提案，不会因在 Lookahead 窗口出现就直接提交。原论文 §3、Appendix 的 Algorithm 2 进一步规定候选池的取用、最长匹配前缀检查和窗口迁移。
+
+论文 **Figure 2(b)** 的 $W=5,N=4,G=2$ 更容易查出实现错误：Lookahead 保存的历史轨迹应有 $(N-1)\times W=3\times5$ 个 Token 位置，对应三轮历史、每轮五个相对位置。图上的颜色代表生成迭代轮次，不代表不同语言模态；每个节点里的数字代表与已确认输出的**相对位置**。验证区是另一组 Token/候选位置，灰色块标记不需要发生的计算，白/黑 Mask 限定可见性。一个候选如果读到了 Jacobi 分支尚未被 Target 确认的兄弟位置，就不能再声称它的条件分布等于原模型逐 Token 推理。
+
+由此得到一次前向时间的成本模型：
+
+$$
+T_{\rm round}=T_{\rm target}(W,N,G,L,B)
+ +T_{\rm pool}+T_{\rm pack},
+\qquad
+\bar T_{\rm token}=\frac{T_{\rm round}}{\mathbb E[L_{\rm accepted}]}.
+$$
+
+这里 $L$ 是现有前缀长度，$B$ 是 Batch；$W,N,G$ 增大可能提高候选覆盖和 $L_{\rm accepted}$，也会扩大 Query 工作量、Mask/Packing 与 Attention 计算。不能从原文关于每轮 $\log(\mathrm{FLOPs})$ 的 Scaling Law 反推“任何 GPU、任何 Batch 都越大越快”。
+
+### 为什么“精确”必须细分 Greedy 与 Sampling 两类？
+
+Greedy 模式下，假设真实前缀为 $y_{1:t-1}$，Candidate 为 $\hat y_t,\hat y_{t+1}$；验证应计算 $p_t(\cdot\mid y_{1:t-1})$、$p_{t+1}(\cdot\mid y_{1:t-1},\hat y_t)$。如果 $\hat y_t$ 不等于 $p_t$ 的 Argmax，后续候选根本不再拥有正确前缀，不能继续判“第二个词是否正确”；拒绝后应从 Target 当前真实前缀的正确分布生成。对于非贪心 Sampling，简单比对 Argmax 不能保持原分布，必须采用相应的严格接受/残差规则。原文把不同采样策略的兼容性当作需要处理的算法部分，不能用一个 Greedy 伪代码宣称 Top-p 无损。
+
+**原始证据链**：[Figure 1/Algorithm 2](https://arxiv.org/pdf/2402.02057) 给出计算图与验证顺序；论文 §4 在 MT-Bench 评估单卡加速最高 1.8×，多 GPU Code Completion Strong Scaling 最高 4×；Figure 2 证明的是 Attention Mask 在指定窗口参数下的**设计语义**，并不是第 2 组速度测试的结果。
+
 [ICML 2024 原文](https://proceedings.mlr.press/v235/fu24a.html) 报告 MT-Bench 等任务的单机加速最高约 **1.8×**，代码补全场景在多 GPU strong scaling 下最高约 **4×**；不同并行资源和 benchmark 不能直接对比。需要查看任务是否具备易重复 n-gram、可用的 GPU 算力冗余以及 Prompt 中相似短语的比例。
 
 [REST](C030-rest.md) 不通过 Jacobi 生成短语，而从外部数据存储中检索；[Ouroboros](C031-ouroboros.md) 则利用短语池补充较轻的 Draft 生成流程。这三个技术名称都涉及 n-gram，却在**候选来源、是否有 Draft 网络、Token 验证时间分配**三个维度明显不同。

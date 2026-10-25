@@ -88,6 +88,29 @@ ReDrafter 将不同阶段交替执行：（1）Target 已确认前缀输出特�
 
 ## 原论文报告了什么，不能推出什么？
 
+### 对照原论文 Figure 2、Figure 3 和真正的 RNN 更新式
+
+在 [ReDrafter arXiv:2403.09919v5 第 2 页 Figure 2](https://arxiv.org/pdf/2403.09919)，作者展示了一个完整的执行轮次：LLM 先确定绿色 Token，Drafter 以它与 Target 最后一层隐藏状态作条件执行 Beam Search；LLM 对分支进行一次验证，蓝色的最长可接受前缀追加到输出。图中灰色词序列代表原始 LLM 顺序生成结果，用于对照输出一致性。这张图的证据作用是**定义执行语义**，不是 GPU 加速测量。
+
+再看同一 PDF 第 3 页 **Figure 3**。作者画出前缀隐藏状态 $h$ 和每个候选 Token Embedding $e_t$ 如何被递归输入 Draft。与前文的教学式不同，论文 §3.1 给出了更精确的 RNN 关系：
+
+$$
+s_t=f(U s_{t-1}+W e_t+b),\qquad
+g_t=[s_t,h].
+$$
+
+其中 $s_t$ 是共享参数的循环状态，$g_t$ 拼接了 Target 的 $h$，随后送入带 Skip Connection 的 MLP 和 Softmax 预测未来 Token。这说明“持续记住历史 Token”的部分由 $s_t$ 负责，而 $h$ 作为固定条件参与每个草稿步的输出 Head。把它写成 §tanh(W_s s_i+W_e e_i+W_h h)§ 只能是教学变种，不能误认为原论文 Eq.。
+
+**Shape 检查**：若 $s_t\in\mathbb R^{d_s}$、$h\in\mathbb R^{d_h}$，则拼接向量 $g_t\in\mathbb R^{d_s+d_h}$；任何接收 $g_t$ 的首个线性层都应以 $d_s+d_h$ 为输入维度。若把 $h$ 不经投影直接加到 $s_t$，只有 $d_s=d_h$ 时才合法。由此也解释为什么必须区分“输入拼接”和“隐状态递推”两条算子路径。
+
+### 由 Beam Trie 推导动态树 Attention Mask
+
+设 Beam 候选为 §a-b-c§ 与 §a-d-e§，构树后节点为 $a,b,c,d,e$。若节点按照拓扑顺序排列，定义 $M_{ij}=0$ 当且仅当 $j$ 是 $i$ 的祖先或 $i=j$，其他位置为 $-\infty$。那么 $c$ 可访问 §a,b,c§，而不能读到 §d,e§；$e$ 可读 §a,d,e§ 而不可读 §b,c§。如果直接套“索引更早就能访问”的普通下三角 Mask，后一分支就可能偷看兄弟分支，Target 校验到的将是**不存在的自回归前缀**，即使输出 Token 恰好相同，也不再具备作者声称的验证语义。
+
+注意这里的 Mask 规则是基于 Figure 2/3 的教学重建，树节点的物理 Packing 和 Dynamic Tree Attention 的执行实现还需结合原文 §3.3。
+
+原论文 **Figure 1（第 1 页）** 才包含实测速度图：左侧是 H100/PyTorch，右侧是 M2 Ultra/MLX；对比 EAGLE、Medusa 和自回归，不能跨不同硬件直接比较柱高。Figure 2/3 解释机制，Figure 1 体现系统效果，三者承担完全不同的证据职责。
+
 [Apple 研究介绍](https://machinelearning.apple.com/research/recurrent-drafter) 报告：NVIDIA H100 / PyTorch 上对 Vicuna 的 MT-Bench 实验最高 **2.8×** 加速；Apple Silicon / MLX/Metal 最高 **2.3×**。这两条对应不同平台和运行环境，不能把倍数互相比较成 GPU 性能排名。
 
 应分别检验循环网络成本、Beam 数、树去重率、蒸馏对候选质量的影响。若希望复现所谓“更快”，还要报告 Target 验证一次花多久、每轮平均确认几枚 Token、草稿生成与树组织各自耗时；接受率与端到端延迟不能互换。
