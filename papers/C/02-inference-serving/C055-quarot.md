@@ -70,7 +70,7 @@ $$
 N(xR)=N(x)R.
 $$
 
-原论文 `3.4 Eq. (3) 的转置约定与本文的行向量定义可能相反，但**可交换的根本条件就是 $\ell_2$ 范数正交不变**。未经吸收的逐通道 $\gamma$ 通常不与任意旋转交换，所以不能漏掉预处理这一步；LayerNorm 中的减均值也不能未经条件检查就照搬 RMSNorm 的证明。
+原论文第 3.4 节 Eq. (3) 的转置约定与本文的行向量定义可能相反，但**可交换的根本条件就是 $\ell_2$ 范数正交不变**。未经吸收的逐通道 $\gamma$ 通常不与任意旋转交换，所以不能漏掉预处理这一步；LayerNorm 中的减均值也不能未经条件检查就照搬 RMSNorm 的证明。
 
 看一个门控 FFN：
 
@@ -112,11 +112,11 @@ $$
 
 所以其 **Attention Scores 完全不变**。与此不同，将 $V$ 右乘 $H$ 会把 Head 的输出整体右乘 $H$；必须在 $W_O$ 里吸收 $H^\top$ 才能让最终输出回到原空间。
 
-但是 [RoPE](../../A/03-transformer/A014-roformer-rope.md) 在 Q/K 投影之后施加随位置变化的旋转 $P_t$。通常 $P_tH\neq HP_t$，所以不能任意把该 $H$ 离线吸收到 $W_Q,W_K$，否则会改变位置关系。QuaRot 选择 **Post-RoPE Head-wise Rotation**：先完成 RoPE，再在运行时对 Q/K 做共同的 Hadamard。原论文 `4 Eq. (13)–(14) 指出，Decode 只有一个当前 Query，而 Key 有大量历史 Token；把 Key 缓存成**已应用位置编码和 Hadamard 的形式**，避免每步回头旋转全部旧 Key，是更合理的执行顺序。
+但是 [RoPE](../../A/03-transformer/A014-roformer-rope.md) 在 Q/K 投影之后施加随位置变化的旋转 $P_t$。通常 $P_tH\neq HP_t$，所以不能任意把该 $H$ 离线吸收到 $W_Q,W_K$，否则会改变位置关系。QuaRot 选择 **Post-RoPE Head-wise Rotation**：先完成 RoPE，再在运行时对 Q/K 做共同的 Hadamard。原论文第 4 节 Eq. (13)–(14) 指出，Decode 只有一个当前 Query，而 Key 有大量历史 Token；把 Key 缓存成**已应用位置编码和 Hadamard 的形式**，避免每步回头旋转全部旧 Key，是更合理的执行顺序。
 
 对 Value，先从 $W_V/W_O$ 对吸收 Head-wise 旋转，再在需要时通过跨 Head Hadamard 帮助矩阵输入去异常。**某些变换可被离线吸收，另一些在线算子必须保留**，不能概括成“模型只做一次 Hadamard 就够了”。
 
-原论文 `4 把精度路径区分得很清楚：线性层的输入可以按每 Token INT4 量化，存储的 Weight 为 INT4，在 CUTLASS TensorCore 做整数 GEMM（INT32 Accumulation）；RMSNorm、RoPE、Attention Scores/Softmax 和部分在线 Hadamard/缩放继续使用较高精度。KV Cache 使用 4-bit 存储，读取后可在 FP16 路径计算注意力。因此 **W4A4KV4 不等于整个网络每个算子都是 INT4**。
+原论文第 4 节 把精度路径区分得很清楚：线性层的输入可以按每 Token INT4 量化，存储的 Weight 为 INT4，在 CUTLASS TensorCore 做整数 GEMM（INT32 Accumulation）；RMSNorm、RoPE、Attention Scores/Softmax 和部分在线 Hadamard/缩放继续使用较高精度。KV Cache 使用 4-bit 存储，读取后可在 FP16 路径计算注意力。因此 **W4A4KV4 不等于整个网络每个算子都是 INT4**。
 
 ## 用 Shape 与实际字节数区分“KV 省内存”和“INT4 算得快”
 

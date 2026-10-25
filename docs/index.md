@@ -61,6 +61,7 @@
 - {doc}`模型量化与低显存部署 <generated/papers/C/02-inference-serving/C039-llm-int8>`：从异常值分流到 {doc}`SmoothQuant <generated/papers/C/02-inference-serving/C040-smoothquant>`、GPTQ、AWQ、FlexGen 和 {doc}`Atom <generated/papers/C/02-inference-serving/C044-atom>`。
 - {doc}`低比特后训练与码本 <generated/papers/C/02-inference-serving/C045-zeroquant>`：ZeroQuant → RPTQ → OmniQuant → SpQR → QuIP# → AQLM；{doc}`QLoRA <generated/papers/C/02-inference-serving/C051-qlora>` 与 {doc}`BitNet b1.58 <generated/papers/C/02-inference-serving/C054-bitnet-b158>` 则分别连接低显存微调、从头低比特训练。
 - {doc}`低比特旋转与可逆仿射 <generated/papers/C/02-inference-serving/C055-quarot>`：QuaRot 正交变换 → {doc}`SpinQuant 学习旋转 <generated/papers/C/02-inference-serving/C056-spinquant>` → {doc}`FlatQuant Kronecker 分解 <generated/papers/C/02-inference-serving/C057-flatquant>`，研究 W4A4 与可选 KV4 的精度、校准成本与 GPU 执行；三篇的具体位宽/基线需要逐表对齐，不能直接排名。
+- {doc}`极端异常值的定向消解 <generated/papers/C/02-inference-serving/C058-duquant>`：DuQuant 的两次局部旋转与 Zigzag 重排；再到 {doc}`QServe 的 W4A8KV4 服务实现 <generated/papers/C/02-inference-serving/C059-qserve>`，分析 INT4 存储、INT8 Tensor Core 以及 KV4 Attention 的真正性能瓶颈。
 - {doc}`Scaling Laws <scaling/index>`：从 Kaplan 到 Chinchilla，理解模型/数据/compute 的训练规划。
 - {doc}`完整模型主线 <models/index>`：从 DeepSeek V2/V3/R1 对照到 Llama 3 与 Qwen2.5。
 - {doc}`推理后训练 <post-training/index>`：从 PPO/GRPO 进入 reasoning RL。

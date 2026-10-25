@@ -12,6 +12,7 @@
 - **量化与受限资源部署**：LLM.int8、SmoothQuant、GPTQ、AWQ、FlexGen、Atom —— 细化异常值、W8A8、W4A16、低比特 GEMM 与 CPU/SSD 迁移之间的技术边界。
 - **极低比特校准、码本与训练**：ZeroQuant、RPTQ、OmniQuant、SpQR、QuIP#、AQLM、QLoRA、LoftQ、BitNet、BitNet b1.58 —— 从后训练量化的误差、硬件代价走向带码本的向量量化、低秩适配与量化感知预训练。
 - **正交旋转到可学习低成本仿射**：QuaRot → SpinQuant → FlatQuant —— 先用正交变换降低坐标离群值，再在正交流形上优化量化误差，最终放宽到逐层可逆仿射与 Kronecker 分解。区分数学等价、离散 Round 后的 PPL 和 INT4 Kernel 的真实延迟。
+- **异常值优先分配与服务级低比特算子**：DuQuant 区分常规与 Massive Outlier，进行块内旋转、Zigzag 分配和二次旋转；QServe 则分析 W4A4 的慢速 Group 解量化，采用 W4A8KV4、Progressive Group Quant 和真实 INT8 Tensor Core 流水。
 
 推理系统不要用同一个“更快”概括四类指标：**TTFT、TPOT/TBT、带 SLO 的 Goodput、Token/Sec** 分别测量不同对象。系统能支持更长 Context 也不表示模型一定能理解该 Context。
 
@@ -64,4 +65,6 @@
 ../generated/papers/C/02-inference-serving/C055-quarot
 ../generated/papers/C/02-inference-serving/C056-spinquant
 ../generated/papers/C/02-inference-serving/C057-flatquant
+../generated/papers/C/02-inference-serving/C058-duquant
+../generated/papers/C/02-inference-serving/C059-qserve
 ~~~

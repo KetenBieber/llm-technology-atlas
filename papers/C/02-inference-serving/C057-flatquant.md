@@ -15,9 +15,9 @@ $$
 
 如果把一个通道的绝对值从 100 降到 10，$\Delta$ 会缩小，显然有帮助。但设经过某次 Rotation 后，通道幅值从 $[100,1,1,\ldots]$ 变成 $[10,10,0.001,0.001,\ldots]$，虽然最大值大幅下降，绝大多数接近零的通道仍可能被 Round 到同一个点。**“没有极端 Outlier”并不保证权重/激活在量化格点上分布均匀**。
 
-原论文 [Figure 1（arXiv HTML 的 `2）](https://arxiv.org/html/2410.09426) 将 LLaMA-3-8B / 70B 的 Output Projection 与 FFN Gate Projection 的 Weight/Activation 沿 Channel Magnitude 降序排列：横轴是通道排序，纵轴是该通道的 Frobenius Magnitude；Per-channel Scaling 和 Hadamard 在去掉最醒目的峰值之后，曲线仍会有陡峭斜率或长尾，而 FlatQuant 变换后的曲线更平。**Figure 1 只显示变换后的幅值分布，不直接测量端到端速度**。
+原论文 [Figure 1（论文第 2 节）](https://arxiv.org/html/2410.09426) 将 LLaMA-3-8B / 70B 的 Output Projection 与 FFN Gate Projection 的 Weight/Activation 沿 Channel Magnitude 降序排列：横轴是通道排序，纵轴是该通道的 Frobenius Magnitude；Per-channel Scaling 和 Hadamard 在去掉最醒目的峰值之后，曲线仍会有陡峭斜率或长尾，而 FlatQuant 变换后的曲线更平。**Figure 1 只显示变换后的幅值分布，不直接测量端到端速度**。
 
-原论文 [Figure 2（`2.2）](https://arxiv.org/html/2410.09426) 比较三种量化方案的 Error Surface：横向包含输入序列中的 Token 位置，纵向是 Transformer Layer。较早的 Pivot Tokens 与更深的层更容易有显著量化误差；FlatQuant 降低了局部峰值和沿层传播的误差。它说明更小的激活/权重峰值并非全部目标，**最后还要控制每层输出实际失真如何跨残差网络累积**。
+原论文 [Figure 2（论文第 2.2 节）](https://arxiv.org/html/2410.09426) 比较三种量化方案的 Error Surface：横向包含输入序列中的 Token 位置，纵向是 Transformer Layer。较早的 Pivot Tokens 与更深的层更容易有显著量化误差；FlatQuant 降低了局部峰值和沿层传播的误差。它说明更小的激活/权重峰值并非全部目标，**最后还要控制每层输出实际失真如何跨残差网络累积**。
 
 因此问题升级：不是找一把统一的正交旋转，使每层所有数据看起来差不多，而是**为每个 Linear Layer 寻找更符合本层输入统计与量化误差的可逆坐标变换**。
 
@@ -91,7 +91,7 @@ $$
 =\operatorname{vec}_{row}(P_1^\top V P_2).
 $$
 
-右边先用 $P_1^\top$ 作用于第一个小轴，再用 $P_2$ 作用于第二个小轴。实现时要对齐 Tensor Memory Layout 与 Vec 方向，否则误把 Column-Major 的 Kronecker 恒等式用于 Row-Major，可能构造出数值不等价的 Kernel。论文 `3.1 Eq. (3) 用 $\times_1,\times_2$ 张量乘法记号表达了相同思想。
+右边先用 $P_1^\top$ 作用于第一个小轴，再用 $P_2$ 作用于第二个小轴。实现时要对齐 Tensor Memory Layout 与 Vec 方向，否则误把 Column-Major 的 Kronecker 恒等式用于 Row-Major，可能构造出数值不等价的 Kernel。论文第 3.1 节 Eq. (3) 用 $\times_1,\times_2$ 张量乘法记号表达了相同思想。
 
 ~~~{mermaid}
 flowchart LR
@@ -128,13 +128,13 @@ $$
 \le\frac{\sqrt n}{2},
 $$
 
-两个上界都在 $n_1=n_2=\sqrt n$ 达到。为什么？AM–GM 给出 $n_1^2+n_2^2\ge2n_1n_2=2n$，以及 $n_1+n_2\ge2\sqrt n$。公式直接解释了“尽量选两个接近平方根的因子”这一 Kernel 设计偏好。对于 $n=8192$ 无法恰好平方拆为两个整数幂二，所以论文 `3.1 给出 $64\times128$ 的方案。
+两个上界都在 $n_1=n_2=\sqrt n$ 达到。为什么？AM–GM 给出 $n_1^2+n_2^2\ge2n_1n_2=2n$，以及 $n_1+n_2\ge2\sqrt n$。公式直接解释了“尽量选两个接近平方根的因子”这一 Kernel 设计偏好。对于 $n=8192$ 无法恰好平方拆为两个整数幂二，所以论文第 3.1 节 给出 $64\times128$ 的方案。
 
 **但** $\mathcal O$ 数量下降不等于 GPU 延迟严格按 32 倍下降：两个小矩阵乘可能是 Memory-Bound，额外 Transpose/Reshape 可能破坏连续访问，因此需要本论文的 Kernel Fusion 才能将成本转化为实际 Speedup。
 
 ## 为何除 Kronecker，还要通道 Scale 与学习 Clip？
 
-FlatQuant `3.1 不只学 $P_1,P_2$，还组合了两种独立自由度：
+FlatQuant 第 3.1 节 不只学 $P_1,P_2$，还组合了两种独立自由度：
 
 **Learnable Per-channel Scaling**：$\operatorname{diag}(c)$ 允许各 Channel 的幅值作不同缩放，相应反向缩放并入其它权重。这样不必期待一个 Kronecker 结构独自适配所有 Weight/Activation 的范围差异。
 
@@ -147,7 +147,7 @@ $$
 
 其中 $\Delta(t)=t/7$ 是教学上以对称 INT4 为例的形式。减少 $t$ 会使正常范围的量化误差下降，但极端大值的 Clip 偏差变大；$E(t)$ 通常**不是单调函数**，应在校准集上优化而不是固定“一律 Clip 90%”。论文同时为 Weight 和 Activation 训练 Clip 参数，并联合学习 $P,c$。
 
-原文 `3.1 Eq. (4) 最终的训练目标不是把“各通道方差差距”直接作为唯一 Loss，而是针对第 $\ell$ 个 Transformer Block：
+原文第 3.1 节 Eq. (4) 最终的训练目标不是把“各通道方差差距”直接作为唯一 Loss，而是针对第 $\ell$ 个 Transformer Block：
 
 $$
 \min_{\Theta_\ell}
@@ -165,7 +165,7 @@ $$
 N(xP)\ne N(x)P
 $$
 
-通常成立。若像 QuaRot 那样把任意 $P$ 放入全网络 Residual Stream 并指望每个 RMSNorm 可交换，就会改变函数。**FlatQuant 的不变性来自适当位置的 $P,P^{-1}$ 成对嵌入单个线性映射路径，而不是正交 Norm 等价性**。跨层重参数化时只有论文 `3.2 指明的特殊 Weight/Norm/投影配对与可融合条件才可以合法搬动。
+通常成立。若像 QuaRot 那样把任意 $P$ 放入全网络 Residual Stream 并指望每个 RMSNorm 可交换，就会改变函数。**FlatQuant 的不变性来自适当位置的 $P,P^{-1}$ 成对嵌入单个线性映射路径，而不是正交 Norm 等价性**。跨层重参数化时只有论文第 3.2 节 指明的特殊 Weight/Norm/投影配对与可融合条件才可以合法搬动。
 
 FFN 的 $\operatorname{SiLU}$ 与 Hadamard Product 也不能一般地和 $P$ 交换；Position Encoding 的 RoPE 不能无条件对一般非正交 $P$ 保持相同 Attention Score。作者 Figure 3(b) 将 Attention、FFN、Norm 中能合并的部分标成红色，Online Transformation/Quantization 标成蓝色，通道 Scale 合并标成绿色。**这张图与一条简单的“X→P→INT4→P逆”流程图不是同一细节层次**：只有遵循实际融合位置，才能保证未量化网络的相应层是数值等价的。
 
@@ -173,13 +173,13 @@ FFN 的 $\operatorname{SiLU}$ 与 Hadamard Product 也不能一般地和 $P$ 交
 
 设原始实现分别执行 `reshape → P1 matmul → P2 matmul → INT4 round → INT4 pack`，每步把中间结果写回 HBM，再让下一步从 HBM 读回来。虽然浮点 FLOPs 变少了，这些额外 Global Memory Round-trip 仍可能成为主要时间。
 
-论文 `3.3 的 **Fused FlatQuant Kernel** 将按两个轴的小矩阵计算与 Quantization 放进一次 Launch/数据流中，减少中间结果的显式 HBM 写入，并兼容 PreFill 和 Decode。对于形状 `[B,T,n]`，Prefill 时 $BT$ 通常大，有机会在并行 Thread Blocks 间分摊 Transform；Decode 时当前 Token 少，Launch Overhead 与数据访问 Pattern 更容易主导。**权重 W4A4 的 GEMM 是另一项成本**，不能因变换 Kernel 快就省略整个模型的矩阵乘测量。
+论文第 3.3 节 的 **Fused FlatQuant Kernel** 将按两个轴的小矩阵计算与 Quantization 放进一次 Launch/数据流中，减少中间结果的显式 HBM 写入，并兼容 PreFill 和 Decode。对于形状 `[B,T,n]`，Prefill 时 $BT$ 通常大，有机会在并行 Thread Blocks 间分摊 Transform；Decode 时当前 Token 少，Launch Overhead 与数据访问 Pattern 更容易主导。**权重 W4A4 的 GEMM 是另一项成本**，不能因变换 Kernel 快就省略整个模型的矩阵乘测量。
 
-论文 Figure 4（`4.3）在 **RTX 3090** 上比较 FP16 与 INT4 的 Prefill/Decode 速度，Prefill 长度 2048、Decode 256 Token，在不同 Batch 下最高分别约 **2.30× 与 1.76×**（有 Kernel Fusion，Batch 64）。同样模型、同样 Batch 下才能评价；也不能把单独的变换 Kernel Speedup 当成完整系统吞吐。
+论文 Figure 4（论文第 4.3 节）在 **RTX 3090** 上比较 FP16 与 INT4 的 Prefill/Decode 速度，Prefill 长度 2048、Decode 256 Token，在不同 Batch 下最高分别约 **2.30× 与 1.76×**（有 Kernel Fusion，Batch 64）。同样模型、同样 Batch 下才能评价；也不能把单独的变换 Kernel Speedup 当成完整系统吞吐。
 
 ## Table 1 / Table 2 / Table 3：三种完全不同的证据
 
-[原始 Table 1（arXiv HTML `4.2）](https://arxiv.org/html/2410.09426) 比较不同模型在 W4A4 上的 WikiText-2 与 C4 PPL；为避免把“量化器更新方式”与“仿射变换”混在一起，作者分别报告 **RTN 与 GPTQ**。
+[原始 Table 1（arXiv HTML 第 4.2 节）](https://arxiv.org/html/2410.09426) 比较不同模型在 W4A4 上的 WikiText-2 与 C4 PPL；为避免把“量化器更新方式”与“仿射变换”混在一起，作者分别报告 **RTN 与 GPTQ**。
 
 例如 LLaMA-3-8B 的 WikiText-2 PPL：
 
@@ -201,7 +201,7 @@ FFN 的 $\operatorname{SiLU}$ 与 Hadamard Product 也不能一般地和 $P$ 交
 
 ## 校准预算、复杂度与失败条件
 
-论文 `4.1 的典型校准是 **128 条 WikiText-2 句子，每条采样 2048 Token，15 个 Epoch，Batch 4，AdamW 初始学习率 $5\times10^{-3}$**；LLaMA-3-8B 的默认流程在单 GPU 上约需 26GB 显存和 0.9 小时。与 QuaRot 的基本离线随机重参数化相比，这里新增了需要优化的仿射参数与逆矩阵；与 SpinQuant 不同，它不受全局正交约束，因此对**可逆性、病态数值与逆矩阵计算**更敏感。
+论文第 4.1 节 的典型校准是 **128 条 WikiText-2 句子，每条采样 2048 Token，15 个 Epoch，Batch 4，AdamW 初始学习率 $5\times10^{-3}$**；LLaMA-3-8B 的默认流程在单 GPU 上约需 26GB 显存和 0.9 小时。与 QuaRot 的基本离线随机重参数化相比，这里新增了需要优化的仿射参数与逆矩阵；与 SpinQuant 不同，它不受全局正交约束，因此对**可逆性、病态数值与逆矩阵计算**更敏感。
 
 工程上至少有四类失效模式：
 

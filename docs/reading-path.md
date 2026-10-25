@@ -270,3 +270,10 @@ QuIP# 通过随机正交变换降低单坐标集中性，再采用适合向量�
 86. {doc}`FlatQuant：用 Kronecker 低成本可学习仿射平坦化激活 <generated/papers/C/02-inference-serving/C057-flatquant>`
 
 在 {doc}`SmoothQuant <generated/papers/C/02-inference-serving/C040-smoothquant>` 的缩放与 {doc}`QuIP# <generated/papers/C/02-inference-serving/C049-quip-sharp>` 的 Hadamard 基础上，首先证明正交变换怎样保持 Transformer 浮点输出不变，但其量化误差与选取的坐标系有关；再研究正交流形上的可训练旋转与校准任务损失；最后解释为什么每层独立可学习的一般可逆变换需要 Kronecker 分解和 Kernel Fusion 才能实际部署。比较论文结果时，必须先对齐模型、位宽 W/A/KV、Weight Quantizer、评测数据、Batch 和硬件，不能把 Table 1 的 PPL 和 Figure 的 Kernel Speedup 当同一个指标。
+
+## 第三十九阶段：定向消除极端异常值与低比特云端服务
+
+87. {doc}`DuQuant：块内贪心旋转、Zigzag 重排与二次旋转 <generated/papers/C/02-inference-serving/C058-duquant>`
+88. {doc}`QServe：Progressive Group Quantization 与 W4A8KV4 INT8 Tensor Core <generated/papers/C/02-inference-serving/C059-qserve>`
+
+DuQuant 对照 QuaRot 的随机旋转，区分跨 Token 持续存在的 Normal Outliers 与只出现于少数位置的 Massive Outliers，解释为何缩放会将异常值转移到 Weight，以及第二次旋转为何依赖 Zigzag 的跨 Block 均衡。QServe 不再只讨论同位宽 PPL，转向真正的 Tensor Core 主循环：为什么 Reduction Dimension 的 Group Scale 会让 INT4 局部累加频繁反量化，如何采用 W4A8KV4 的 Packed Weight、INT8 Tensor Core、保护性编码、SmoothAttention 与 KV4 内核共同降低成本。前者的 W4A4 质量数据和后者的 W4A8KV4 Token/s 不属于同一项可直接排序的指标。
