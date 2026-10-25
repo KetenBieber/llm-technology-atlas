@@ -53,7 +53,7 @@ $$
 
 ---
 
-## 阅读导航
+### 阅读导航
 
 建议先掌握：
 
@@ -100,9 +100,9 @@ $$
 
 *教学解释图｜Q/K/V block 在 HBM 与 SRAM 间分块流动，online softmax 在不物化完整注意力矩阵的前提下保持 exact attention。*
 
-# 一、先把一个常见误区拆掉：GPU 快，不代表“算术”是最贵的
+## 一、先把一个常见误区拆掉：GPU 快，不代表“算术”是最贵的
 
-## 1. 现代 GPU 至少有两类我们必须区分的资源
+### 1. 现代 GPU 至少有两类我们必须区分的资源
 
 为了理解 FlashAttention，先暂时不谈 Transformer。
 
@@ -160,7 +160,7 @@ $$
 
 ---
 
-## 2. 一次 kernel 真正做了什么？
+### 2. 一次 kernel 真正做了什么？
 
 一个 GPU kernel 的粗略执行：
 
@@ -201,7 +201,7 @@ $$
 
 ---
 
-## 3. Arithmetic Intensity
+### 3. Arithmetic Intensity
 
 定义：
 
@@ -235,9 +235,9 @@ Softmax 还包含 max reduction、exp、sum reduction、divide；如果中间结
 
 ---
 
-# 二、Standard Attention：数学式很干净，执行图却很糟糕
+## 二、Standard Attention：数学式很干净，执行图却很糟糕
 
-## 4. 标准 Attention 三步
+### 4. 标准 Attention 三步
 
 单 head：
 
@@ -273,11 +273,11 @@ $$
 
 ---
 
-## 5. 但普通实现往往把它拆成多个 kernel
+### 5. 但普通实现往往把它拆成多个 kernel
 
 典型实现：
 
-### Kernel 1
+#### Kernel 1
 
 $$
 QK^\top\rightarrow S.
@@ -289,7 +289,7 @@ $$
 S\rightarrow\text{HBM}.
 $$
 
-### Kernel 2
+#### Kernel 2
 
 从 HBM 读 $S$，计算：
 
@@ -303,7 +303,7 @@ $$
 P\rightarrow\text{HBM}.
 $$
 
-### Kernel 3
+#### Kernel 3
 
 读 $P,V$，计算：
 
@@ -339,7 +339,7 @@ $$
 
 ---
 
-## 6. 为什么 $N\times N$ 特别可怕？
+### 6. 为什么 $N\times N$ 特别可怕？
 
 如果：
 
@@ -381,7 +381,7 @@ $$
 
 ---
 
-## 7. Standard Attention 真正的问题不只是“显存占用”
+### 7. Standard Attention 真正的问题不只是“显存占用”
 
 很多介绍只说 Attention matrix 占：
 
@@ -416,9 +416,9 @@ $$
 
 ---
 
-# 三、为什么“把三个 Kernel Fuse 起来”还不是完整答案？
+## 三、为什么“把三个 Kernel Fuse 起来”还不是完整答案？
 
-## 9. 最直觉方案
+### 9. 最直觉方案
 
 你可能会说：
 
@@ -438,7 +438,7 @@ SRAM 只有 hundreds of KB / SM，而 S 可能 hundreds of MB / GB。
 
 ---
 
-## 10. GEMM 很容易 tile，Softmax 却把所有列耦合在一起
+### 10. GEMM 很容易 tile，Softmax 却把所有列耦合在一起
 
 矩阵乘法：
 
@@ -476,9 +476,9 @@ $$
 
 ---
 
-# 四、Online Softmax：FlashAttention exactness 的数学核心
+## 四、Online Softmax：FlashAttention exactness 的数学核心
 
-## 11. 从稳定 Softmax 开始
+### 11. 从稳定 Softmax 开始
 
 给：
 
@@ -525,7 +525,7 @@ $$
 
 ---
 
-## 12. 把一整行切成两个 Block
+### 12. 把一整行切成两个 Block
 
 设：
 
@@ -557,7 +557,7 @@ $$
 
 ---
 
-## 13. 第一块的 exp sum 怎样换到新的 global max？
+### 13. 第一块的 exp sum 怎样换到新的 global max？
 
 原来：
 
@@ -614,7 +614,7 @@ $$
 
 ---
 
-## 14. 这可以递归
+### 14. 这可以递归
 
 处理第 k 个 block 前维护：
 
@@ -653,9 +653,9 @@ $$
 
 ---
 
-# 五、Attention 最后还需要 $PV$：Output 也必须 Online Merge
+## 五、Attention 最后还需要 $PV$：Output 也必须 Online Merge
 
-## 15. 只维护 $(m,\ell)$ 还不够
+### 15. 只维护 $(m,\ell)$ 还不够
 
 Attention output：
 
@@ -696,7 +696,7 @@ $$
 
 ---
 
-## 16. 两个 Block 的 numerator 怎样合并？
+### 16. 两个 Block 的 numerator 怎样合并？
 
 全局 max：
 
@@ -736,7 +736,7 @@ $$
 
 ---
 
-## 17. 如果保存的是 normalized $O_{\text{old}}$
+### 17. 如果保存的是 normalized $O_{\text{old}}$
 
 已有：
 
@@ -798,7 +798,7 @@ $$
 
 ---
 
-## 18. 教学图：Online Softmax State
+### 18. 教学图：Online Softmax State
 
 ![教学解释图：Online Softmax State Merge](../../../figures/explainers/A055/02-online-softmax-state-merge.svg)
 
@@ -809,9 +809,9 @@ $$
 
 ---
 
-# 六、为什么这不是 Approximate Softmax？
+## 六、为什么这不是 Approximate Softmax？
 
-## 19. 没有任何合法 Attention Entry 被主动删除
+### 19. 没有任何合法 Attention Entry 被主动删除
 
 FlashAttention 仍计算所有合法 causal pair 的：
 
@@ -845,7 +845,7 @@ $$
 
 ---
 
-## 20. 和 MInference 对照
+### 20. 和 MInference 对照
 
 MInference：
 
@@ -871,9 +871,9 @@ MInference 可以把自己选中的 sparse tiles 用 FlashAttention-style online
 
 ---
 
-# 七、FlashAttention Forward：为什么外层遍历 K/V Block？
+## 七、FlashAttention Forward：为什么外层遍历 K/V Block？
 
-## 21. 输入分块
+### 21. 输入分块
 
 $$
 Q\rightarrow Q_1,\dots,Q_{T_r}.
@@ -923,7 +923,7 @@ $$
 
 ---
 
-## 22. 外层循环
+### 22. 外层循环
 
 对：
 
@@ -949,7 +949,7 @@ loop order 本身就是 IO optimization。
 
 ---
 
-## 23. 每个 Tile 内发生什么？
+### 23. 每个 Tile 内发生什么？
 
 对：
 
@@ -1009,7 +1009,7 @@ $$
 
 ---
 
-# 八、原论文主图应该怎么读？
+## 八、原论文主图应该怎么读？
 
 ![FlashAttention 原论文 IO-aware tiling overview](../../../figures/A055/fig1-io-overview.svg)
 
@@ -1029,9 +1029,9 @@ block 是：
 
 ---
 
-# 九、IO Complexity：为什么 HBM Access 会下降？
+## 九、IO Complexity：为什么 HBM Access 会下降？
 
-## 24. Standard Attention
+### 24. Standard Attention
 
 至少处理：
 
@@ -1051,7 +1051,7 @@ HBM accesses。
 
 ---
 
-## 25. FlashAttention 不写 $S,P$，但会重复读 Q
+### 25. FlashAttention 不写 $S,P$，但会重复读 Q
 
 K/V block 大约：
 
@@ -1100,7 +1100,7 @@ $$
 
 ---
 
-## 26. 为什么这比 $N^2$ 小很多？
+### 26. 为什么这比 $N^2$ 小很多？
 
 比例：
 
@@ -1120,9 +1120,9 @@ $$
 
 ---
 
-# 十、重要边界：FlashAttention 没把时间复杂度变成线性
+## 十、重要边界：FlashAttention 没把时间复杂度变成线性
 
-## 27. Forward 仍然计算 Dense $QK^\top$
+### 27. Forward 仍然计算 Dense $QK^\top$
 
 FLOPs：
 
@@ -1156,7 +1156,7 @@ $$
 
 ---
 
-## 28. 为什么仍能快很多？
+### 28. 为什么仍能快很多？
 
 当 kernel 在 memory-bound region：
 
@@ -1174,9 +1174,9 @@ $$
 
 ---
 
-# 十一、论文 Lower Bound：到底证明了什么？
+## 十一、论文 Lower Bound：到底证明了什么？
 
-## 29. Proposition
+### 29. Proposition
 
 对：
 
@@ -1197,7 +1197,7 @@ HBM accesses。
 
 ---
 
-## 30. 不要夸大成“每个 M 上都绝对最优”
+### 30. 不要夸大成“每个 M 上都绝对最优”
 
 论文 lower bound 的准确含义是：
 
@@ -1223,9 +1223,9 @@ HBM accesses。
 
 ---
 
-# 十二、Backward：为什么训练更能体现 FlashAttention 的反直觉价值？
+## 十二、Backward：为什么训练更能体现 FlashAttention 的反直觉价值？
 
-## 31. Standard Backward 为什么需要 $P$？
+### 31. Standard Backward 为什么需要 $P$？
 
 Forward：
 
@@ -1282,9 +1282,9 @@ $$
 
 ---
 
-# 十三、FlashAttention 的关键决策：别保存，重算
+## 十三、FlashAttention 的关键决策：别保存，重算
 
-## 32. Forward 保存什么？
+### 32. Forward 保存什么？
 
 不保存：
 
@@ -1308,7 +1308,7 @@ $$
 
 ---
 
-## 33. Backward 需要 $P_{ij}$ 时怎么办？
+### 33. Backward 需要 $P_{ij}$ 时怎么办？
 
 重新 load：
 
@@ -1343,9 +1343,9 @@ P 变成：
 
 ---
 
-# 十四、为什么 Recomputation 居然更快？
+## 十四、为什么 Recomputation 居然更快？
 
-## 34. 传统 checkpointing 直觉
+### 34. 传统 checkpointing 直觉
 
 ~~~text
 少存 activation
@@ -1375,7 +1375,7 @@ FlashAttention 则是：
 
 ---
 
-## 35. 原论文最关键的一组数字
+### 35. 原论文最关键的一组数字
 
 GPT-2 medium attention，A100：
 
@@ -1411,7 +1411,7 @@ $$
 
 ---
 
-## 36. 原论文 microbenchmark
+### 36. 原论文 microbenchmark
 
 ![FlashAttention 原论文 IO microbenchmark](../../../figures/A055/fig2-io-microbenchmark.svg)
 
@@ -1419,9 +1419,9 @@ $$
 
 ---
 
-# 十五、Softmax Backward 的 $D_i$：为什么不用整行 Reduction？
+## 十五、Softmax Backward 的 $D_i$：为什么不用整行 Reduction？
 
-## 37. Standard Softmax Gradient
+### 37. Standard Softmax Gradient
 
 一行：
 
@@ -1458,7 +1458,7 @@ $$
 
 ---
 
-## 38. 恒等式 $D_i=dO_i^\top O_i$
+### 38. 恒等式 $D_i=dO_i^\top O_i$
 
 因为：
 
@@ -1503,7 +1503,7 @@ $$
 
 ---
 
-## 39. Backward Tile 内就能计算 $dS$
+### 39. Backward Tile 内就能计算 $dS$
 
 恢复 $P_{ij}$，计算：
 
@@ -1547,9 +1547,9 @@ $$
 
 ---
 
-# 十六、Dropout Mask 为什么也不用保存？
+## 十六、Dropout Mask 为什么也不用保存？
 
-## 40. Standard 做法
+### 40. Standard 做法
 
 Forward 生成：
 
@@ -1563,7 +1563,7 @@ Backward 需要相同 mask，直觉上会保存 Z。
 
 ---
 
-## 41. 保存 PRNG State 就够了
+### 41. 保存 PRNG State 就够了
 
 Forward 保存随机数生成器状态：
 
@@ -1579,9 +1579,9 @@ Backward reset 到相同状态，然后按相同次序重建 tile-level dropout 
 
 ---
 
-# 十七、“线性内存”到底是什么意思？
+## 十七、“线性内存”到底是什么意思？
 
-## 42. Attention Intermediate
+### 42. Attention Intermediate
 
 Standard：
 
@@ -1607,7 +1607,7 @@ softmax stats。
 
 ---
 
-## 43. 不代表整个 Transformer Memory 都是 O(N)
+### 43. 不代表整个 Transformer Memory 都是 O(N)
 
 整个模型还有：
 
@@ -1625,9 +1625,9 @@ softmax stats。
 
 ---
 
-# 十八、为什么更省 Memory 还能提高模型质量？
+## 十八、为什么更省 Memory 还能提高模型质量？
 
-## 44. FlashAttention 自己没有改变模型函数
+### 44. FlashAttention 自己没有改变模型函数
 
 因为 exact：
 
@@ -1663,9 +1663,9 @@ better kernel
 
 ---
 
-# 十九、训练实验怎样读？
+## 十九、训练实验怎样读？
 
-## 45. BERT-large
+### 45. BERT-large
 
 相同初始化、target MLM accuracy 72%，8×A100：
 
@@ -1678,7 +1678,7 @@ better kernel
 
 ---
 
-## 46. GPT-2
+### 46. GPT-2
 
 GPT-2 small：
 
@@ -1700,7 +1700,7 @@ PPL 近似一致。
 
 ---
 
-## 47. 原论文 GPT-2 training evidence
+### 47. 原论文 GPT-2 training evidence
 
 ![FlashAttention 原论文 GPT-2 training evidence](../../../figures/A055/fig4-gpt2-training.svg)
 
@@ -1708,9 +1708,9 @@ PPL 近似一致。
 
 ---
 
-# 二十、Runtime 与 Memory Benchmark
+## 二十、Runtime 与 Memory Benchmark
 
-## 48. 原论文 benchmark
+### 48. 原论文 benchmark
 
 ![FlashAttention 原论文 runtime / memory benchmark](../../../figures/A055/fig3-runtime-memory.svg)
 
@@ -1727,9 +1727,9 @@ PPL 近似一致。
 
 ---
 
-# 二十一、IO Optimization 不能战胜所有 Arithmetic Scaling
+## 二十一、IO Optimization 不能战胜所有 Arithmetic Scaling
 
-## 49. FlashAttention 仍是 $O(N^2d)$
+### 49. FlashAttention 仍是 $O(N^2d)$
 
 当 N 非常大，即使 HBM 优化非常好：
 
@@ -1767,13 +1767,13 @@ FlashAttention-style kernel
 
 ---
 
-# 二十二、Block-Sparse FlashAttention：必须和 Exact FlashAttention 分开
+## 二十二、Block-Sparse FlashAttention：必须和 Exact FlashAttention 分开
 
-## 50. Exact FlashAttention
+### 50. Exact FlashAttention
 
 计算完整合法 attention domain，只改变 execution，所以 exact。
 
-## 51. Block-Sparse FlashAttention
+### 51. Block-Sparse FlashAttention
 
 给 sparse block mask：
 
@@ -1795,9 +1795,9 @@ $$
 
 ---
 
-# 二十三、为什么很多“更少 FLOPs”的 Approximate Attention 当年并没有更快？
+## 二十三、为什么很多“更少 FLOPs”的 Approximate Attention 当年并没有更快？
 
-## 52. 真实 GPU 不只执行数学公式
+### 52. 真实 GPU 不只执行数学公式
 
 理论 $O(N)$ 方法可能包含：
 
@@ -1825,9 +1825,9 @@ $$
 
 ---
 
-# 二十四、Kernel Fusion 为什么必要但不充分？
+## 二十四、Kernel Fusion 为什么必要但不充分？
 
-## 53. Fusion 的价值
+### 53. Fusion 的价值
 
 如果：
 
@@ -1843,7 +1843,7 @@ HBM → y → opB → HBM
 
 ---
 
-## 54. 但 Attention Intermediate 太大
+### 54. 但 Attention Intermediate 太大
 
 即使逻辑上把 QK、mask、softmax、dropout、PV 融成一个 kernel，如果没有 tiling + online softmax：
 
@@ -1863,9 +1863,9 @@ $$
 
 ---
 
-# 二十五、FlashAttention 与普通 GEMM Tiling 有什么不同？
+## 二十五、FlashAttention 与普通 GEMM Tiling 有什么不同？
 
-## 55. GEMM Tile 只需要 Partial Sum
+### 55. GEMM Tile 只需要 Partial Sum
 
 $$
 C_{ij}
@@ -1877,7 +1877,7 @@ $$
 
 ---
 
-## 56. Softmax Tile 不能直接相加
+### 56. Softmax Tile 不能直接相加
 
 如果每块各自：
 
@@ -1901,9 +1901,9 @@ $$
 
 ---
 
-# 二十六、为什么 DCA 与 MInference 都反复出现 Online Softmax？
+## 二十六、为什么 DCA 与 MInference 都反复出现 Online Softmax？
 
-## 57. DCA
+### 57. DCA
 
 DCA 将 attention relation 分组，最后需要把 partial attention 合并成一个全局正确 softmax。
 
@@ -1913,11 +1913,11 @@ $$
 m,\ell,O.
 $$
 
-## 58. MInference
+### 58. MInference
 
 MInference 遍历 sparse blocks / columns，也需要 selected set 上的全局 normalization。
 
-## 59. FlashAttention 已变成底层代数接口
+### 59. FlashAttention 已变成底层代数接口
 
 不只是一个具体 CUDA kernel。
 
@@ -1945,27 +1945,27 @@ $$
 
 ---
 
-# 二十七、Evidence Boundary
+## 二十七、Evidence Boundary
 
-## 60. “Exact”能证明什么？
+### 60. “Exact”能证明什么？
 
 说明算法没有主动删除或近似 attention pair。
 
 不说明 bitwise 与某个 PyTorch kernel 完全相同；浮点运算顺序变化仍会产生小 rounding differences。
 
-## 61. “Linear memory”能证明什么？
+### 61. “Linear memory”能证明什么？
 
 说明不 materialize $N^2$ attention intermediates。
 
 不说明整个 Transformer training memory 很小或完全线性。
 
-## 62. “7.6× attention speedup”能证明什么？
+### 62. “7.6× attention speedup”能证明什么？
 
 是特定 hardware/shape/baseline 下的 kernel result。
 
 不能写成所有模型 end-to-end 都 7.6×。
 
-## 63. “更多 FLOPs 更快”能否普遍化？
+### 63. “更多 FLOPs 更快”能否普遍化？
 
 只在：
 
@@ -1981,9 +1981,9 @@ $$
 
 ---
 
-# 二十八、为什么 FlashAttention-2 仍然有巨大空间？
+## 二十八、为什么 FlashAttention-2 仍然有巨大空间？
 
-## 64. FA1 已经降低 IO，但 GPU 不一定吃满
+### 64. FA1 已经降低 IO，但 GPU 不一定吃满
 
 好的 asymptotic IO 不代表：
 
@@ -2015,17 +2015,17 @@ FlashAttention-2
 
 ---
 
-# 二十九、与现代 LLM 系统重新连线
+## 二十九、与现代 LLM 系统重新连线
 
-## 65. Llama 3
+### 65. Llama 3
 
 128K 与大规模训练系统需要成熟 fused attention kernel 体系。
 
-## 66. Qwen2.5
+### 66. Qwen2.5
 
 1M serving 中 YaRN、DCA、MInference-derived sparse attention 最终仍需要高效 tile execution。
 
-## 67. MInference
+### 67. MInference
 
 论文直接基于 Triton、PIT、FlashAttention-style kernel。
 
@@ -2041,17 +2041,17 @@ $$
 
 ---
 
-# 三十、对机器人与边缘部署最值得迁移的原则
+## 三十、对机器人与边缘部署最值得迁移的原则
 
-## 68. 不要只看 MACs / FLOPs
+### 68. 不要只看 MACs / FLOPs
 
 例如 NPU 上两个网络：
 
-### Model A
+#### Model A
 
 1 GFLOP，但大量 transpose、scatter、unsupported op、DDR round-trip。
 
-### Model B
+#### Model B
 
 1.5 GFLOP，但 fused、SRAM reuse 高、连续 tensor、kernel support 好。
 
@@ -2065,7 +2065,7 @@ FlashAttention 是经典反例：更多 arithmetic 不一定慢。
 
 ---
 
-## 69. 数据移动本身就是算法的一部分
+### 69. 数据移动本身就是算法的一部分
 
 传统分析只写：
 
@@ -2087,7 +2087,7 @@ $$
 
 ---
 
-## 70. Recomputation 可以是主动性能优化
+### 70. Recomputation 可以是主动性能优化
 
 边缘平台也常出现 memory bandwidth 比 compute 更稀缺。
 
@@ -2103,17 +2103,17 @@ $$
 
 ---
 
-# 三十一、论文核心论证链
+## 三十一、论文核心论证链
 
-## Claim 1：Standard Attention 的 wall-clock bottleneck 大量来自 HBM IO
+### Claim 1：Standard Attention 的 wall-clock bottleneck 大量来自 HBM IO
 
 证据：memory hierarchy、standard execution dataflow、microbenchmark。
 
-## Claim 2：Softmax 可以 block-wise exact aggregation
+### Claim 2：Softmax 可以 block-wise exact aggregation
 
 证据：$(m,\ell)$ 代数合并公式。
 
-## Claim 3：不 materialize $S,P$ 可显著减少 HBM accesses
+### Claim 3：不 materialize $S,P$ 可显著减少 HBM accesses
 
 理论：
 
@@ -2123,7 +2123,7 @@ $$
 \Theta(N^2d^2/M).
 $$
 
-## Claim 4：Recomputation 可以同时省 memory 并加速 backward
+### Claim 4：Recomputation 可以同时省 memory 并加速 backward
 
 证据：
 
@@ -2139,13 +2139,13 @@ $$
 41.7\rightarrow7.3\text{ ms}.
 $$
 
-## Claim 5：Kernel efficiency 能转化成 end-to-end model benefit
+### Claim 5：Kernel efficiency 能转化成 end-to-end model benefit
 
 BERT、GPT-2、LRA、long-context experiments 支撑，但幅度受 Amdahl's law 限制。
 
 ---
 
-# 三十二、最容易学错的十二个地方
+## 三十二、最容易学错的十二个地方
 
 1. **FlashAttention 是 Sparse Attention**：错，FA1 主算法是 exact dense attention。
 2. **复杂度从 $O(N^2)$ 变 $O(N)$**：错，FLOPs 仍 quadratic。
@@ -2162,7 +2162,7 @@ BERT、GPT-2、LRA、long-context experiments 支撑，但幅度受 Amdahl's law
 
 ---
 
-# 三十三、整篇论文压成一条因果链
+## 三十三、整篇论文压成一条因果链
 
 ~~~{mermaid}
 flowchart TD
@@ -2184,7 +2184,7 @@ flowchart TD
 
 ---
 
-# 三十四、下一步：FlashAttention-2
+## 三十四、下一步：FlashAttention-2
 
 FA1 回答：
 
@@ -2208,7 +2208,7 @@ FlashAttention-2 会继续研究：
 
 ---
 
-# 三十五、最终自检
+## 三十五、最终自检
 
 读完 FlashAttention，至少应该回答：
 

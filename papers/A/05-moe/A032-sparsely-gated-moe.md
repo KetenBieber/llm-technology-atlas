@@ -1,6 +1,8 @@
+# Sparsely-Gated MoE：条件计算怎样扩大模型容量
+
 > **原文**：Noam Shazeer 等，*Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer*, 2017，[arXiv](https://arxiv.org/abs/1701.06538)。对应 Paperlist A/05 第 1 篇。本文提出可扩展的 Sparsely-Gated Mixture-of-Experts（MoE）层：给每个 token 一个 router，仅激活少量专家，从而让**总参数量大幅增长，而单 token 计算量只增长很少**；同时引入 noisy top-k gating、load-balancing 辅助目标与专家并行通信。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
 **主要类型：A 原始方法论文；次要属性：C 分布式条件计算系统。**
 
@@ -58,7 +60,7 @@ Dense 模型参数和激活 FLOPs高度绑定；Sparse MoE 则允许大部分参
 
 *教学解释图｜token 经 gating、Top-k routing、expert dispatch 与 combine 形成稀疏计算主路径。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
 设输入 token hidden：
 
@@ -159,7 +161,7 @@ $$
 
 Dispatch 后每个 expert 接收一部分 token。
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
 ~~~mermaid
 flowchart TD
@@ -205,9 +207,9 @@ restore original token order
 
 所以 MoE 的困难不仅是数学路由，还包括**动态通信和负载均衡**。
 
-# 关键技术
+## 关键技术
 
-## 1. Dense FFN 为什么把容量和 FLOPs绑在一起
+### 1. Dense FFN 为什么把容量和 FLOPs绑在一起
 
 Dense FFN：
 
@@ -287,7 +289,7 @@ $$
 
 参数容量和计算解耦。
 
-## 2. 具体数字例子
+### 2. 具体数字例子
 
 设：
 
@@ -326,7 +328,7 @@ $$
 
 但不要把“激活参数 200M”直接等价为“整个模型每 token 只算 200M 参数”，因为 Attention、embedding、router、shared layers 等仍是 dense。
 
-## 3. 为什么最简单 Top-k 会崩成少数 experts
+### 3. 为什么最简单 Top-k 会崩成少数 experts
 
 如果 router 早期偶然更偏 expert 7：
 
@@ -373,7 +375,7 @@ load collapse
 
 所以负载均衡不是“为了好看”，而是 sparse MoE 能否扩展的必要条件。
 
-## 4. Noisy Top-k 为什么有探索作用
+### 4. Noisy Top-k 为什么有探索作用
 
 Router logits：
 
@@ -416,7 +418,7 @@ nearby experts occasionally sampled
 
 噪声不是最终目的，目的是让离散 Top-k 附近保持探索和可训练性。
 
-## 5. Importance loss 为什么要看 gate mass
+### 5. Importance loss 为什么要看 gate mass
 
 定义 expert `i` 的 importance：
 
@@ -475,7 +477,7 @@ $$
 
 它和真正“每个 expert 实际收到多少 token”并不完全等价，因此论文还研究 load 估计。
 
-## 6. 为什么 Load 和 Importance 是两个概念
+### 6. 为什么 Load 和 Importance 是两个概念
 
 假设 Top-1 router。
 
@@ -508,7 +510,7 @@ $$
 
 高质量 MoE balancing 必须关心真实 dispatch load。
 
-## 7. Capacity 为什么是系统约束而不仅是模型超参
+### 7. Capacity 为什么是系统约束而不仅是模型超参
 
 每个 expert 所在 device 的 tensor buffer 必须预先有有限容量。
 
@@ -568,7 +570,7 @@ capacity factor 太小：
 
 所以 routing quality 和系统效率通过 capacity 紧密耦合。
 
-## 8. Expert Parallel 为什么自然需要 All-to-All
+### 8. Expert Parallel 为什么自然需要 All-to-All
 
 假设：
 
@@ -611,7 +613,7 @@ $$
 - load balance；
 - overlap communication/computation。
 
-## 9. 为什么稀疏路由梯度仍能训练 Router
+### 9. 为什么稀疏路由梯度仍能训练 Router
 
 Top-k index 是离散操作。
 
@@ -644,7 +646,7 @@ Router 梯度还受到：
 
 因此并不是对完整 Top-k ranking 处处光滑求导，而是通过选中路径和辅助概率机制得到可训练信号。
 
-## 10. 最小 PyTorch：Top-2 MoE 信息流
+### 10. 最小 PyTorch：Top-2 MoE 信息流
 
 ~~~python
 import torch
@@ -740,7 +742,7 @@ assert y.shape == x.shape
 
 这是教学实现，生产系统绝不会逐 expert Python loop；会先对 token 按 expert 排序/dispatch，再执行 batched GEMM 与 All-to-All。
 
-## 11. 实验结果与证据边界
+### 11. 实验结果与证据边界
 
 原论文把 MoE 用于语言建模和机器翻译等任务，并展示数千 experts、极大参数量条件下，单样本只激活少量专家仍能获得更强容量。其代表系统把总参数扩到当时极大的量级，同时保持相对有限计算成本。
 
@@ -757,7 +759,7 @@ assert y.shape == x.shape
 - Top-k 越小永远越好；
 - 专家自然会自动形成清晰人类可解释领域分工。
 
-# 预训练与后训练
+## 预训练与后训练
 
 本文 MoE 层本身与目标函数正交。
 
@@ -793,9 +795,9 @@ $$
 
 它不是 SFT、Preference Learning 或 RL。
 
-# 推理与部署
+## 推理与部署
 
-## Active Parameters
+### Active Parameters
 
 总 expert 参数：
 
@@ -820,7 +822,7 @@ $$
 
 只报总参数会高估每 token FLOPs；只报 active 参数又会低估显存/存储容量。
 
-## Prefill / Decode
+### Prefill / Decode
 
 每个 token 都要：
 
@@ -831,7 +833,7 @@ $$
 
 MoE 不直接降低 Attention 的 `T^2`；它主要替换/扩展 FFN 部分。
 
-## Weight HBM
+### Weight HBM
 
 即便每 token 只激活少量 experts，batch 中不同 token 可能覆盖很多 experts。
 
@@ -842,7 +844,7 @@ MoE 不直接降低 Attention 的 `T^2`；它主要替换/扩展 FFN 部分。
 
 大 batch 时，按 expert regroup token 能提升 GEMM efficiency。
 
-## Expert Parallel Communication
+### Expert Parallel Communication
 
 核心通信通常为：
 
@@ -856,7 +858,7 @@ activation bytes，而不是把 expert weights 每次发来发去。
 
 因此大规模 MoE 的系统性能取决于 token dispatch 与网络拓扑。
 
-## 技术 → 模型
+### 技术 → 模型
 
 - Mixture of Experts → Sparsely-Gated MoE：`DERIVED_FROM / EXTENDS`
 - Noisy Top-k gating → 本文：`PROPOSES`
@@ -864,7 +866,7 @@ activation bytes，而不是把 expert weights 每次发来发去。
 - Sparsely-Gated MoE → Switch Transformer：后续 `SIMPLIFIES/EXTENDS`
 - Sparsely-Gated MoE → DeepSeekMoE：后续 `EXTENDS` expert specialization
 
-## 模型 → 技术
+### 模型 → 技术
 
 - Dense FFN：`IMPLEMENTS` all parameters active/token
 - Sparsely-Gated MoE：`IMPLEMENTS` Top-k conditional expert activation

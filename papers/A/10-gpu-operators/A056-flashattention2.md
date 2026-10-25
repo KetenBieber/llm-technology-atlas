@@ -38,7 +38,7 @@ $$
 
 ---
 
-## 阅读导航
+### 阅读导航
 
 强烈建议先读：
 
@@ -87,9 +87,9 @@ $$
 
 *教学解释图｜sequence parallelism 与 Split-Q 重新分配 block/warp 工作，使 IO 已优化后的 Attention 更接近 GPU 吞吐上限。*
 
-# 一、从 FA1 的“成功”开始：为什么 30–50% Peak 仍然不够？
+## 一、从 FA1 的“成功”开始：为什么 30–50% Peak 仍然不够？
 
-## 1. FA1 已经完成了最关键的算法重构
+### 1. FA1 已经完成了最关键的算法重构
 
 FA1 做了三件大事：
 
@@ -112,7 +112,7 @@ $$
 
 但 GPU profiling 告诉我们：
 
-### FA1 Forward
+#### FA1 Forward
 
 大约只达到：
 
@@ -122,7 +122,7 @@ $$
 
 theoretical max FLOPs/s。
 
-### FA1 Backward
+#### FA1 Backward
 
 更低：
 
@@ -144,7 +144,7 @@ $$
 
 ---
 
-## 2. 教学总图：瓶颈已经迁移
+### 2. 教学总图：瓶颈已经迁移
 
 
 这张图建立一个很重要的系统观：
@@ -153,9 +153,9 @@ $$
 
 ---
 
-# 二、先补 GPU Execution Model：SM、Thread Block、Warp
+## 二、先补 GPU Execution Model：SM、Thread Block、Warp
 
-## 3. GPU 不是“一个很大的并行 CPU”
+### 3. GPU 不是“一个很大的并行 CPU”
 
 以 NVIDIA GPU 为例，可以粗略理解为：
 
@@ -194,7 +194,7 @@ $$
 
 ---
 
-## 4. Warp 为什么是核心执行单位？
+### 4. Warp 为什么是核心执行单位？
 
 NVIDIA GPU 以 warp 为基本调度粒度。
 
@@ -228,7 +228,7 @@ FA2 的 split-Q 改动正是在减少后者。
 
 ---
 
-## 5. Thread Block 为什么又重要？
+### 5. Thread Block 为什么又重要？
 
 thread block：
 
@@ -257,9 +257,9 @@ block 太大可能吃掉全部 register/SRAM resource，导致：
 
 ---
 
-# 三、Occupancy：为什么“任务太少”会浪费 GPU？
+## 三、Occupancy：为什么“任务太少”会浪费 GPU？
 
-## 6. A100 有很多 SM
+### 6. A100 有很多 SM
 
 论文例子：
 
@@ -283,7 +283,7 @@ $$
 
 ---
 
-## 7. FA1 的并行单位是什么？
+### 7. FA1 的并行单位是什么？
 
 论文指出，FA1 主要 parallelize：
 
@@ -341,9 +341,9 @@ blocks。
 
 ---
 
-# 四、FA2 第一层改进：减少“贵”的 Non-Matmul FLOPs
+## 四、FA2 第一层改进：减少“贵”的 Non-Matmul FLOPs
 
-## 8. FLOP 不是同价商品
+### 8. FLOP 不是同价商品
 
 在 A100：
 
@@ -381,9 +381,9 @@ $$
 
 ---
 
-## 9. Attention 除了 GEMM 还有大量什么？
+### 9. Attention 除了 GEMM 还有大量什么？
 
-### Matmul
+#### Matmul
 
 $$
 QK^\top
@@ -397,7 +397,7 @@ $$
 
 Tensor Core 很擅长。
 
-### Non-matmul
+#### Non-matmul
 
 - max；
 - exp；
@@ -413,9 +413,9 @@ Tensor Core 很擅长。
 
 ---
 
-# 五、FA1 Online Softmax 哪些地方还能省？
+## 五、FA1 Online Softmax 哪些地方还能省？
 
-## 10. FA1 的 Output 每轮都在做归一化相关缩放
+### 10. FA1 的 Output 每轮都在做归一化相关缩放
 
 回忆 FA1 merge：
 
@@ -460,7 +460,7 @@ $$
 
 ---
 
-## 11. 为什么这不会改变答案？
+### 11. 为什么这不会改变答案？
 
 假设全局：
 
@@ -505,7 +505,7 @@ $$
 
 ---
 
-## 12. 为什么这点“小改动”也值得做？
+### 12. 为什么这点“小改动”也值得做？
 
 因为被省掉的是：
 
@@ -531,9 +531,9 @@ $$
 
 ---
 
-# 六、第二个小改动：只保存 LogSumExp
+## 六、第二个小改动：只保存 LogSumExp
 
-## 13. FA1 Backward 保存什么？
+### 13. FA1 Backward 保存什么？
 
 为了重建 softmax probability：
 
@@ -563,7 +563,7 @@ $$
 
 ---
 
-## 14. 两个量可以压成一个
+### 14. 两个量可以压成一个
 
 定义：
 
@@ -608,7 +608,7 @@ $$
 
 ---
 
-## 15. 这有什么收益？
+### 15. 这有什么收益？
 
 原来每 row 保存：
 
@@ -639,9 +639,9 @@ $$
 
 ---
 
-# 七、FA2 Forward Loop 顺序发生了根本变化
+## 七、FA2 Forward Loop 顺序发生了根本变化
 
-## 16. FA1 的概念循环
+### 16. FA1 的概念循环
 
 FA1 论文算法可以理解为：
 
@@ -666,7 +666,7 @@ sequence blocks 在一个 head 的 worker 内串行处理。
 
 ---
 
-## 17. FA2 换成 Q row-block 为外循环
+### 17. FA2 换成 Q row-block 为外循环
 
 FA2：
 
@@ -700,9 +700,9 @@ $$
 
 ---
 
-# 八、为什么不同 Q Row Blocks 可以 Embarrassingly Parallel？
+## 八、为什么不同 Q Row Blocks 可以 Embarrassingly Parallel？
 
-## 18. Attention 每一行的输出互不依赖
+### 18. Attention 每一行的输出互不依赖
 
 对于 query $i$：
 
@@ -757,7 +757,7 @@ $$
 
 ---
 
-## 19. Sequence Parallelism 为什么特别适合长 Context？
+### 19. Sequence Parallelism 为什么特别适合长 Context？
 
 设 row block size：
 
@@ -815,7 +815,7 @@ $$
 
 ---
 
-# 九、原论文 Forward/Backward Parallelism 图
+## 九、原论文 Forward/Backward Parallelism 图
 
 ![FlashAttention-2 原论文 sequence parallelism](../../../figures/A056/fig1-sequence-parallelism.png)
 
@@ -828,7 +828,7 @@ $$
 
 这张图揭示：
 
-## Forward
+### Forward
 
 worker owns：
 
@@ -838,7 +838,7 @@ $$
 
 对应的 row block。
 
-## Backward
+### Backward
 
 worker owns：
 
@@ -854,9 +854,9 @@ $$
 
 ---
 
-# 十、Backward 为什么按 Column Block 并行？
+## 十、Backward 为什么按 Column Block 并行？
 
-## 20. $dK_j,dV_j$ 可以局部累加
+### 20. $dK_j,dV_j$ 可以局部累加
 
 固定 K/V column block $j$。
 
@@ -892,7 +892,7 @@ $$
 
 ---
 
-## 21. 但 $dQ_i$ 会被多个 Column Workers 同时贡献
+### 21. 但 $dQ_i$ 会被多个 Column Workers 同时贡献
 
 因为：
 
@@ -927,7 +927,7 @@ $$
 
 ---
 
-## 22. 为什么愿意接受 Atomic Add？
+### 22. 为什么愿意接受 Atomic Add？
 
 这是典型 trade-off。
 
@@ -962,9 +962,9 @@ FA2 实验说明：
 
 ---
 
-# 十一、FA1 Warp Partition：Split-K 到底是什么？
+## 十一、FA1 Warp Partition：Split-K 到底是什么？
 
-## 23. 一个 Thread Block 里通常有多个 Warps
+### 23. 一个 Thread Block 里通常有多个 Warps
 
 例如：
 
@@ -1003,7 +1003,7 @@ FA1 的 forward 采用类似：
 
 ---
 
-## 24. 每个 Warp 得到什么？
+### 24. 每个 Warp 得到什么？
 
 Warp 0：
 
@@ -1036,9 +1036,9 @@ $$
 
 ---
 
-# 十二、为什么 Split-K 会产生 Shared-Memory Traffic？
+## 十二、为什么 Split-K 会产生 Shared-Memory Traffic？
 
-## 25. Warps 之间不能直接共享彼此 Registers
+### 25. Warps 之间不能直接共享彼此 Registers
 
 每个 warp 的 partial output 在自己的 registers 中。
 
@@ -1072,9 +1072,9 @@ FA1 已经努力减少 HBM IO，但这里：
 
 ---
 
-# 十三、FA2 Warp Partition：改成 Split-Q
+## 十三、FA2 Warp Partition：改成 Split-Q
 
-## 26. 核心思想
+### 26. 核心思想
 
 不要把 key columns 分给不同 warps。
 
@@ -1106,7 +1106,7 @@ K/V tile 对所有 warps 可见。
 
 ---
 
-## 27. 每个 Warp 现在得到完整 Output Slice
+### 27. 每个 Warp 现在得到完整 Output Slice
 
 对自己负责的 query rows：
 
@@ -1144,9 +1144,9 @@ $$
 
 ---
 
-# 十四、原论文 FA1 vs FA2 Warp Partition
+## 十四、原论文 FA1 vs FA2 Warp Partition
 
-## FA1：Split-K
+### FA1：Split-K
 
 ![FlashAttention-1 warp partition](../../../figures/A056/fig2-fa1-split-k.png)
 
@@ -1157,7 +1157,7 @@ $$
 
 *原论文示意。多个 warps 分 K/V 方向，同一 query output 被拆成多个 partial results，所以必须跨 warp reduction。*
 
-## FA2：Split-Q
+### FA2：Split-Q
 
 ![FlashAttention-2 warp partition](../../../figures/A056/fig3-fa2-split-q.png)
 
@@ -1167,9 +1167,9 @@ $$
 
 ---
 
-# 十五、为什么 Split-Q 不意味着 K/V 被“复制很多份”到 HBM？
+## 十五、为什么 Split-Q 不意味着 K/V 被“复制很多份”到 HBM？
 
-## 28. Logical Sharing 与 Physical Copy 要区分
+### 28. Logical Sharing 与 Physical Copy 要区分
 
 多个 warps 都需要 K/V。
 
@@ -1192,9 +1192,9 @@ $$
 
 ---
 
-# 十六、为什么 Split-Q 不是永远更好？
+## 十六、为什么 Split-Q 不是永远更好？
 
-## 29. Work Partition 依赖 Shape
+### 29. Work Partition 依赖 Shape
 
 如果：
 
@@ -1217,9 +1217,9 @@ FA2 的结论是针对常见 Attention shape 和 GPU architecture 优化。
 
 ---
 
-# 十七、Block Size：为什么越大不一定越快？
+## 十七、Block Size：为什么越大不一定越快？
 
-## 30. 大 Block 的优势
+### 30. 大 Block 的优势
 
 例如：
 
@@ -1242,7 +1242,7 @@ $$
 
 ---
 
-## 31. 但大 Block 消耗更多 Resources
+### 31. 但大 Block 消耗更多 Resources
 
 需要：
 
@@ -1264,7 +1264,7 @@ register spill 到 local memory，实际通常落到更慢 memory hierarchy。
 
 ---
 
-## 32. Occupancy 再次出现
+### 32. Occupancy 再次出现
 
 单 block 占 SRAM：
 
@@ -1314,9 +1314,9 @@ $$
 
 ---
 
-# 十八、为什么这里已经接近 Compiler / Auto-Tuning 问题？
+## 十八、为什么这里已经接近 Compiler / Auto-Tuning 问题？
 
-## 33. 最优 Tile 不是纯数学常数
+### 33. 最优 Tile 不是纯数学常数
 
 它依赖：
 
@@ -1340,9 +1340,9 @@ $$
 
 ---
 
-# 十九、Causal Mask：为什么能直接少算接近一半 Blocks？
+## 十九、Causal Mask：为什么能直接少算接近一半 Blocks？
 
-## 34. Causal Attention
+### 34. Causal Attention
 
 合法条件：
 
@@ -1368,7 +1368,7 @@ $$
 
 ---
 
-## 35. 理想 FLOPs 约减半
+### 35. 理想 FLOPs 约减半
 
 dense square matrix：
 
@@ -1415,19 +1415,19 @@ $$
 
 ---
 
-# 二十、FA2 为什么仍是 Exact Attention？
+## 二十、FA2 为什么仍是 Exact Attention？
 
-## 36. 三个改动都没有删除数学项
+### 36. 三个改动都没有删除数学项
 
-### Non-matmul reduction
+#### Non-matmul reduction
 
 只是代数重排。
 
-### Sequence parallelism
+#### Sequence parallelism
 
 只是把 rows/columns 分给不同 workers。
 
-### Split-Q
+#### Split-Q
 
 只是 warp work assignment。
 
@@ -1453,9 +1453,9 @@ $$
 
 ---
 
-# 二十一、FA1 与 FA2 的 Asymptotic Complexity 是否改变？
+## 二十一、FA1 与 FA2 的 Asymptotic Complexity 是否改变？
 
-## 37. 没有
+### 37. 没有
 
 Forward FLOPs：
 
@@ -1484,9 +1484,9 @@ FA2 的提升来自：
 
 ---
 
-# 二十二、A100 上为什么 Matmul 与 Non-Matmul Peak 差 16×
+## 二十二、A100 上为什么 Matmul 与 Non-Matmul Peak 差 16×
 
-## 38. Tensor Core 是专用硬件
+### 38. Tensor Core 是专用硬件
 
 A100 Tensor Core 针对：
 
@@ -1518,9 +1518,9 @@ $$
 
 ---
 
-# 二十三、Benchmark FLOPs 怎么算？
+## 二十三、Benchmark FLOPs 怎么算？
 
-## 39. Forward Attention Matmul FLOPs
+### 39. Forward Attention Matmul FLOPs
 
 每 head：
 
@@ -1564,7 +1564,7 @@ $$
 
 ---
 
-## 40. Backward 为什么论文乘 2.5？
+### 40. Backward 为什么论文乘 2.5？
 
 Forward 有 2 个主要 matmuls：
 
@@ -1597,9 +1597,9 @@ $$
 
 ---
 
-# 二十四、A100 实验：73% Peak 到底有多高？
+## 二十四、A100 实验：73% Peak 到底有多高？
 
-## 41. FA2 Forward
+### 41. FA2 Forward
 
 达到最高约：
 
@@ -1628,7 +1628,7 @@ $$
 
 ---
 
-## 42. Backward
+### 42. Backward
 
 最高约：
 
@@ -1654,15 +1654,15 @@ backward 更复杂：
 
 ---
 
-# 二十五、原论文 A100 Throughput Evidence
+## 二十五、原论文 A100 Throughput Evidence
 
-## Non-causal
+### Non-causal
 
 ![FlashAttention-2 A100 non-causal benchmark](../../../figures/A056/fig4-a100-fwd-bwd.svg)
 
 *原论文 benchmark，head dimension 128、non-causal。比较 standard attention、FA1、Triton FA1 与 FA2 的 forward+backward throughput。*
 
-## Causal
+### Causal
 
 ![FlashAttention-2 A100 causal benchmark](../../../figures/A056/fig5-a100-causal-fwd-bwd.svg)
 
@@ -1685,9 +1685,9 @@ backward 更复杂：
 
 ---
 
-# 二十六、为什么 FA2 对长序列特别有价值？
+## 二十六、为什么 FA2 对长序列特别有价值？
 
-## 43. 长序列通常意味着更小 Batch
+### 43. 长序列通常意味着更小 Batch
 
 显存预算固定。
 
@@ -1719,7 +1719,7 @@ $$
 
 ---
 
-## 44. FA2 增加 Sequence Blocks
+### 44. FA2 增加 Sequence Blocks
 
 现在：
 
@@ -1751,9 +1751,9 @@ $T_r$ 反而增加。
 
 ---
 
-# 二十七、End-to-End Training：Kernel Speedup 为什么会被稀释？
+## 二十七、End-to-End Training：Kernel Speedup 为什么会被稀释？
 
-## 45. GPT Training 不只有 Attention
+### 45. GPT Training 不只有 Attention
 
 总时间包括：
 
@@ -1785,7 +1785,7 @@ $$
 
 ---
 
-## 46. 原论文 8×A100 Training
+### 46. 原论文 8×A100 Training
 
 | Model | 无 FA1 | FA1 | FA2 |
 |---|---:|---:|---:|
@@ -1810,7 +1810,7 @@ model FLOPs utilization。
 
 ---
 
-## 47. 为什么 8K 的增益比 2K 更明显？
+### 47. 为什么 8K 的增益比 2K 更明显？
 
 2K 时 Attention 占总训练时间比例较小。
 
@@ -1840,9 +1840,9 @@ $$
 
 ---
 
-# 二十八、FA2 支持 MQA/GQA 的方式
+## 二十八、FA2 支持 MQA/GQA 的方式
 
-## 48. 不要真的复制 KV Heads
+### 48. 不要真的复制 KV Heads
 
 MQA/GQA：
 
@@ -1863,7 +1863,7 @@ FA2 通过 index mapping：
 
 ---
 
-## 49. Backward 需要额外 Reduction
+### 49. Backward 需要额外 Reduction
 
 因为多个 Q heads 都使用同一个：
 
@@ -1895,9 +1895,9 @@ $$
 
 ---
 
-# 二十九、H100：为什么“直接搬过去”就已经更快？
+## 二十九、H100：为什么“直接搬过去”就已经更快？
 
-## 50. 论文在 H100 上没有用 Hopper Specialized Features
+### 50. 论文在 H100 上没有用 Hopper Specialized Features
 
 FA2 implementation 直接运行：
 
@@ -1925,9 +1925,9 @@ $$
 
 ---
 
-# 三十、为什么 FA2 还没有把 H100 吃透？
+## 三十、为什么 FA2 还没有把 H100 吃透？
 
-## 51. Hardware Generation 改变了最优 Dataflow
+### 51. Hardware Generation 改变了最优 Dataflow
 
 Hopper 新增：
 
@@ -1955,9 +1955,9 @@ $$
 
 ---
 
-# 三十一、FA1 → FA2 真正体现的是“优化层级迁移”
+## 三十一、FA1 → FA2 真正体现的是“优化层级迁移”
 
-## 52. FA1
+### 52. FA1
 
 目标：
 
@@ -1979,7 +1979,7 @@ $$
 
 ---
 
-## 53. FA2
+### 53. FA2
 
 目标转成：
 
@@ -1997,7 +1997,7 @@ $$
 
 ---
 
-## 54. 后续 FA3
+### 54. 后续 FA3
 
 进一步：
 
@@ -2016,9 +2016,9 @@ $$
 
 ---
 
-# 三十二、为什么“Big-O 一样”完全不妨碍再快 2×
+## 三十二、为什么“Big-O 一样”完全不妨碍再快 2×
 
-## 55. FA1 与 FA2 都是
+### 55. FA1 与 FA2 都是
 
 $$
 O(N^2d).
@@ -2060,9 +2060,9 @@ Big-O 只描述：
 
 ---
 
-# 三十三、FA2 与 MInference：两个完全不同的 Parallelism
+## 三十三、FA2 与 MInference：两个完全不同的 Parallelism
 
-## 56. MInference
+### 56. MInference
 
 减少：
 
@@ -2078,7 +2078,7 @@ $$
 
 ---
 
-## 57. FA2
+### 57. FA2
 
 不减少 pair。
 
@@ -2104,9 +2104,9 @@ $$
 
 ---
 
-# 三十四、为什么 FA2 很适合作为 4D Parallelism 前置？
+## 三十四、为什么 FA2 很适合作为 4D Parallelism 前置？
 
-## 58. 这里第一次真正把“单 GPU 内部并行”拆到执行单元
+### 58. 这里第一次真正把“单 GPU 内部并行”拆到执行单元
 
 后面学：
 
@@ -2142,9 +2142,9 @@ $$
 
 ---
 
-# 三十五、对机器人 GPU/NPU 的迁移意义
+## 三十五、对机器人 GPU/NPU 的迁移意义
 
-## 59. Work Partition 比“线程越多越好”复杂得多
+### 59. Work Partition 比“线程越多越好”复杂得多
 
 例如一个视觉算子：
 
@@ -2166,7 +2166,7 @@ FA1 split-K → FA2 split-Q 就是最典型案例。
 
 ---
 
-## 60. 在 NPU 上同样要问
+### 60. 在 NPU 上同样要问
 
 - 哪个 dimension 是 reduction axis？
 - 哪个 dimension 的 output 独立？
@@ -2184,55 +2184,55 @@ FA1 split-K → FA2 split-Q 就是最典型案例。
 
 ---
 
-# 三十六、论文证据边界
+## 三十六、论文证据边界
 
-## 61. 可以支持
+### 61. 可以支持
 
-### A
+#### A
 
 FA1 的 GPU utilization 明显低于 optimized GEMM。
 
-### B
+#### B
 
 减少 non-matmul FLOPs、增加 sequence parallelism、改 warp partition 能显著提升 throughput。
 
-### C
+#### C
 
 A100 指定 benchmark 下 FA2 attention 可达约 73% forward theoretical peak，backward up to 63%。
 
-### D
+#### D
 
 对 GPT-style training，FA2 能进一步提升 end-to-end throughput，长 context 下收益更显著。
 
 ---
 
-## 62. 不能过度扩张
+### 62. 不能过度扩张
 
-### 错误 1
+#### 错误 1
 
 “Split-Q 在所有 GPU kernel 都优于 Split-K。”
 
 不成立。
 
-### 错误 2
+#### 错误 2
 
 “FA2 比 FA1 永远 2×。”
 
 不同 shapes 差异明显。
 
-### 错误 3
+#### 错误 3
 
 “73% peak 就等于整模型 73% GPU utilization。”
 
 Attention kernel metric 与 model FLOPs utilization 不是同一个 measurement。
 
-### 错误 4
+#### 错误 4
 
 “H100 335 TFLOPs/s 就说明已经针对 Hopper 优化。”
 
 恰恰相反，论文明确还没利用 TMA/WGMMA/FP8。
 
-### 错误 5
+#### 错误 5
 
 “FA2 改善了 Attention 数学复杂度。”
 
@@ -2240,7 +2240,7 @@ Attention kernel metric 与 model FLOPs utilization 不是同一个 measurement�
 
 ---
 
-# 三十七、把整篇论文压成一条因果链
+## 三十七、把整篇论文压成一条因果链
 
 ~~~{mermaid}
 flowchart TD
@@ -2266,11 +2266,11 @@ flowchart TD
 
 ---
 
-# 三十八、下一步：FA3 还是 4D Parallelism？
+## 三十八、下一步：FA3 还是 4D Parallelism？
 
 从知识依赖看，两条都合理：
 
-## 继续 GPU kernel
+### 继续 GPU kernel
 
 $$
 \text{FA1}
@@ -2288,7 +2288,7 @@ $$
 - asynchronous pipeline；
 - FP8。
 
-## 转入 Distributed Training
+### 转入 Distributed Training
 
 $$
 \text{single-GPU work partition}
@@ -2309,7 +2309,7 @@ FA3 可以作为 GPU kernel 主线的后续扩展。
 
 ---
 
-# 三十九、最终自检
+## 三十九、最终自检
 
 读完 FA2，至少应该回答：
 

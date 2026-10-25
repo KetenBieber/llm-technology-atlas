@@ -1,6 +1,8 @@
+# GQA：在 MHA 表达能力与 MQA 推理效率之间折中
+
 > **原文**：Joshua Ainslie 等，*GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints*, 2023，[arXiv](https://arxiv.org/abs/2305.13245)。对应 Paperlist A/04 第 2 篇。本文提出 Grouped-Query Attention（GQA）以及从已有 MHA checkpoint 进行 uptraining 的方案。GQA 的核心关系：`H_Q` 个 Query heads 被划成 `H_{KV}` 组，每组共享一个 Key/Value head。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
 **主要类型：A 原始方法论文。**
 
@@ -49,7 +51,7 @@ Transformer
 
 *教学解释图｜在 MHA 与 MQA 之间按 query group 共享 K/V，形成质量、缓存与带宽之间的折中。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
 设：
 
@@ -132,7 +134,7 @@ O_h
 A_hV_{g(h)}.
 $$
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
 ~~~mermaid
 flowchart TD
@@ -165,9 +167,9 @@ $$
 O\in\mathbb R^{B\times T\times d}.
 $$
 
-# 关键技术
+## 关键技术
 
-## 1. 统一公式：MHA、GQA、MQA 只是 H_KV 不同
+### 1. 统一公式：MHA、GQA、MQA 只是 H_KV 不同
 
 令：
 
@@ -177,7 +179,7 @@ $$
 
 则：
 
-### MHA
+#### MHA
 
 $$
 H_{KV}=H.
@@ -189,7 +191,7 @@ $$
 G=1.
 $$
 
-### GQA
+#### GQA
 
 $$
 1<H_{KV}<H.
@@ -201,7 +203,7 @@ $$
 G=\frac{H}{H_{KV}}.
 $$
 
-### MQA
+#### MQA
 
 $$
 H_{KV}=1.
@@ -261,7 +263,7 @@ $$
 
 所以 GQA 并不是追求极限最小 KV，而是找到中间点。
 
-## 2. 为什么多个 Query 共享 K/V 仍有表达能力
+### 2. 为什么多个 Query 共享 K/V 仍有表达能力
 
 第 `h` 个 Query：
 
@@ -309,7 +311,7 @@ $$
 
 所以可以同时保留多个“索引/内容子空间”。
 
-## 3. 为什么不能随便删 K/V heads
+### 3. 为什么不能随便删 K/V heads
 
 假设原 MHA：
 
@@ -404,7 +406,7 @@ $$
 
 这不保证平均后功能完全等价，因为 attention 是非线性 Softmax；因此还需要继续训练。
 
-## 4. 为什么只用约 5% 原预训练 compute 就能 uptrain
+### 4. 为什么只用约 5% 原预训练 compute 就能 uptrain
 
 MHA checkpoint 已经学会：
 
@@ -446,7 +448,7 @@ trained MHA
 
 5% 是论文 recipe，不是所有 checkpoint 的固定恢复成本。
 
-## 5. GQA 的参数量推导
+### 5. GQA 的参数量推导
 
 Q projection：
 
@@ -507,7 +509,7 @@ d^2
 }
 $$
 
-### MHA
+#### MHA
 
 $$
 H_{KV}=H_Q:
@@ -515,7 +517,7 @@ H_{KV}=H_Q:
 3d^2.
 $$
 
-### GQA 8/32
+#### GQA 8/32
 
 $$
 d^2(1+2\times0.25)
@@ -523,7 +525,7 @@ d^2(1+2\times0.25)
 1.5d^2.
 $$
 
-### MQA
+#### MQA
 
 $$
 d^2
@@ -534,7 +536,7 @@ $$
 
 GQA 正好处于中间。
 
-## 6. 具体 KV 数字
+### 6. 具体 KV 数字
 
 设：
 
@@ -601,7 +603,7 @@ GQA: 可以显著增大 batch
 MQA: KV 最省，但质量约束更强
 ~~~
 
-## 7. 最小 PyTorch GQA
+### 7. 最小 PyTorch GQA
 
 ~~~python
 import torch
@@ -727,7 +729,7 @@ $$
 
 **生产实现不应真的复制 KV Cache。** Kernel 应通过 head→group 索引让多个 query head 读取同一个 K/V head，否则内存优势会被自己复制掉。
 
-## 8. GQA 的真正质量—速度连续谱
+### 8. GQA 的真正质量—速度连续谱
 
 令 ratio：
 
@@ -780,7 +782,7 @@ training budget
 choose H_KV
 ~~~
 
-## 9. 实验结果如何读
+### 9. 实验结果如何读
 
 论文比较：
 
@@ -798,7 +800,7 @@ choose H_KV
 
 不能把“接近 MQA speed”理解成所有硬件上 latency 相等；当 FFN、weight bandwidth、通信成为主瓶颈时，KV head 减少的边际收益会下降。
 
-# 预训练与后训练
+## 预训练与后训练
 
 GQA 论文最重要的训练创新之一就是 **uptraining**。
 
@@ -828,7 +830,7 @@ $$
 
 如果用 LoRA 修复转换后的 K/V，也属于额外 PEFT 方案，不是论文核心 recipe。
 
-# 推理与部署
+## 推理与部署
 
 GQA 的系统意义集中在 Decode。
 
@@ -852,14 +854,14 @@ $$
 - FFN FLOPs 不变；
 - 参数 weight bandwidth 仍在。
 
-## 技术 → 模型
+### 技术 → 模型
 
 - MHA → GQA：`DERIVED_FROM`
 - MQA → GQA：`GENERALIZES`，GQA 包含 MQA 作为 `H_{KV}=1` 特例
 - GQA → 本文：`PROPOSES`
 - GQA → Llama 2 70B / Llama 3 等：后续 `ADOPTS`
 
-## 模型 → 技术
+### 模型 → 技术
 
 - MHA Transformer：`IMPLEMENTS` `H_Q=H_{KV}`
 - MQA Transformer：`IMPLEMENTS` `H_{KV}=1`

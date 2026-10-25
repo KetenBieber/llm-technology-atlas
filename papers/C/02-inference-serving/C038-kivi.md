@@ -69,6 +69,50 @@ flowchart TD
 
 于是系统必须分别维护：缓存中已量化的旧 Token、近期未量化 Token 的地址，以及按 Head/Layer 的组尺度。低比特的理论容量优势并不等于 Kernel 一定更快——如果反量化、访存合并和 Scale 加载很昂贵，延迟仍可能变差。
 
+## 两种 Group Orientation 为什么产生不同的量化误差？
+
+令 Key、Value 的形状均为 $[T,d_h]$。假设有 4 个 Token、2 个特征通道：
+
+$$
+K=\begin{bmatrix}
+100&1\\100&-1\\100&0.5\\100&-0.5
+\end{bmatrix},\qquad
+V=\begin{bmatrix}
+1&100\\-1&2\\0.5&3\\-0.5&4
+\end{bmatrix}.
+$$
+
+对 $K$ 若每 Token 行共享一个量化 Scale，第一列的 100 会让同一行第二列的 0.5 或 1 几乎全部损失精度；若沿 Channel 跨 Token 分别求 Scale，就能让第二通道的 $[-1,1]$ 保留更密的量化格点。
+
+对 $V$，这里的最大值 100 集中在第一 Token 的第二通道。按 Token 选择 Scale 可以让其他三个 Token 各自处于较窄范围；若为每个 Channel 跨全历史共享 Scale，第二列的那个 100 会连带污染后面所有 Token 的小值。**Key 与 Value 有不同异常值结构**才是非对称方向的原因，而不是认为两套矩阵的“语义”天然必须对应两种方向。
+
+这些值是为了说明 Scale 污染而构造；[KIVI ICML 2024 论文](https://proceedings.mlr.press/v235/liu24bz.html) 的 Key/Value 异常方向来自实际 LLaMA 层的可视化和统计，工程中不同模型/Head 需要复核其是否成立。
+
+### 计算真实显存时不能只看 2-bit 对 16-bit
+
+假设 $L=32$ 层，$H_{kv}=8$ 个 KV Heads，$d_h=128$，缓存 $T=16{,}384$ Token。FP16 纯 KV 数据量为
+
+$$
+2\times32\times8\times128\times16{,}384\times2
+=2{,}147{,}483{,}648\ {\rm bytes}
+\approx2\ {\rm GiB}.
+$$
+
+理想 2-bit 纯值缓存是 $1/4$ GiB，但必须增加 Group Scale/Zero Point、Index/Packing、近期 FP16 Residual Buffer 和其他模型内存。若尾部 $R=128$ Token 未量化，其 FP16 数据单独还占
+
+$$
+2\times32\times8\times128\times128\times2
+=16{,}777{,}216\ {\rm bytes}\approx16\ {\rm MiB}.
+$$
+
+此例把 KV 存储量的数量级算清楚，不能把 $1/4$ GiB 说成完整服务端进程的峰值显存。
+
+## 残差缓冲区的更新顺序
+
+当前 Decode 产生新 Token 的 KV：先插入未量化的 Tail Buffer；随后 Attention 读取历史量化 KV 与新的 FP16 KV（需要保证逻辑时间索引与 Mask 一致）；一旦 Tail Buffer 累积到适合 Quantize 的 Group 大小，再把旧段按 Key Channel、Value Token 方向打包成 2-bit，并释放对应旧 FP16 Tail 项。若每生成一枚 Token 就回头重算全部 Group Scale，便破坏了 KIVI 引入 Residual 以减少量化频率的关键目的。
+
+因此实验除 PPL 外还应记录量化打包耗时、按 Group 读取 Scale 成本、GPU HBM 字节、模型权重与 KV 占比。否则“KV 理论节省 8 倍”无法推出实际 Token/s。
+
 ## 对照结果与其它 KV 方案
 
 [ICML 2024 正式论文](https://proceedings.mlr.press/v235/liu24bz.html) 报告 Llama-2、Falcon、Mistral 等设置下，模型权重也计入的总体峰值显存可减少至原来的约 $1/2.6$，由此 Batch 最高可扩大 **4 倍**，报告真实生成任务吞吐 **2.35–3.47×**。这些数字不是“每张 GPU / 每个模型统一 8 倍”。

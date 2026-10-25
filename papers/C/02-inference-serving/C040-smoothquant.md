@@ -70,6 +70,36 @@ flowchart LR
 
 *自制重参数化图，非论文 Figure。请对照 [SmoothQuant 官方论文 Figure 2](https://proceedings.mlr.press/v202/xiao23c/xiao23c.pdf)：上半显示原始 X outlier 拉大范围，下半展示迁移后 X、W 更均匀。*
 
+## 用原公式算出 Migration Strength 的真正作用
+
+取通道校准激活最大值 $a=100$，该通道权重最大值 $w=0.01$。原论文按
+
+$$
+s=\frac{a^\alpha}{w^{1-\alpha}}
+$$
+
+定义迁移尺度。若 $\alpha=0$，则 $s=w^{-1}=100$；若 $\alpha=1/2$，得到 $s=\sqrt{a/w}=100$；若 $\alpha=1$，则 $s=a=100$。这个特殊例子**三个取值巧合相同**，根本不适合直觉上看 $\alpha$ 的调节效果。换成 $a=100,w=1$：
+
+$$
+s(0)=1,\qquad s(1/2)=10,\qquad s(1)=100.
+$$
+
+于是变换后激活最大幅度为 $a/s$，权重最大幅度为 $w\,s$：
+
+| $\alpha$ | 迁移尺度 $s$ | 新激活最大值 | 新权重最大值 |
+|---|---:|---:|---:|
+| 0 | 1 | 100 | 1 |
+| 0.5 | 10 | 10 | 10 |
+| 1 | 100 | 1 | 100 |
+
+表格是由原公式手算的单通道教学例子，不表示实际最佳 $\alpha=0.5$。它说明随着 $\alpha$ 增加，激活更容易量化，而权重可能变难量化。真实的误差还取决于其他通道分布、Group Scale 与非线性层，所以最佳迁移程度不一定是两者 Max 完全相等。
+
+## Figure 1/2 的因果关系与实际速度
+
+[ICML 2023 正式论文](https://proceedings.mlr.press/v202/xiao23c.html) 的 Figure 1 画的是 Activation Outlier 为什么破坏 W8A8；Figure 2 展示同一 Linear 的 $X$ 与 $W$ 在平滑前后如何交换异常范围。读完两图还只知道**量化输入的分布变好**，尚不知道推理速度。速度需要结合 INT8 Tensor Core、Kernel Layout、Batch 和 End-to-end Wall Clock 的实验。
+
+一个关键工程反例：若模型只在 Decode 的 Batch=1 下执行 GEMV，权重读取受 HBM 限制，离线平滑可能让 Weight 更好表示但不一定使 INT8 运算获得论文大 Batch GEMM 的加速。**相同 W8A8 的位宽对不同 Shape 会有不同的 Kernel 价值**，因此必须至少分开测 Prefill 和 Decode。
+
 ## 什么时候能把 Runtime 开销提前挪到 Offline？
 
 为了运行时不需要对每个 Activation 额外执行高成本通道缩放，可以把 $D^{-1}$ 与前一层可融合的归一化参数或 Linear Bias 等结构合并；把 $DW$ 离线预处理成量化友好权重。这里依赖模型 LayerNorm/RMSNorm 与线性层的位置和实现，**不是任意两层都能无代价融合**。

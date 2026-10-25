@@ -53,6 +53,39 @@ $$
 
 此处仅解释蒸馏目标，不把这个抽象式冒充作者完整的实际 Loss 或温度设定；精确训练配方需查阅 [原文](https://arxiv.org/abs/2403.09919) 的训练章节。由此可知 ReDrafter **不是**不训练的候选检索方法，[REST](C030-rest.md) 才是另一条路线。
 
+## 为什么 Recurrent State 比多个独立 Head 更容易表达长草稿？
+
+采用形状明确的表示：Target 最后确认位置状态 $h_t\in\mathbb R^d$，草稿当前隐状态 $s_i\in\mathbb R^{d_s}$，Token Embedding $e(\hat x_i)\in\mathbb R^{d_e}$。一个教学版 Recurrent Transition 是
+
+$$
+s_{i+1}=\tanh\left(W_s s_i+W_e e(\hat x_i)+W_h h_t+b\right),
+\quad W_s\in\mathbb R^{d_s\times d_s}.
+$$
+
+从 $s_{i+1}$ 投影至词表 $V$ 得到 $q_{i+1}=\mathrm{softmax}(U s_{i+1})$，其中 $U:[V,d_s]$。同一组循环参数 $W_s,W_e,W_h$ 跨草稿步共享，而 [Hydra](C025-hydra.md) 的各 Head 面向不同未来深度，这解释了两者结构上的差异。**这不是原文 RNN Cell 的逐字等式**；实际结构、输入融合与 KD 路线必须对照 [Apple 原始论文](https://arxiv.org/abs/2403.09919) 的 §3。
+
+### Beam Search 与树合并必须分开
+
+假设 Beam Search 返回长度均为 4 的三个候选：
+
+~~~text
+a b c d
+a b c e
+a f g h
+~~~
+
+逐条执行 Target 的候选位置数为 $3\times4=12$。以 Trie 合并后，唯一节点是 §a,b,c,d,e,f,g,h§，仅 8 个节点。理论候选节点减少 $1-8/12=1/3$，但每个 Token Node 必须携带正确的 Parent Index 与树 Mask。树里 §d§ 不能看到兄弟 §e§，§g§ 不能看到来自另一支的 §b§；若完全改成普通 Causal Mask，将使注意力读到非祖先 Token，验证的条件分布就错了。
+
+更重要的是，Beam Search 最大化的是草稿概率或评分，**不是无条件确定 Target 采样结果**。如果使用随机采样，必须显式实现正确的 Tree Acceptance 与残差规则。Trie 去重只保证推理计算图的重复前缀减少，不保证严格采样分布。
+
+## 从执行时序拆出真正的三个创新点
+
+ReDrafter 将不同阶段交替执行：（1）Target 已确认前缀输出特征；（2）小循环 Drafter 在此条件下执行 Beam Search；（3）将重叠的 Beam Prefix 合并并组织 Dynamic Tree Attention；（4）Target 并行校验候选；（5）接受并推进至下一轮。这使一次 Target Forward 可以覆盖多个候选 Token，却也引入 $T_{\rm recurrent}+T_{\rm beam}+T_{\rm mask}$。
+
+从硬件视角看，假设 Target 一次单 Token Forward 要 15 ms，而一轮草稿+构树合计 5 ms，树验证 18 ms；若平均确认 3 个 Token，平均成本为 $(5+18)/3\approx7.67$ ms/token，相对普通 15 ms/token 约 1.96 倍。若树候选质量下降使确认数仅 1，成本反而是 23 ms/token。这是教学成本模型，说明需要的指标是 **每轮 Target 提交数与额外草稿开销的联合分布**。
+
+原论文 [Apple Research 摘要](https://machinelearning.apple.com/research/recurrent-drafter) 明确将 RNN、Dynamic Tree Attention、KD 列为三项驱动因素。不能仅从 2.8 倍的 H100 结果判断究竟是其中哪个模块贡献更多，应针对移除 Dynamic Tree、移除 KD 和不同 Beam Width 的消融测量。
+
 ## 原论文报告了什么，不能推出什么？
 
 [Apple 研究介绍](https://machinelearning.apple.com/research/recurrent-drafter) 报告：NVIDIA H100 / PyTorch 上对 Vicuna 的 MT-Bench 实验最高 **2.8×** 加速；Apple Silicon / MLX/Metal 最高 **2.3×**。这两条对应不同平台和运行环境，不能把倍数互相比较成 GPU 性能排名。

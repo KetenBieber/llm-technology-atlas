@@ -1,6 +1,8 @@
+# RMSNorm：为什么只做均方根缩放也能稳定 Transformer
+
 > **原文**：Biao Zhang, Rico Sennrich, *Root Mean Square Layer Normalization*, 2019，[arXiv](https://arxiv.org/abs/1910.07467)。对应 Paperlist A/03 第 6 篇。本文提出 RMSNorm 与 partial RMSNorm。要特别区分：RMSNorm 的核心不是“把 LayerNorm 换个名字”，而是**主动删除 re-centering，只保留 re-scaling invariance**。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
 **主要类型：A 原始方法论文。** 本文位于 Transformer / RNN / FFN 的归一化模块层，不改变 Attention、FFN、Tokenizer 或训练目标。
 
@@ -46,7 +48,7 @@ Transformer
 
 *教学解释图｜去掉均值中心化以后，RMSNorm 保留尺度归一化，同时缩短 forward/backward 的归约依赖。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
 对单个 token hidden state：
 
@@ -102,9 +104,9 @@ Y[B,T,d]
 
 因此 batch 大小变化不会像 BatchNorm 那样改变归一化统计语义。
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
-## LayerNorm 与 RMSNorm 的数据流
+### LayerNorm 与 RMSNorm 的数据流
 
 LayerNorm：
 
@@ -167,9 +169,9 @@ Attention / FFN                    │
 
 RMSNorm 本身不决定 Pre-Norm 或 Post-Norm；那是 block layout 的更高层设计。
 
-# 关键技术
+## 关键技术
 
-## 1. LayerNorm 到底提供哪两种 invariance
+### 1. LayerNorm 到底提供哪两种 invariance
 
 LayerNorm：
 
@@ -257,7 +259,7 @@ $$
 
 但加常数 `b\mathbf1` 时一般不成立。因此 RMSNorm 保留 re-scaling invariance，舍弃 re-centering invariance。
 
-## 2. RMS 与标准差不是一回事
+### 2. RMS 与标准差不是一回事
 
 定义：
 
@@ -317,7 +319,7 @@ $$
 
 两者明显不同。
 
-## 3. 为什么说 RMSNorm 带来隐式尺度调节
+### 3. 为什么说 RMSNorm 带来隐式尺度调节
 
 考虑：
 
@@ -351,7 +353,7 @@ $$
 
 所以后续层对整体正尺度变化不敏感。它并没有真正改 optimizer 的 learning rate；所谓 implicit learning-rate adaptation 是对有效激活/梯度尺度的解释。
 
-## 4. 反向传播完整推导
+### 4. 反向传播完整推导
 
 忽略 gain，定义：
 
@@ -421,7 +423,7 @@ $$
 
 这说明 backward 仍存在 hidden 维度耦合：RMS 分母依赖全部 `x_i`，不能把它理解成每个元素独立除一个常数。
 
-## 5. 为什么少一个 mean reduction 可能更快
+### 5. 为什么少一个 mean reduction 可能更快
 
 LayerNorm 要获得中心和尺度，RMSNorm 只需要：
 
@@ -446,7 +448,7 @@ $$
 
 因此论文 7%–64% 不能当成现代 LLM 固定收益。citeturn100152academia0
 
-## 6. pRMSNorm
+### 6. pRMSNorm
 
 partial RMSNorm 用一部分 feature 估计：
 
@@ -467,7 +469,7 @@ $$
 
 目的是减少统计成本，但这是近似；如果子集不代表完整 hidden distribution，估计会偏离真实 RMS。
 
-## 7. 最小 PyTorch 实现
+### 7. 最小 PyTorch 实现
 
 ~~~python
 import torch
@@ -504,7 +506,7 @@ print(x.grad.shape)            # [2,4,8]
 
 `pow(2)` 对应 `x_i^2`；`mean(dim=-1)` 对应 hidden 维平均；`sqrt` 得 RMS；`x/rms` 完成 re-scaling；`weight` 对应可学习 gain。
 
-## 8. 实验结果与证据边界
+### 8. 实验结果与证据边界
 
 论文在多类网络/任务上比较 LayerNorm 与 RMSNorm，报告 RMSNorm 能保持相近性能，同时在其设置下降低运行时间，并研究 pRMSNorm。citeturn100152academia0
 
@@ -520,7 +522,7 @@ print(x.grad.shape)            # [2,4,8]
 - RMSNorm 与 LayerNorm 函数完全等价；
 - 所有现代 GPU 都能复现同样加速百分比。
 
-# 预训练与后训练
+## 预训练与后训练
 
 RMSNorm 不改变预训练目标：
 
@@ -542,7 +544,7 @@ Residual
 
 训练时 gain 参数参与反向；没有 BatchNorm 式 running mean/variance。SFT、DPO、PPO 等阶段都可沿用相同 RMSNorm backbone，因此归一化方法与后训练目标基本正交。
 
-# 推理与部署
+## 推理与部署
 
 Prefill：
 
@@ -574,14 +576,14 @@ load
 
 因此系统优化重点是 reduction、HBM traffic 与 fusion，而不是改变 Attention 的 `O(T^2)` 复杂度。
 
-## 技术 → 模型
+### 技术 → 模型
 
 - LayerNorm → RMSNorm：`DERIVED_FROM`
 - RMSNorm → 本文：`PROPOSES`
 - pRMSNorm → 本文：`PROPOSES`
 - RMSNorm → LLaMA/Mistral/DeepSeek 等：后续 `ADOPTS`
 
-## 模型 → 技术
+### 模型 → 技术
 
 - RMSNorm：`IMPLEMENTS` RMS re-scaling + learnable gain
 - LLaMA 类 Decoder：`ADOPTS` RMSNorm，通常结合 Pre-Norm residual

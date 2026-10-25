@@ -55,6 +55,45 @@ flowchart TD
 
 *自制解释图，非原论文 Figure。原文方法图中的通道重排与 Mixed Precision 和 Kernel 绑定，是理解为什么理论 bit 数真的能成为服务吞吐的关键。*
 
+## 把 W4A4 与 W4A16 放进同一块 Tensor Core 的条件里理解
+
+令 $X:[B T,d]$、$W:[d,o]$。在 Weight-Only W4A16 中，Weight 可以压缩到 4-bit 存储，但 Activation 仍是 FP16；多数硬件必须把 Packed Weight 以某种方式解码后才能与 Activation 做匹配的 GEMM。Atom 的 W4A4 则希望让主要路径的 Weight 与 Activation 都形成 4-bit 整数，直接用支持 INT4 的矩阵乘算子：
+
+$$
+Y_{\rm main}\simeq s_Xs_W\,Q_4(X_{:,N})Q_4(W_{N,:}).
+$$
+
+其中 $N$ 是普通通道，$s_X,s_W$ 是按照允许 Group Granularity 执行的 Scale。还有敏感通道 $O$，需另外的高精度贡献以及 Layout 组织与输出融合：
+
+$$
+Y\simeq Y_{\rm main}
++X_{:,O}W_{O,:}.
+$$
+
+这两个公式只是说明拆分后数据流，真正 Kernel 仍必须明确是否按 Block/Token 量化 Activation、如何避免 Group Scale 妨碍整数累加，以及混精度路径怎样与主路径合并。**不能仅凭 W4A4 四个字符推出一定调用最快的 INT4 Kernel**。
+
+### 为什么低 Batch 下收益可能完全不同？
+
+对 $X:[1,d]$ 的单 Token Decode，运算类似 GEMV，核心瓶颈可能是从 HBM 读取 Weight；W4A16 的压缩读取已经有帮助。对 $X:[256,d]$，一次 GEMM 可以在更大 Batch 中重用 Weight，算力占比上升，此时直接使用 INT4×INT4 低精度矩阵乘才更有机会提升吞吐。换句话说，选择实现时应该分别计算 Arithmetic Intensity：
+
+$$
+I=\frac{\text{实际算术操作数}}{\text{从 HBM 读写的 Byte 数}}.
+$$
+
+低 Batch 和大 Batch 的 $I$ 差异很大；使用不同 Kernel、Tile Size、Dequantize 路径也会改变 Byte 数。论文的 Serving Benchmark 以**相同 Latency Target**对比吞吐，这一点比摘录最终最大 7.73× 更重要：否则只提升 Batch 并放宽用户等待，就能人为造出吞吐更高的成绩。
+
+## 混精度为什么会影响可用的压缩比例？
+
+假设矩阵中只有 1% 参数落在高精度异常分支，其余 99% 可以使用 4-bit 表示。仅统计 Weight Payload，平均位数为
+
+$$
+0.99\times4+0.01\times16=4.12\ {\rm bit/weight}.
+$$
+
+这个结果还不包含 Group Scale、通道映射和 Alignment。如果实际做成两个孤立的小 GEMM、不断 Gather/Scatter，开销也可能大于 0.12 bit 的 Weight 增量，因此 Mixed-Precision 策略和 Kernel Layout 必须一起设计。这是一个阐释性方案，不等于声称 Atom 固定用“1% FP16 + 99% W4A4”的配置。
+
+[MLSys 2024 官方摘要](https://proceedings.mlsys.org/paper_files/paper/2024/hash/5edb57c05c81d04beb716ef1d542fe9e-Abstract-Conference.html) 给出的 7.73× 相对 FP16 和 2.53× 相对 INT8 都带有**相同延迟目标**的服务协议。若要归因于“异常通道保护”，需对照作者移除 Mixed-Precision 或改 Group Size 的消融；若只摘最大吞吐并忽略 Server Batch/SLO，是不合格的性能归因。
+
 ## 为什么 Batch 和目标延迟是评估的必要条件？
 
 在 Decode 阶段，低 Batch 往往首先受限于权重带宽；在较大 Batch 下，矩阵乘法可能更受 GPU 计算吞吐影响。W4A4 可提高每单位显存存储的权重密度，并尝试直接利用更高的低精度算力，但如果新增的高精度支路、重新布局和反量化引入高固定开销，小 Batch 也可能不划算。

@@ -1,6 +1,8 @@
+# MQA：为什么共享 K/V 能显著降低 Decode Cache
+
 > **原文**：Noam Shazeer, *Fast Transformer Decoding: One Write-Head is All You Need*, 2019，[arXiv](https://arxiv.org/abs/1911.02150)。对应 Paperlist A/04 第 1 篇。本文提出 Multi-Query Attention（MQA）：**Query 仍保留多头，但所有 Query Head 共享同一组 Key/Value Head**。它主要针对 autoregressive incremental decoding 的 KV memory bandwidth，而不是把 Attention 的数学复杂度从二次降为线性。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
 **主要类型：A 原始方法论文；次要属性：推理效率架构。**
 
@@ -52,7 +54,7 @@ Transformer
 
 *教学解释图｜保留多组 Query heads，同时共享 K/V 状态，以牺牲较少表达自由度换取 decode cache 与带宽下降。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
 输入：
 
@@ -66,7 +68,7 @@ $$
 - 每 head 维度：`d_h`；
 - 通常 `d_{\rm model}=Hd_h`。
 
-## MHA
+### MHA
 
 $$
 Q\in\mathbb R^{B\times H\times T\times d_h},
@@ -80,7 +82,7 @@ $$
 V\in\mathbb R^{B\times H\times T\times d_h}.
 $$
 
-## MQA
+### MQA
 
 Query 不变：
 
@@ -121,9 +123,9 @@ O=
 \in\mathbb R^{B\times T\times d_{\rm model}}.
 $$
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
-## MHA
+### MHA
 
 ~~~text
 X
@@ -143,7 +145,7 @@ X
 *教学解释图｜MHA vs. MQA Head Sharing。*
 
 
-## MQA
+### MQA
 
 ~~~text
 X
@@ -160,9 +162,9 @@ X ── Wv → shared V ┘
 
 删除的是 K/V 的**head-specific projection diversity**，而不是 Q head diversity。
 
-# 关键技术
+## 关键技术
 
-## 1. 为什么 Decode 与训练阶段的瓶颈不同
+### 1. 为什么 Decode 与训练阶段的瓶颈不同
 
 训练/Prefill 时：
 
@@ -211,7 +213,7 @@ memory bandwidth bound
 
 MQA 正针对这个瓶颈。
 
-## 2. KV Cache 大小完整推导
+### 2. KV Cache 大小完整推导
 
 设：
 
@@ -254,13 +256,13 @@ M_{\rm KV}
 }
 $$
 
-### MHA
+#### MHA
 
 $$
 H_{kv}=H.
 $$
 
-### MQA
+#### MQA
 
 $$
 H_{kv}=1.
@@ -278,7 +280,7 @@ $$
 
 这不是“整个模型显存缩小 H 倍”，只是 KV Cache 这一项。
 
-## 3. 具体 32 层例子
+### 3. 具体 32 层例子
 
 设：
 
@@ -352,7 +354,7 @@ $$
 
 这就是服务场景 MQA 价值远高于“少几个 projection 参数”的原因。
 
-## 4. 每个 Decode token 为什么也减少 HBM 读取
+### 4. 每个 Decode token 为什么也减少 HBM 读取
 
 第 `t` 步，每层至少需要历史 K/V：
 
@@ -395,7 +397,7 @@ $$
 
 所以不能说 Decode 总延迟一定精确提升 `H` 倍。
 
-## 5. MQA 没有把 Attention 的 token 复杂度降阶
+### 5. MQA 没有把 Attention 的 token 复杂度降阶
 
 Prefill full attention：
 
@@ -431,7 +433,7 @@ MQA 改的是：
 
 不是稀疏化 attention matrix。
 
-## 6. 为什么共享 K/V 可能损失质量
+### 6. 为什么共享 K/V 可能损失质量
 
 MHA 第 `h` 头拥有：
 
@@ -472,7 +474,7 @@ MQA:
 
 这减少表示容量，因此可能造成质量下降。后续 GQA 就是用多个共享组折中。
 
-## 7. MHA 参数量与 MQA 参数量
+### 7. MHA 参数量与 MQA 参数量
 
 仅看 QKV projection。
 
@@ -547,7 +549,7 @@ $$
 
 但整个 Transformer 大量参数在 FFN，因此整模型参数不会降 3 倍。
 
-## 8. 最小 PyTorch：真正只共享 K/V
+### 8. 最小 PyTorch：真正只共享 K/V
 
 ~~~python
 import torch
@@ -650,7 +652,7 @@ $$
 
 矩阵乘时 batch broadcasting 让同一个 K/V 被 8 个 Query head 使用。
 
-## 9. 原文实验的证据边界
+### 9. 原文实验的证据边界
 
 论文在 Transformer 语言/翻译等设置中比较 MHA 与 MQA，核心观察是：
 
@@ -669,7 +671,7 @@ $$
 
 但“只轻微掉点”不是所有任务都保证。不同规模、训练策略、head 数与数据都会影响质量差异。
 
-# 预训练与后训练
+## 预训练与后训练
 
 MQA 是**架构改动**，不是新的训练目标。
 
@@ -701,9 +703,9 @@ MQA 与：
 
 均属于不同层级。
 
-# 推理与部署
+## 推理与部署
 
-## Prefill
+### Prefill
 
 MQA 能减少 K/V projection 与 KV 写入，但 dense attention score 仍是：
 
@@ -713,7 +715,7 @@ $$
 
 所以 Prefill 仍可能被 Attention FLOPs/HBM 主导。
 
-## Decode
+### Decode
 
 这是 MQA 最大收益点：
 
@@ -739,7 +741,7 @@ $$
 [B,L,H,T,d_h].
 $$
 
-## Batch 服务
+### Batch 服务
 
 如果显存上限固定，KV 缩小可让：
 
@@ -749,14 +751,14 @@ $$
 
 这可能让 throughput 收益比单请求 latency 收益更显著。
 
-## 技术 → 模型
+### 技术 → 模型
 
 - MHA → MQA：`DERIVED_FROM`
 - MQA → 本文：`PROPOSES`
 - MQA → PaLM 等后续模型：`ADOPTS`
 - MQA → GQA：`GENERALIZED_BY / EXTENDS`，GQA 令 KV heads 从 1 增至中间值
 
-## 模型 → 技术
+### 模型 → 技术
 
 - 原始 Transformer：`ADOPTS` MHA
 - MQA Transformer：`IMPLEMENTS` H Query heads + 1 KV head

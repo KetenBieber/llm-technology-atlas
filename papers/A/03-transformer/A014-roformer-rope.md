@@ -1,8 +1,10 @@
+# RoPE：把相对位置信息写进旋转内积
+
 > **原文**：Jianlin Su 等，[*RoFormer: Enhanced Transformer with Rotary Position Embedding*](https://arxiv.org/abs/2104.09864)，2021，[可检索原文](https://ar5iv.labs.arxiv.org/html/2104.09864)，重点 `3.1–3.4、`4.1–4.5、Table 1–5。此文是 RoPE 的原始方法论文，原文主要展示**Encoder 式长文本分类、BERT 式 MLM 和英德翻译**；现代 Decoder-only LLM 的 KV Cache 与长上下文扩展属于后续采用与工程分析，不能当成原论文已验证的应用。对应 Paperlist A/03 第 4 篇。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
-## 不是新的 Attention 算法：论文只改动 Q/K 的位置注入方式
+### 不是新的 Attention 算法：论文只改动 Q/K 的位置注入方式
 
 **主要类型 A：原始方法论文；次要属性 B：RoFormer 模型及其预训练/下游实验。** Transformer 自注意力在没有位置信息时对序列置换等变，原版在 Token Embedding 上直接相加正弦绝对位置编码。若我们关心的是「query 与 key 相距多少个 token」，直接相加绝对位置未必以最简洁方式向 Attention score 暴露相对位移；一些后续相对位置方案在打分矩阵中引入额外偏置或相对位置表，需要考虑长度截断及其与其他注意力 kernel 的兼容性。
 
@@ -34,9 +36,9 @@ RoPE 想同时满足两个条件：单个 token 在位置 `m` 的 Q/K 含有**�
 
 *教学解释图｜绝对位置相位通过二维旋转注入 Q/K，而内积中的位置项只保留相对位移。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
-## 三种空间必须分开：token、Attention head、二维旋转对子空间
+### 三种空间必须分开：token、Attention head、二维旋转对子空间
 
 设 `X\in\mathbb R^{B\times T\times d_{\rm model}}`，通常先通过独立线性映射和多头 reshape 得
 
@@ -66,7 +68,7 @@ $$
 
 如果只在 Q 上施加旋转、K 不旋转，`q_m^\top k_n` 只含 `m` 而不会自然产生 `n-m`，破坏主要构造。现代某些 Partial RoPE / 交错或前后半维 pairing 的实现布局不同，**必须保证 Q、K 采用完全相同的维度配对与频率约定**；仅改变实现布局而不相应调整预训练权重通常不等价。
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
 ~~~mermaid
 flowchart TD
@@ -89,9 +91,9 @@ flowchart TD
 
 **模块删减分析：** 去掉两条旋转支路只剩普通无位置点积；把绝对位置向量简单叠加到词向量则回到另一种位置注入方式，其分数会出现内容—位置交叉项而不天然只依赖相对位移；去掉 `V` 分支仍能算 score，却失去被汇总的内容；把 RoPE 同时加到 `V` 会改变 Value 加权和的语义，不属于原论文的常规实现。RoPE 对一个 self-attention 块的**输出 Shape 完全不变**，因此可以把它作为与 FFN、Norm、MoE 无关的可插拔位置机制。
 
-# 关键技术
+## 关键技术
 
-## 1. 先把需求写成数学约束，而不是直接背公式
+### 1. 先把需求写成数学约束，而不是直接背公式
 
 考虑位置 `m` 的内容向量 `q=W_Qx_m` 与位置 `n` 的 `k=W_Kx_n`。我们希望编码函数 `f_q(q,m),f_k(k,n)` 满足
 
@@ -109,7 +111,7 @@ $$
 
 其中 `q^\top p_n` 独立依赖 `n`，`p_m^\top k` 独立依赖 `m`，要靠后续参数自行组合才能得到只依赖相对位移的规律。RoPE 则用满足群运算的正交旋转，使位置差**成为内积的代数恒等式**。[原文 `3.1](https://ar5iv.labs.arxiv.org/html/2104.09864)
 
-## 2. 从一个二维向量推到相对位移：不跳过转置和三角恒等式
+### 2. 从一个二维向量推到相对位移：不跳过转置和三角恒等式
 
 定义标准二维旋转矩阵
 
@@ -164,7 +166,7 @@ $$
 
 因此如果内容 `q,k` 不变，两者同时整体平移相同位置数，未加 mask 的 Attention score 严格相同。它不代表一个实际 LLM 在把文本整体移动后**所有输出必然严格相同**：例如 attention causal mask、特殊 tokens、上下文裁剪、其他绝对位置组件及数值精度也影响前向。
 
-## 3. 为什么可以用复数写，且不是必须使用复数 tensor
+### 3. 为什么可以用复数写，且不是必须使用复数 tensor
 
 把实数二维向量 `(a,b)` 看作复数 `z=a+ib`，乘单位复数 `e^{i\phi}=\cos\phi+i\sin\phi`：
 
@@ -186,7 +188,7 @@ $$
 
 举例取 `q=(1,0),k=(1,0)`、`\theta=\pi/2`。两者同位置时点积 1；`m=0,n=1` 时 `k'=(0,1)`，点积 0；`m=0,n=2` 时 `k'=(-1,0)`，点积 -1；`m=0,n=4` 时 `k'=(1,0)`，又回到 1。**最后一项警告了单频率位置表示的周期性混叠：距离越大不意味着单对 Q/K 的点积必然越来越小。**
 
-## 4. 从二维推广到 `d_h` 维：Block Diagonal Rotation 的代价
+### 4. 从二维推广到 `d_h` 维：Block Diagonal Rotation 的代价
 
 若 `d_h` 为偶数，把每个 head 的向量拆为 `d_h/2` 个二维对：
 
@@ -236,7 +238,7 @@ $$
 
 实际矩阵 `R_{\Theta,m}` 看起来是 `d_h\times d_h`，但每行只有不超过两个非零系数。直接以稠密矩阵乘法 `O(d_h^2)` 实现完全浪费；对每个二维对进行四次逐元素乘法、两次加减即可，时间 `O(d_h)`、存储 cos/sin 表 `O(Td_h)`（可以现场生成或缓存），没有额外 trainable 参数。[原文 `3.2、`3.4.2](https://ar5iv.labs.arxiv.org/html/2104.09864)
 
-## 5. 长距离衰减：论文说的是多频率振荡和一个上界，不是严格单调
+### 5. 长距离衰减：论文说的是多频率振荡和一个上界，不是严格单调
 
 原论文 `3.4.3 将复数点积写成不同频率的和：
 
@@ -264,7 +266,7 @@ $$
 
 长期外推还会遇到高频相位快速旋转、训练未覆盖的相位组合和有限精度误差，后来的 RoPE scaling / YaRN 才需要重新调整频率、位置或做继续训练；那是**后续问题**，不是 RoPE 原文保证无界外推。
 
-## 6. 可运行 PyTorch：interleaved RoPE、位置平移不变与正确的 Decode offset
+### 6. 可运行 PyTorch：interleaved RoPE、位置平移不变与正确的 Decode offset
 
 ~~~python
 import torch
@@ -321,7 +323,7 @@ print("rotation norm, relative shift, cache offset and gradients OK")
 
 此代码需要实际安装 PyTorch 才可运行；它验证数学与 Shape，但不等于实现了整篇 RoFormer MLM/翻译训练或生产级融合 kernel。
 
-## 7. 原文实验：哪些支持 RoPE，哪些不能被概括成「全面超过 BERT」
+### 7. 原文实验：哪些支持 RoPE，哪些不能被概括成「全面超过 BERT」
 
 | 实验位置 | 控制关系 | 原文数字/结论 | 证据边界 |
 |---|---|---|---|
@@ -333,7 +335,7 @@ print("rotation norm, relative shift, cache offset and gradients OK")
 
 [全部数字与实验限制：原文 `4、Table 1–5、`4.5.5](https://ar5iv.labs.arxiv.org/html/2104.09864)。这也解释了不能仅依据原文对长距离衰减的理论分析就保证无限窗口性能：作者自己在局限性中承认尚未充分解释其收敛优势和长文本性能机制。
 
-# 预训练与后训练
+## 预训练与后训练
 
 **RoPE 是位置注入方式，不是新损失。** 原文分别把它接入原有翻译 Transformer（监督翻译 CE）、BERT 式 Encoder（MLM 预训练）、Performer 变体（字符语言建模），以及中文 WoBERT 衍生的长文本模型（约 34GB 中文 Wikipedia、新闻及论坛训练语料，分不同上下文长度阶段训练）。若仅交换 Q/K 位置机制，模型的 `p_\theta(y\mid x)` 或 MLM 中交叉熵定义不必改变：
 
@@ -346,15 +348,15 @@ $$
 
 论文原始训练设置：英德 4.5M 平行句，沿用原 Transformer 类似 BPE/Adam/label smoothing 的翻译训练；英语 BookCorpus+Wikipedia MLM，对照模型训练 100k steps、batch64、最大序列512、AdamW `1e-5`；中文按多个上下文长度与 batch 阶段进行预训练并在文本匹配任务微调。**没有提出 SFT、Reward Model、PPO、DPO、GRPO、机器人动作 chunk 或世界模型训练目标**。后续 Llama 等对 Decoder-only next-token CE 的采用应在相应模型报告中单独描述。
 
-# 推理与部署
+## 推理与部署
 
-## 为什么 RoPE 能保持 Attention 的主复杂度，又增加少量运算
+### 为什么 RoPE 能保持 Attention 的主复杂度，又增加少量运算
 
 RoPE 对 `Q,K` 的每个二维对做常数次乘加，单层在 `B,h,T,d_h` 上的总额外运算 `O(BhTd_h)`；普通 full self-attention 的 `QK^\top` 和 `AV` 仍是 `O(BhT^2d_h)`。因此**它不会把 dense Attention 的 `O(T^2)` 变成 `O(T)`**，也不会单独消除朴素显式 `[B,h,T,T]` Attention Matrix 的显存。
 
 RoPE 的 `\cos,\sin` 表可按位置预计算、在整个 batch/head 间广播；或者在融合 Attention kernel 中按块生成，以权衡表访存与三角函数/近似计算。由于旋转不改变 Q/K Shape，KV Cache 的标量容量也不因 RoPE 单独下降。原文没有提出 FlashAttention、GQA 或 PagedAttention；它们可以和 RoPE 组合，但各自优化位置不同。
 
-### Prefill 与 Decode：绝对 position_id 是真正的工程陷阱
+#### Prefill 与 Decode：绝对 position_id 是真正的工程陷阱
 
 Prefill 已有 `T` token 时，为每个位置 `0,\ldots,T-1` 计算旋转 Q/K，生成 causal Attention，并将**已按各自 position 旋转的 K** 和未旋转的 V 写入缓存。Decode 新 token 的绝对位置 `m=T` 时，只给它的当前 Q/K 用 `R_{\Theta,m}` 旋转，再与缓存 K 做点积，不应重复旋转旧 K。
 
@@ -373,7 +375,7 @@ $$
 
 `n_{\rm kv}` 是否小于 Q heads 取决于 MHA/MQA/GQA 等**另一个技术**；RoPE 自身不修改 `n_{\rm kv}`。它在计算复杂度与内存大小上几乎保持原主项，但很长上下文的三角函数相位、浮点精度和训练外推分布需要额外验证。
 
-## 技术 → 模型
+### 技术 → 模型
 
 - `RoPE → RoFormer`：`PROPOSES` Q/K 绝对位置旋转与 Attention score 显式相对位移的实现。
 - `Sinusoidal PE → RoPE`：`DERIVED_FROM` 多频率三角函数启发，但把绝对位置从输入加法改为 Q/K 的乘法旋转。
@@ -381,7 +383,7 @@ $$
 - `RoPE → Llama 系列`：`ADOPTS` 后续自回归 Decoder 的位置机制，具体 head 维和频率参数按每代报告核对。
 - `RoPE 长上下文扩展 → YaRN`：`EXTENDS` 后续对 RoPE 频率/位置范围做重新缩放与训练适配；不是本文发明 YaRN。
 
-## 模型 → 技术
+### 模型 → 技术
 
 - `RoFormer`：`DERIVED_FROM` 已有 Transformer 自注意力和 BERT/WoBERT 类 Encoder；`PROPOSES` 特征对子空间旋转；`ADOPTS` 原有 MLM/翻译/分类目标及优化器。
 - `PerFormer（文中变体）`：`DERIVED_FROM` Performer 线性 Attention；`EXTENDS` 使用分子旋转而分母保持未旋转的相对位置实现，不能视为 vanilla softmax-RoPE 的严格等价替换。
@@ -390,6 +392,6 @@ $$
 **验收**：写出 `R(m\theta)^\top R(n\theta)=R((n-m)\theta)` 的全部步骤、证明二维旋转保范数、给出 `[B,h,T,d_h]` 的偶奇维广播代码、检查缓存 Key 被旋转的唯一时机，并解释为什么「天然相对位置」既不等于「严格单调长程衰减」也不等于「无限长度外推保证」。
 
 
-## 从这里继续：RoPE 为什么还不能天然支持无限上下文？
+### 从这里继续：RoPE 为什么还不能天然支持无限上下文？
 
 RoPE 的点积虽然只显式依赖相对位移，但训练只覆盖有限的相对距离与 phase range，因此“relative position”并不自动推出“无限长度外推”。下一步直接进入 [YaRN：RoPE 长上下文外推](A018-yarn.md)：从 direct extrapolation failure、Position Interpolation 一直推到 NTK-by-parts、attention magnitude scaling 与 Dynamic YaRN。

@@ -32,7 +32,7 @@ MInference
 
 ---
 
-## 阅读导航
+### 阅读导航
 
 建议先掌握：
 
@@ -85,9 +85,9 @@ MInference
 
 *教学解释图｜离线识别 attention head pattern，在线只计算 vertical/slash/block-sparse 区域，直接压缩长 prompt 的 prefill 成本。*
 
-# 一、先区分 Prefill 与 Decode：这是理解 MInference 的起点
+## 一、先区分 Prefill 与 Decode：这是理解 MInference 的起点
 
-## 1. 一次 LLM 请求其实有两个完全不同的阶段
+### 1. 一次 LLM 请求其实有两个完全不同的阶段
 
 假设用户输入 prompt：
 
@@ -103,7 +103,7 @@ $$
 
 推理过程可以拆成：
 
-### Prefill
+#### Prefill
 
 一次性处理完整 prompt：
 
@@ -113,7 +113,7 @@ $$
 
 为所有 prompt token 计算 hidden states，并建立 KV Cache。
 
-### Decode
+#### Decode
 
 之后每次只新增一个 token：
 
@@ -127,7 +127,7 @@ $$
 
 ---
 
-## 2. Prefill 的 Attention Shape
+### 2. Prefill 的 Attention Shape
 
 一层 self-attention 中：
 
@@ -180,7 +180,7 @@ $$
 
 ---
 
-## 3. Decode 为什么不是 $L^2$？
+### 3. Decode 为什么不是 $L^2$？
 
 生成第一个新 token 时，只有一个新的 query：
 
@@ -238,7 +238,7 @@ MInference 主要攻击的是第一项。
 
 ---
 
-## 4. 为什么长上下文用户首先感受到 TTFT？
+### 4. 为什么长上下文用户首先感受到 TTFT？
 
 TTFT：
 
@@ -283,7 +283,7 @@ $$
 
 ---
 
-## 5. MInference 论文给出的基线有多夸张？
+### 5. MInference 论文给出的基线有多夸张？
 
 论文以 LLaMA-3-8B、单张 A100 为例。
 
@@ -314,9 +314,9 @@ $$
 
 ---
 
-# 二、FlashAttention 已经很快了，为什么还不够？
+## 二、FlashAttention 已经很快了，为什么还不够？
 
-## 6. Dense Attention 有两个不同成本
+### 6. Dense Attention 有两个不同成本
 
 标准 naive attention 最大的问题之一，是 materialize：
 
@@ -347,7 +347,7 @@ $$
 
 ---
 
-## 7. FlashAttention 不是把 $O(L^2)$ 变成 $O(L)$
+### 7. FlashAttention 不是把 $O(L^2)$ 变成 $O(L)$
 
 这是 MInference 必须建立的前置认识。
 
@@ -381,9 +381,9 @@ $$
 
 ---
 
-# 三、第一观察：Attention Weight 实际上高度稀疏
+## 三、第一观察：Attention Weight 实际上高度稀疏
 
-## 8. Dense Matrix 中真的每个 Entry 都重要吗？
+### 8. Dense Matrix 中真的每个 Entry 都重要吗？
 
 标准 attention 输出：
 
@@ -439,7 +439,7 @@ $$
 
 ---
 
-## 9. 128K Attention 的一个论文观察
+### 9. 128K Attention 的一个论文观察
 
 MInference 在 128K attention matrix 上做分析。
 
@@ -463,7 +463,7 @@ $$
 
 ---
 
-## 10. “Attention 稀疏”不能怎样理解？
+### 10. “Attention 稀疏”不能怎样理解？
 
 错误理解：
 
@@ -473,11 +473,11 @@ $$
 
 原因包括：
 
-### Softmax normalization
+#### Softmax normalization
 
 删掉 entry 会改变 denominator。
 
-### Value vector
+#### Value vector
 
 一个 attention weight 虽小，但对应：
 
@@ -487,15 +487,15 @@ $$
 
 可能在某些维度贡献显著。
 
-### 多层累积
+#### 多层累积
 
 单层微小误差会传播到后续 layer。
 
-### Head 差异
+#### Head 差异
 
 不同 head 的稀疏结构完全不同。
 
-### Task 差异
+#### Task 差异
 
 retrieval、summarization、code 的重要 token 分布不同。
 
@@ -505,9 +505,9 @@ retrieval、summarization、code 的重要 token 分布不同。
 
 ---
 
-# 四、第二观察：Attention 稀疏，但具体位置是动态的
+## 四、第二观察：Attention 稀疏，但具体位置是动态的
 
-## 11. 为什么不能离线保存一套 Top-K Token？
+### 11. 为什么不能离线保存一套 Top-K Token？
 
 假设在 prompt A 中发现：
 
@@ -553,7 +553,7 @@ prompt B 可能是：
 
 ---
 
-## 12. 于是出现一个矛盾
+### 12. 于是出现一个矛盾
 
 我们想要：
 
@@ -587,9 +587,9 @@ MInference 真正解决的，就是：
 
 ---
 
-# 五、第三观察：Indices 动态，但 Pattern Family 相对稳定
+## 五、第三观察：Indices 动态，但 Pattern Family 相对稳定
 
-## 13. 最关键的工程突破
+### 13. 最关键的工程突破
 
 MInference 发现：
 
@@ -619,7 +619,7 @@ $$
 
 ---
 
-## 14. 三种典型 Pattern
+### 14. 三种典型 Pattern
 
 论文把长上下文 attention head 归纳成：
 
@@ -643,9 +643,9 @@ $$
 
 ---
 
-# 六、A-shape：最简单，也最像 StreamingLLM
+## 六、A-shape：最简单，也最像 StreamingLLM
 
-## 15. A-shape 长什么样？
+### 15. A-shape 长什么样？
 
 Attention matrix：
 
@@ -654,7 +654,7 @@ Attention matrix：
 
 A-shape 通常有两部分：
 
-### 左侧 vertical band
+#### 左侧 vertical band
 
 模型持续关注最开始一批 token。
 
@@ -664,7 +664,7 @@ A-shape 通常有两部分：
 - global tokens；
 - system / BOS 等早期位置。
 
-### 对角线附近 local band
+#### 对角线附近 local band
 
 每个 query 主要关注最近的 token。
 
@@ -686,7 +686,7 @@ A-shape 通常有两部分：
 
 ---
 
-## 16. A-shape 为什么最便宜？
+### 16. A-shape 为什么最便宜？
 
 因为 mask 可以提前固定：
 
@@ -716,7 +716,7 @@ $$
 
 ---
 
-## 17. A-shape 的弱点是什么？
+### 17. A-shape 的弱点是什么？
 
 它只能看：
 
@@ -739,9 +739,9 @@ $$
 
 ---
 
-# 七、Vertical-Slash：MInference 最重要的一类 Pattern
+## 七、Vertical-Slash：MInference 最重要的一类 Pattern
 
-## 18. Vertical Line 是什么？
+### 18. Vertical Line 是什么？
 
 如果很多 query 都关注同一个 key position：
 
@@ -776,7 +776,7 @@ attention matrix 会出现一条 vertical line：
 
 ---
 
-## 19. Slash Line 是什么？
+### 19. Slash Line 是什么？
 
 如果 attention 倾向某个 fixed relative offset：
 
@@ -809,7 +809,7 @@ $$
 
 ---
 
-## 20. 为什么 Vertical 和 Slash 要组合？
+### 20. 为什么 Vertical 和 Slash 要组合？
 
 只用 vertical：
 
@@ -839,9 +839,9 @@ $$
 
 ---
 
-# 八、Block-Sparse：当重要区域不是线，而是空间簇
+## 八、Block-Sparse：当重要区域不是线，而是空间簇
 
-## 21. 什么叫 Spatial Clustering？
+### 21. 什么叫 Spatial Clustering？
 
 有些 head 的重要 attention entry 不形成干净的 vertical / diagonal line。
 
@@ -877,7 +877,7 @@ $$
 
 ---
 
-## 22. 为什么 Block-Sparse 比 Fine-Grained Top-K 更 GPU 友好？
+### 22. 为什么 Block-Sparse 比 Fine-Grained Top-K 更 GPU 友好？
 
 GPU 擅长：
 
@@ -922,9 +922,9 @@ $$
 
 ---
 
-# 九、为什么 MInference 不直接统一用 Vertical-Slash？
+## 九、为什么 MInference 不直接统一用 Vertical-Slash？
 
-## 23. 论文里 VS 的确占大多数 Head
+### 23. 论文里 VS 的确占大多数 Head
 
 附录 pattern distribution 显示，在某些搜索配置下：
 
@@ -962,7 +962,7 @@ $$
 
 ---
 
-## 24. 这告诉我们什么？
+### 24. 这告诉我们什么？
 
 神经网络 head specialization 并不是：
 
@@ -982,9 +982,9 @@ $$
 
 ---
 
-# 十、Kernel-Aware：为什么“同 FLOPs”也可能速度差很多？
+## 十、Kernel-Aware：为什么“同 FLOPs”也可能速度差很多？
 
-## 25. 论文比较四类 Sparse Pattern
+### 25. 论文比较四类 Sparse Pattern
 
 | Pattern | Spatial Structure | Indices | GPU Latency | Index Cost |
 |---|---|---|---|---|
@@ -997,7 +997,7 @@ $$
 
 ---
 
-## 26. 概念 FLOPs 与 Kernel FLOPs 有什么区别？
+### 26. 概念 FLOPs 与 Kernel FLOPs 有什么区别？
 
 假设理论上只想保留：
 
@@ -1046,7 +1046,7 @@ $$
 
 ---
 
-## 27. 为什么这叫 Kernel-Aware Search？
+### 27. 为什么这叫 Kernel-Aware Search？
 
 对于每一个 pattern family，先构造一组参数候选：
 
@@ -1087,9 +1087,9 @@ B 的 kernel 实际算 6%
 
 ---
 
-# 十一、Offline Search：先给每个 Head 选“结构类型”
+## 十一、Offline Search：先给每个 Head 选“结构类型”
 
-## 28. Offline Search 输入什么？
+### 28. Offline Search 输入什么？
 
 对某个 head，有：
 
@@ -1142,7 +1142,7 @@ $$
 
 ---
 
-## 29. 为什么不是只看 Attention Matrix Recall？
+### 29. 为什么不是只看 Attention Matrix Recall？
 
 因为最终真正进入后续网络的是：
 
@@ -1172,7 +1172,7 @@ $$
 
 ---
 
-## 30. Offline Search 要对每个 Prompt 重做吗？
+### 30. Offline Search 要对每个 Prompt 重做吗？
 
 不是。
 
@@ -1209,7 +1209,7 @@ Layer 1 Head 2
 
 ---
 
-## 31. Search 成本大吗？
+### 31. Search 成本大吗？
 
 论文附录报告：
 
@@ -1227,7 +1227,7 @@ Layer 1 Head 2
 
 ---
 
-## 32. 整个 Offline / Online 分离
+### 32. 整个 Offline / Online 分离
 
 ![教学解释图：Offline Online Head Policy](../../../figures/explainers/A054/02-offline-online-head-policy.svg)
 
@@ -1238,9 +1238,9 @@ Layer 1 Head 2
 
 这个设计是整篇论文真正的系统核心之一。
 
-# 十二、Online Vertical-Slash：为什么只看最后 64 个 Query 就能找全局重要位置？
+## 十二、Online Vertical-Slash：为什么只看最后 64 个 Query 就能找全局重要位置？
 
-## 33. Online 阶段真正缺的是什么？
+### 33. Online 阶段真正缺的是什么？
 
 Offline search 已经告诉某个 head：
 
@@ -1282,7 +1282,7 @@ $$
 
 ---
 
-## 34. Vertical-Slash 用最后一小段 Query 做 Probe
+### 34. Vertical-Slash 用最后一小段 Query 做 Probe
 
 论文默认：
 
@@ -1358,7 +1358,7 @@ $$
 
 ---
 
-## 35. 为什么偏偏用最后几个 Query？
+### 35. 为什么偏偏用最后几个 Query？
 
 Causal attention 中，第 $i$ 个 query 只能看到：
 
@@ -1395,7 +1395,7 @@ $$
 
 ---
 
-## 36. 这里有什么隐含假设？
+### 36. 这里有什么隐含假设？
 
 隐含假设：
 
@@ -1426,9 +1426,9 @@ $$
 
 ---
 
-# 十三、Vertical Indices 怎样从 Probe Matrix 得到？
+## 十三、Vertical Indices 怎样从 Probe Matrix 得到？
 
-## 37. 一列为什么代表一个 Key Token？
+### 37. 一列为什么代表一个 Key Token？
 
 $\hat A$ 中：
 
@@ -1479,7 +1479,7 @@ $$
 
 ---
 
-## 38. 一个简单例子
+### 38. 一个简单例子
 
 假设 4 个 probe query：
 
@@ -1512,9 +1512,9 @@ $$
 
 ---
 
-# 十四、Slash Indices 怎样得到？
+## 十四、Slash Indices 怎样得到？
 
-## 39. Diagonal 为什么对应 Relative Offset？
+### 39. Diagonal 为什么对应 Relative Offset？
 
 attention matrix 中：
 
@@ -1577,7 +1577,7 @@ $$
 
 ---
 
-## 40. Slash 不等于 Local Window
+### 40. Slash 不等于 Local Window
 
 local window 保留：
 
@@ -1614,7 +1614,7 @@ $$
 
 ---
 
-## 41. Vertical 与 Slash 怎样转成 GPU Sparse Format？
+### 41. Vertical 与 Slash 怎样转成 GPU Sparse Format？
 
 如果简单把：
 
@@ -1648,9 +1648,9 @@ sparse kernel
 
 ---
 
-# 十五、Block-Sparse Online Estimation：为什么 Mean Pooling 有用？
+## 十五、Block-Sparse Online Estimation：为什么 Mean Pooling 有用？
 
-## 42. 目标
+### 42. 目标
 
 如果某个 head offline 被判为 Block-Sparse：
 
@@ -1671,7 +1671,7 @@ $$
 
 ---
 
-## 43. 先把 Sequence 分块
+### 43. 先把 Sequence 分块
 
 block size：
 
@@ -1727,7 +1727,7 @@ $$
 
 ---
 
-## 44. Coarse Attention Matrix
+### 44. Coarse Attention Matrix
 
 计算：
 
@@ -1783,7 +1783,7 @@ $$
 
 ---
 
-## 45. 为什么 Mean-Pooled Q/K 的 Dot Product 有意义？
+### 45. 为什么 Mean-Pooled Q/K 的 Dot Product 有意义？
 
 看一个 block pair：
 
@@ -1826,7 +1826,7 @@ $$
 
 ---
 
-## 46. 但 Softmax 后还是精确的吗？
+### 46. 但 Softmax 后还是精确的吗？
 
 不是。
 
@@ -1865,7 +1865,7 @@ $$
 
 ---
 
-## 47. Top Blocks
+### 47. Top Blocks
 
 对 coarse matrix：
 
@@ -1902,9 +1902,9 @@ $$
 
 ---
 
-# 十六、A-shape Online 阶段为什么什么都不用估计？
+## 十六、A-shape Online 阶段为什么什么都不用估计？
 
-## 48. 因为它的 Sparse Geometry 是固定的
+### 48. 因为它的 Sparse Geometry 是固定的
 
 如果 head 已经被 offline 分类为 A-shape：
 
@@ -1939,11 +1939,11 @@ $$
 
 ---
 
-# 十七、三种 Pattern 的 Online Cost 对比
+## 十七、三种 Pattern 的 Online Cost 对比
 
-## 49. A-shape
+### 49. A-shape
 
-### Index cost
+#### Index cost
 
 $$
 O(1)
@@ -1951,7 +1951,7 @@ $$
 
 或几乎为 0。
 
-### Attention cost
+#### Attention cost
 
 大约：
 
@@ -1967,9 +1967,9 @@ $$
 
 ---
 
-## 50. Vertical-Slash
+### 50. Vertical-Slash
 
-### Estimation cost
+#### Estimation cost
 
 last-query probe：
 
@@ -1983,7 +1983,7 @@ $$
 q_p=64.
 $$
 
-### Sparse attention
+#### Sparse attention
 
 依赖保留 columns + slash blocks 的真实面积。
 
@@ -1991,9 +1991,9 @@ $$
 
 ---
 
-## 51. Block-Sparse
+### 51. Block-Sparse
 
-### Estimation cost
+#### Estimation cost
 
 coarse matmul：
 
@@ -2004,7 +2004,7 @@ O
 \right).
 $$
 
-### Sparse attention
+#### Sparse attention
 
 如果每个 query block 保留：
 
@@ -2035,9 +2035,9 @@ $$
 
 ---
 
-# 十八、Formal Mask Objective：MInference 真正在优化什么？
+## 十八、Formal Mask Objective：MInference 真正在优化什么？
 
-## 52. Dynamic Sparse Mask
+### 52. Dynamic Sparse Mask
 
 定义：
 
@@ -2109,7 +2109,7 @@ $$
 
 ---
 
-## 53. 两个互相冲突的优化目标
+### 53. 两个互相冲突的优化目标
 
 第一目标：
 
@@ -2144,7 +2144,7 @@ $$
 
 ---
 
-## 54. 为什么保留更多 Entry 不一定更优？
+### 54. 为什么保留更多 Entry 不一定更优？
 
 如果保留率提高：
 
@@ -2186,7 +2186,7 @@ $$
 
 ---
 
-## 55. 还有第三个隐藏变量：Index Cost
+### 55. 还有第三个隐藏变量：Index Cost
 
 某些非常聪明的动态 Top-K 方法可能产生很好的 sparse mask。
 
@@ -2224,9 +2224,9 @@ $$
 
 ---
 
-# 十九、为什么 Context 越长，MInference 越划算？
+## 十九、为什么 Context 越长，MInference 越划算？
 
-## 56. Dense Attention 的增长
+### 56. Dense Attention 的增长
 
 近似：
 
@@ -2238,7 +2238,7 @@ $$
 
 ---
 
-## 57. Index Estimator 的增长更慢
+### 57. Index Estimator 的增长更慢
 
 Vertical-Slash probe：
 
@@ -2290,7 +2290,7 @@ $$
 
 ---
 
-## 58. 为什么短 Context 反而可能不值得？
+### 58. 为什么短 Context 反而可能不值得？
 
 论文 limitation 明确指出：
 
@@ -2324,9 +2324,9 @@ $$
 
 ---
 
-# 二十、从 Amdahl's Law 看 MInference
+## 二十、从 Amdahl's Law 看 MInference
 
-## 59. 假设 Attention 占 90%
+### 59. 假设 Attention 占 90%
 
 原始 total time：
 
@@ -2381,7 +2381,7 @@ $$
 
 ---
 
-## 60. 再加 Index Overhead
+### 60. 再加 Index Overhead
 
 若 index build：
 
@@ -2417,9 +2417,9 @@ $$
 
 ---
 
-# 二十一、Sparse Kernel：选了 Index 后，真正怎样计算？
+## 二十一、Sparse Kernel：选了 Index 后，真正怎样计算？
 
-## 61. Block-Sparse FlashAttention
+### 61. Block-Sparse FlashAttention
 
 标准 FlashAttention 对 Q block：
 
@@ -2468,7 +2468,7 @@ $$
 
 ---
 
-## 62. Appendix 给出的近似 Speedup
+### 62. Appendix 给出的近似 Speedup
 
 论文写：
 
@@ -2520,9 +2520,9 @@ $$
 
 ---
 
-# 二十二、Vertical-Slash Kernel 为什么更复杂？
+## 二十二、Vertical-Slash Kernel 为什么更复杂？
 
-## 63. 两种 Geometry 混在一起
+### 63. 两种 Geometry 混在一起
 
 Vertical part：
 
@@ -2542,7 +2542,7 @@ GPU 最喜欢整 block。
 
 ---
 
-## 64. Slash 怎样转成 Block Range？
+### 64. Slash 怎样转成 Block Range？
 
 对某个 query tile：
 
@@ -2581,7 +2581,7 @@ block。
 
 ---
 
-## 65. Vertical Column 怎样处理？
+### 65. Vertical Column 怎样处理？
 
 vertical index：
 
@@ -2609,9 +2609,9 @@ $$
 
 ---
 
-# 二十三、为什么 Sparse Kernel 内仍然需要 Online Softmax？
+## 二十三、为什么 Sparse Kernel 内仍然需要 Online Softmax？
 
-## 66. Sparse Attention 仍然是 Softmax Attention
+### 66. Sparse Attention 仍然是 Softmax Attention
 
 对 selected set：
 
@@ -2651,7 +2651,7 @@ $$
 
 ---
 
-## 67. 两个 Sparse Tile 怎样合并？
+### 67. 两个 Sparse Tile 怎样合并？
 
 第一批 logits 最大值：
 
@@ -2714,11 +2714,11 @@ output numerator 同理。
 
 ---
 
-## 68. MInference 是 Exact Attention 吗？
+### 68. MInference 是 Exact Attention 吗？
 
 必须分两个层次说。
 
-### 给定 Sparse Mask 后
+#### 给定 Sparse Mask 后
 
 对：
 
@@ -2728,7 +2728,7 @@ $$
 
 内保留的 entries，kernel 会正确计算它们的 softmax attention。
 
-### 相对于原 Dense Attention
+#### 相对于原 Dense Attention
 
 不是 exact。
 
@@ -2758,9 +2758,9 @@ $$
 
 ---
 
-# 二十四、原论文 Framework 图
+## 二十四、原论文 Framework 图
 
-## 69. 三种 Pattern 怎样放进一个系统？
+### 69. 三种 Pattern 怎样放进一个系统？
 
 ![MInference 原论文 Framework](../../../figures/A054/fig-framework.svg)
 
@@ -2782,9 +2782,9 @@ Approximate Dense Attention Output
 
 ---
 
-# 二十五、Pattern Recall：为什么 Structured Pattern 比 Fine-Grained Top-K 更有效率？
+## 二十五、Pattern Recall：为什么 Structured Pattern 比 Fine-Grained Top-K 更有效率？
 
-## 70. 原论文 Pattern Recall 图
+### 70. 原论文 Pattern Recall 图
 
 ![MInference pattern recall vs kernel FLOPs](../../../figures/A054/fig-pattern-recall.svg)
 
@@ -2794,7 +2794,7 @@ Approximate Dense Attention Output
 
 ---
 
-## 71. 为什么 Fine-Grained Top-K 可能理论上更精确？
+### 71. 为什么 Fine-Grained Top-K 可能理论上更精确？
 
 如果你已经知道 dense attention matrix：
 
@@ -2810,7 +2810,7 @@ $$
 
 ---
 
-## 72. 但为什么系统上反而可能差？
+### 72. 但为什么系统上反而可能差？
 
 因为每一行的 index 都可能完全不规则：
 
@@ -2860,9 +2860,9 @@ MInference 则约束 sparsity 必须长得像：
 
 ---
 
-# 二十六、这是 Algorithm–Hardware Co-design
+## 二十六、这是 Algorithm–Hardware Co-design
 
-## 73. 如果只从算法角度优化
+### 73. 如果只从算法角度优化
 
 目标：
 
@@ -2877,7 +2877,7 @@ $$
 
 ---
 
-## 74. 如果只从硬件角度优化
+### 74. 如果只从硬件角度优化
 
 目标：
 
@@ -2887,7 +2887,7 @@ $$
 
 ---
 
-## 75. MInference 的折中
+### 75. MInference 的折中
 
 候选 pattern 本身就是：
 
@@ -2912,9 +2912,9 @@ $$
 这也是它比“attention 很 sparse，所以剪掉”更值得学习的地方。
 
 
-# 二十七、实验先看什么？先看 Static vs Dynamic
+## 二十七、实验先看什么？先看 Static vs Dynamic
 
-## 76. 最有因果意义的一项比较
+### 76. 最有因果意义的一项比较
 
 如果我们已经知道某个 head 属于 Vertical-Slash / Block-Sparse，
 
@@ -2952,7 +2952,7 @@ $$
 
 ---
 
-## 77. 这说明 Pattern Stable 与 Index Stable 是两回事
+### 77. 这说明 Pattern Stable 与 Index Stable 是两回事
 
 正确：
 
@@ -2983,9 +2983,9 @@ Vertical-Slash head 的“形状”可以稳定。
 
 ---
 
-# 二十八、Ablation：为什么三种 Pattern 都要保留？
+## 二十八、Ablation：为什么三种 Pattern 都要保留？
 
-## 78. LLaMA-3-8B-262K InfiniteBench
+### 78. LLaMA-3-8B-262K InfiniteBench
 
 完整 MInference：
 
@@ -3013,7 +3013,7 @@ $$
 
 ---
 
-## 79. KV Retrieval 暴露 Minority Head 的价值
+### 79. KV Retrieval 暴露 Minority Head 的价值
 
 完整：
 
@@ -3043,15 +3043,15 @@ $$
 
 ---
 
-## 80. Additional Ablation：Vertical 与 Slash 也不能随便删
+### 80. Additional Ablation：Vertical 与 Slash 也不能随便删
 
 论文附录继续拆 VS：
 
-### only vertical
+#### only vertical
 
 性能明显下降，尤其 retrieval。
 
-### only slash
+#### only slash
 
 保留更多整体性能。
 
@@ -3077,9 +3077,9 @@ $$
 
 ---
 
-# 二十九、InfiniteBench：为什么 Local Window Baseline 在 Retrieval 上崩？
+## 二十九、InfiniteBench：为什么 Local Window Baseline 在 Retrieval 上崩？
 
-## 81. StreamingLLM 的结构限制
+### 81. StreamingLLM 的结构限制
 
 StreamingLLM 主要保留：
 
@@ -3106,7 +3106,7 @@ target 不在 sparse mask 内。
 
 ---
 
-## 82. MInference 为什么能避免这类硬删除？
+### 82. MInference 为什么能避免这类硬删除？
 
 Vertical-Slash / Block-Sparse 会根据当前 prompt 动态估计：
 
@@ -3123,7 +3123,7 @@ Vertical-Slash / Block-Sparse 会根据当前 prompt 动态估计：
 
 ---
 
-## 83. InfiniteBench 结果怎样读？
+### 83. InfiniteBench 结果怎样读？
 
 论文表中，例如 LLaMA-3-8B-262K：
 
@@ -3165,7 +3165,7 @@ $$
 
 ---
 
-## 84. 为什么 Sparse 有时分数会略高于 Dense？
+### 84. 为什么 Sparse 有时分数会略高于 Dense？
 
 可能原因很多：
 
@@ -3193,9 +3193,9 @@ $$
 
 ---
 
-# 三十、RULER：Claimed Context 与 Effective Context 不是一回事
+## 三十、RULER：Claimed Context 与 Effective Context 不是一回事
 
-## 85. 什么叫 Claimed Context？
+### 85. 什么叫 Claimed Context？
 
 模型配置写：
 
@@ -3213,7 +3213,7 @@ $$
 
 ---
 
-## 86. 什么叫 Effective Context？
+### 86. 什么叫 Effective Context？
 
 RULER 用 task accuracy 测：
 
@@ -3229,7 +3229,7 @@ $$
 
 ---
 
-## 87. 一个有意思的结果
+### 87. 一个有意思的结果
 
 LLaMA-3-8B-262K dense：
 
@@ -3269,7 +3269,7 @@ $$
 
 ---
 
-## 88. 为什么 Sparse 可能偶尔提升 RULER？
+### 88. 为什么 Sparse 可能偶尔提升 RULER？
 
 一种可能直觉：
 
@@ -3285,9 +3285,9 @@ $$
 
 ---
 
-# 三十一、PG-19：Language Modeling 误差有多大？
+## 三十一、PG-19：Language Modeling 误差有多大？
 
-## 89. 为什么还需要 PPL？
+### 89. 为什么还需要 PPL？
 
 Needle / retrieval 主要测：
 
@@ -3303,7 +3303,7 @@ $$
 
 ---
 
-## 90. 论文报告
+### 90. 论文报告
 
 对 100K prompt：
 
@@ -3319,7 +3319,7 @@ MInference 相比 full attention：
 
 ---
 
-## 91. 但 PPL 与 Long Reasoning 仍然不是一回事
+### 91. 但 PPL 与 Long Reasoning 仍然不是一回事
 
 和 DCA 一样：
 
@@ -3337,9 +3337,9 @@ PPL 主要说明：
 
 ---
 
-# 三十二、Needle in a Haystack：1M 还能找到信息吗？
+## 三十二、Needle in a Haystack：1M 还能找到信息吗？
 
-## 92. 原论文 1M Needle 图
+### 92. 原论文 1M Needle 图
 
 ![MInference 1M Needle](../../../figures/A054/fig-needle-1m.svg)
 
@@ -3355,7 +3355,7 @@ Needle 正好测试这个风险。
 
 ---
 
-## 93. 为什么 StreamingLLM 会出现明显空洞？
+### 93. 为什么 StreamingLLM 会出现明显空洞？
 
 如果 needle 不在：
 
@@ -3374,9 +3374,9 @@ MInference dynamic index 能根据 attention probe 发现：
 
 ---
 
-# 三十三、Latency：Context 越长，Speedup 越大
+## 三十三、Latency：Context 越长，Speedup 越大
 
-## 94. 原论文 End-to-End Speedup
+### 94. 原论文 End-to-End Speedup
 
 ![MInference latency speedup](../../../figures/A054/fig-latency-gain.svg)
 
@@ -3403,7 +3403,7 @@ $$
 
 ---
 
-## 95. 为什么 Speedup 不是常数？
+### 95. 为什么 Speedup 不是常数？
 
 Dense：
 
@@ -3440,9 +3440,9 @@ $$
 
 ---
 
-# 三十四、实际 Kernel Sparsity 与理论 Mask Sparsity
+## 三十四、实际 Kernel Sparsity 与理论 Mask Sparsity
 
-## 96. 为什么还要单独测 Kernel Sparsity？
+### 96. 为什么还要单独测 Kernel Sparsity？
 
 理论 mask 说：
 
@@ -3464,7 +3464,7 @@ $$
 
 ---
 
-## 97. 论文观察
+### 97. 论文观察
 
 context > 200K 后：
 
@@ -3496,9 +3496,9 @@ $$
 
 ---
 
-# 三十五、Latency Breakdown：Index Build 到底占多少？
+## 三十五、Latency Breakdown：Index Build 到底占多少？
 
-## 98. 原论文详细 latency 图
+### 98. 原论文详细 latency 图
 
 ![MInference detailed latency](../../../figures/A054/fig-latency-details.svg)
 
@@ -3524,7 +3524,7 @@ $$
 
 ---
 
-## 99. 为什么 10K 时 Index Cost 可能到 30%？
+### 99. 为什么 10K 时 Index Cost 可能到 30%？
 
 当：
 
@@ -3563,9 +3563,9 @@ else:
 
 ---
 
-# 三十六、三种 Sparse Kernel 本身速度也不同
+## 三十六、三种 Sparse Kernel 本身速度也不同
 
-## 100. Appendix Microbenchmark
+### 100. Appendix Microbenchmark
 
 论文在 1M context 下报告：
 
@@ -3577,7 +3577,7 @@ else:
 
 ---
 
-## 101. 为什么 Block-Sparse 最容易跑快？
+### 101. 为什么 Block-Sparse 最容易跑快？
 
 因为它最贴合 GPU tile：
 
@@ -3593,7 +3593,7 @@ $$
 
 ---
 
-## 102. 为什么 Vertical-Slash 慢一点？
+### 102. 为什么 Vertical-Slash 慢一点？
 
 它需要同时处理：
 
@@ -3616,9 +3616,9 @@ $$
 
 ---
 
-# 三十七、为什么 MInference 只做 Prefill Sparse，Decode 保持 Dense？
+## 三十七、为什么 MInference 只做 Prefill Sparse，Decode 保持 Dense？
 
-## 103. Decode 本身已经不是 $L^2$
+### 103. Decode 本身已经不是 $L^2$
 
 单 decode token：
 
@@ -3650,7 +3650,7 @@ $$
 
 ---
 
-## 104. Prefill 才是最肥的目标
+### 104. Prefill 才是最肥的目标
 
 Prefill：
 
@@ -3680,7 +3680,7 @@ $$
 
 ---
 
-## 105. 这和 KV Cache Compression 的目标不同
+### 105. 这和 KV Cache Compression 的目标不同
 
 KV compression：
 
@@ -3706,9 +3706,9 @@ SnapKV / ShadowKV / other KV compression
 
 ---
 
-# 三十八、为什么 MInference 与 DCA 完全不是一回事？
+## 三十八、为什么 MInference 与 DCA 完全不是一回事？
 
-## 106. DCA 不减少 Pair Count
+### 106. DCA 不减少 Pair Count
 
 [DCA](A053-dual-chunk-attention.md) 仍然让 query 访问所有历史 content key。
 
@@ -3726,7 +3726,7 @@ $$
 
 ---
 
-## 107. MInference 真正删除大量 Pair
+### 107. MInference 真正删除大量 Pair
 
 MInference 构造：
 
@@ -3748,7 +3748,7 @@ $$
 
 ---
 
-## 108. 两者为什么还能组合？
+### 108. 两者为什么还能组合？
 
 因为 DCA / YaRN 决定：
 
@@ -3776,9 +3776,9 @@ $$
 
 ---
 
-# 三十九、为什么 MInference 与 YaRN 也不是替代关系？
+## 三十九、为什么 MInference 与 YaRN 也不是替代关系？
 
-## 109. YaRN 解决的是 Position OOD
+### 109. YaRN 解决的是 Position OOD
 
 [YaRN](../03-transformer/A018-yarn.md) 调整：
 
@@ -3796,7 +3796,7 @@ pair 数。
 
 ---
 
-## 110. MInference 不会自动让模型支持更长 RoPE
+### 110. MInference 不会自动让模型支持更长 RoPE
 
 如果一个 4K model：
 
@@ -3812,9 +3812,9 @@ MInference 就算把 compute 降低 100×：
 
 ---
 
-# 四十、把 Qwen2.5 的 1M Pipeline 再走一次
+## 四十、把 Qwen2.5 的 1M Pipeline 再走一次
 
-## 111. 第一步：Progressive Long-Context Training
+### 111. 第一步：Progressive Long-Context Training
 
 Qwen2.5-Turbo 训练：
 
@@ -3832,7 +3832,7 @@ $$
 
 ---
 
-## 112. 第二步：YaRN + DCA
+### 112. 第二步：YaRN + DCA
 
 外推到：
 
@@ -3842,17 +3842,17 @@ $$
 
 其中：
 
-### YaRN
+#### YaRN
 
 处理 position-frequency extrapolation。
 
-### DCA
+#### DCA
 
 处理 chunk-wise relative-position relation。
 
 ---
 
-## 113. 第三步：MInference-derived Sparse Attention
+### 113. 第三步：MInference-derived Sparse Attention
 
 即使模型可以逻辑上接收：
 
@@ -3879,11 +3879,11 @@ attention pairs。
 
 ---
 
-## 114. 为什么 Qwen 的 12.5× 与 MInference 论文 10× 不能混在一起？
+### 114. 为什么 Qwen 的 12.5× 与 MInference 论文 10× 不能混在一起？
 
 它们来自不同系统：
 
-### MInference paper
+#### MInference paper
 
 - 模型；
 - GPU；
@@ -3893,7 +3893,7 @@ attention pairs。
 
 有自己的实验条件。
 
-### Qwen2.5-Turbo
+#### Qwen2.5-Turbo
 
 是在阿里自己的 serving / long-context stack 中：
 
@@ -3911,9 +3911,9 @@ attention pairs。
 
 ---
 
-# 四十一、为什么 95% Sparse 不意味着只保留 5% Token？
+## 四十一、为什么 95% Sparse 不意味着只保留 5% Token？
 
-## 115. Attention Sparsity 是二维的
+### 115. Attention Sparsity 是二维的
 
 mask：
 
@@ -3945,7 +3945,7 @@ $$
 
 ---
 
-## 116. 这也是为什么 KV Cache 还在
+### 116. 这也是为什么 KV Cache 还在
 
 即使某个 query 不关注某些 key：
 
@@ -3961,9 +3961,9 @@ $$
 
 ---
 
-# 四十二、为什么 Dynamic Sparse Index 本身是一个 Prediction Problem？
+## 四十二、为什么 Dynamic Sparse Index 本身是一个 Prediction Problem？
 
-## 117. Dense Attention 是 Teacher
+### 117. Dense Attention 是 Teacher
 
 真正想知道：
 
@@ -3997,7 +3997,7 @@ $$
 
 ---
 
-## 118. 为什么不训练一个 Neural Predictor？
+### 118. 为什么不训练一个 Neural Predictor？
 
 可以。
 
@@ -4027,9 +4027,9 @@ MInference 选择：
 
 ---
 
-# 四十三、MInference 的一个非常值得学的系统原则
+## 四十三、MInference 的一个非常值得学的系统原则
 
-## 119. 不要预测完整目标，只预测“够执行”的结构
+### 119. 不要预测完整目标，只预测“够执行”的结构
 
 如果目标是恢复完整：
 
@@ -4061,9 +4061,9 @@ $$
 
 ---
 
-# 四十四、为什么 Offline Pattern Search 只用一个 Sample 仍可能泛化？
+## 四十四、为什么 Offline Pattern Search 只用一个 Sample 仍可能泛化？
 
-## 120. 因为 Search 的对象不是具体 Token Index
+### 120. 因为 Search 的对象不是具体 Token Index
 
 offline 决定：
 
@@ -4081,7 +4081,7 @@ online 才决定：
 
 ---
 
-## 121. 但这个结论不能无限外推
+### 121. 但这个结论不能无限外推
 
 换：
 
@@ -4101,9 +4101,9 @@ head behavior 可能变化。
 
 ---
 
-# 四十五、MInference 是否需要 Fine-Tuning？
+## 四十五、MInference 是否需要 Fine-Tuning？
 
-## 122. 不需要 Weight Update
+### 122. 不需要 Weight Update
 
 论文方法不做：
 
@@ -4117,7 +4117,7 @@ $$
 
 ---
 
-## 123. 但绝不是 Zero-Preparation
+### 123. 但绝不是 Zero-Preparation
 
 需要：
 
@@ -4142,9 +4142,9 @@ $$
 
 ---
 
-# 四十六、为什么 Short Context 不应该强制使用 MInference？
+## 四十六、为什么 Short Context 不应该强制使用 MInference？
 
-## 124. Total Latency
+### 124. Total Latency
 
 写成：
 
@@ -4182,7 +4182,7 @@ $$
 
 ---
 
-## 125. 因此 Runtime 应该是 Adaptive 的
+### 125. 因此 Runtime 应该是 Adaptive 的
 
 合理 serving policy：
 
@@ -4210,9 +4210,9 @@ $$
 
 ---
 
-# 四十七、为什么 Sparse Budget 不能越低越好？
+## 四十七、为什么 Sparse Budget 不能越低越好？
 
-## 126. 更高 Sparsity 的风险
+### 126. 更高 Sparsity 的风险
 
 论文 limitation 明确：
 
@@ -4228,7 +4228,7 @@ $$
 
 ---
 
-## 127. 所以 Sparse Budget 是一个 Quality Knob
+### 127. 所以 Sparse Budget 是一个 Quality Knob
 
 可以把服务目标写成：
 
@@ -4259,9 +4259,9 @@ $$
 
 ---
 
-# 四十八、为什么 MInference 的 Pattern Search 要看 Kernel FLOPs，而不是 Wall Time？
+## 四十八、为什么 MInference 的 Pattern Search 要看 Kernel FLOPs，而不是 Wall Time？
 
-## 128. Search 时直接测 Wall Time 不是更真实吗？
+### 128. Search 时直接测 Wall Time 不是更真实吗？
 
 理论上可以。
 
@@ -4289,9 +4289,9 @@ kernel FLOPs / structured cost model 更稳定。
 
 ---
 
-# 四十九、一个值得注意的命名：Million-tokens Inference
+## 四十九、一个值得注意的命名：Million-tokens Inference
 
-## 129. 它不是只服务 1M
+### 129. 它不是只服务 1M
 
 MInference 可以用在：
 
@@ -4310,9 +4310,9 @@ MInference 可以用在：
 
 ---
 
-# 五十、与 DCA 相比，MInference 终于真正改变 Complexity 了吗？
+## 五十、与 DCA 相比，MInference 终于真正改变 Complexity 了吗？
 
-## 130. Dense
+### 130. Dense
 
 $$
 O(L^2d).
@@ -4320,7 +4320,7 @@ $$
 
 ---
 
-## 131. A-shape
+### 131. A-shape
 
 如果 global/local width 固定：
 
@@ -4330,7 +4330,7 @@ $$
 
 ---
 
-## 132. VS
+### 132. VS
 
 如果 vertical/slash budget不随 L 线性增长：
 
@@ -4346,7 +4346,7 @@ $$
 
 ---
 
-## 133. Block-Sparse
+### 133. Block-Sparse
 
 固定每个 query block 的：
 
@@ -4364,7 +4364,7 @@ $$
 
 ---
 
-## 134. 但 Online Estimation 也要算
+### 134. 但 Online Estimation 也要算
 
 因此严格系统复杂度：
 
@@ -4396,9 +4396,9 @@ $$
 
 ---
 
-# 五十一、为什么 Block-Sparse Estimator 仍是 Quadratic，却没问题？
+## 五十一、为什么 Block-Sparse Estimator 仍是 Quadratic，却没问题？
 
-## 135. 因为常数缩小 4096 倍
+### 135. 因为常数缩小 4096 倍
 
 $$
 B=64.
@@ -4438,9 +4438,9 @@ $$
 
 ---
 
-# 五十二、MInference 对 Head Specialization 给了什么启示？
+## 五十二、MInference 对 Head Specialization 给了什么启示？
 
-## 136. Attention Head 并不是同质的
+### 136. Attention Head 并不是同质的
 
 不同 heads：
 
@@ -4454,7 +4454,7 @@ MInference 通过 sparse pattern 侧面观察到了这种异质性。
 
 ---
 
-## 137. 但 Pattern 不等于可解释语义标签
+### 137. 但 Pattern 不等于可解释语义标签
 
 不能说：
 
@@ -4474,9 +4474,9 @@ pattern 只描述：
 
 ---
 
-# 五十三、MInference 与 Attention Sink
+## 五十三、MInference 与 Attention Sink
 
-## 138. A-shape 左侧 Vertical Band
+### 138. A-shape 左侧 Vertical Band
 
 早期 token 经常被大量 queries attention。
 
@@ -4492,9 +4492,9 @@ MInference 并没有声称重新发现这个全部现象。
 
 ---
 
-# 五十四、MInference 与 Longformer / BigBird 的差别
+## 五十四、MInference 与 Longformer / BigBird 的差别
 
-## 139. Fixed Sparse Pattern
+### 139. Fixed Sparse Pattern
 
 Longformer / BigBird 通常在 architecture / training 阶段使用预定义 sparsity：
 
@@ -4507,7 +4507,7 @@ Longformer / BigBird 通常在 architecture / training 阶段使用预定义 spa
 
 ---
 
-## 140. MInference
+### 140. MInference
 
 目标是：
 
@@ -4525,15 +4525,15 @@ Longformer / BigBird 通常在 architecture / training 阶段使用预定义 spa
 
 ---
 
-# 五十五、MInference 与 Top-K / SparQ 的关系
+## 五十五、MInference 与 Top-K / SparQ 的关系
 
-## 141. Fine-Grained Dynamic Sparse 的优势
+### 141. Fine-Grained Dynamic Sparse 的优势
 
 可以更精确选择 important entries。
 
 ---
 
-## 142. 缺点
+### 142. 缺点
 
 为了找到这些 fine-grained indices：
 
@@ -4553,9 +4553,9 @@ $$
 
 ---
 
-# 五十六、为什么论文最终要用 Triton + PIT + FlashAttention？
+## 五十六、为什么论文最终要用 Triton + PIT + FlashAttention？
 
-## 143. Triton
+### 143. Triton
 
 用来写：
 
@@ -4570,7 +4570,7 @@ $$
 
 ---
 
-## 144. FlashAttention
+### 144. FlashAttention
 
 提供：
 
@@ -4582,7 +4582,7 @@ Block-Sparse kernel建立在这个执行模式上。
 
 ---
 
-## 145. PIT
+### 145. PIT
 
 主要帮助：
 
@@ -4597,9 +4597,9 @@ Block-Sparse kernel建立在这个执行模式上。
 
 ---
 
-# 五十七、论文最重要的 System Formula
+## 五十七、论文最重要的 System Formula
 
-## 146. Total Speedup 的第一性原理
+### 146. Total Speedup 的第一性原理
 
 设 Dense prefill：
 
@@ -4651,7 +4651,7 @@ $$
 
 ---
 
-## 147. Context 越长
+### 147. Context 越长
 
 $$
 T_A
@@ -4676,7 +4676,7 @@ $$
 
 ---
 
-## 148. Context 很短
+### 148. Context 很短
 
 $$
 T_A
@@ -4700,7 +4700,7 @@ $$
 
 ---
 
-## 149. 其他层越来越占比
+### 149. 其他层越来越占比
 
 即使 attention 无限快：
 
@@ -4722,9 +4722,9 @@ $$
 
 ---
 
-# 五十八、MInference 的 Evidence Boundary
+## 五十八、MInference 的 Evidence Boundary
 
-## 150. 96.8% Attention Mass
+### 150. 96.8% Attention Mass
 
 支持：
 
@@ -4736,7 +4736,7 @@ $$
 
 ---
 
-## 151. Pattern Stability
+### 151. Pattern Stability
 
 支持：
 
@@ -4748,7 +4748,7 @@ $$
 
 ---
 
-## 152. 10× Speedup
+### 152. 10× Speedup
 
 支持：
 
@@ -4760,7 +4760,7 @@ $$
 
 ---
 
-## 153. Benchmark Near-Dense Accuracy
+### 153. Benchmark Near-Dense Accuracy
 
 支持：
 
@@ -4772,7 +4772,7 @@ $$
 
 ---
 
-## 154. 1M Needle
+### 154. 1M Needle
 
 支持：
 
@@ -4784,7 +4784,7 @@ $$
 
 ---
 
-## 155. Training-Free
+### 155. Training-Free
 
 支持：
 
@@ -4796,9 +4796,9 @@ $$
 
 ---
 
-# 五十九、论文的核心论证链
+## 五十九、论文的核心论证链
 
-## 156. Claim 1：Long-context Prefill 的核心瓶颈是 Attention
+### 156. Claim 1：Long-context Prefill 的核心瓶颈是 Attention
 
 证据：
 
@@ -4807,7 +4807,7 @@ $$
 
 ---
 
-## 157. Claim 2：Long Attention 高度 Sparse
+### 157. Claim 2：Long Attention 高度 Sparse
 
 证据：
 
@@ -4816,7 +4816,7 @@ $$
 
 ---
 
-## 158. Claim 3：Sparse Indices 是 Dynamic 的
+### 158. Claim 3：Sparse Indices 是 Dynamic 的
 
 证据：
 
@@ -4825,7 +4825,7 @@ $$
 
 ---
 
-## 159. Claim 4：Dynamic Sparsity 存在 Structured Pattern Families
+### 159. Claim 4：Dynamic Sparsity 存在 Structured Pattern Families
 
 证据：
 
@@ -4836,7 +4836,7 @@ $$
 
 ---
 
-## 160. Claim 5：Structured Sparse Pattern 能真正映射到 Fast GPU Kernel
+### 160. Claim 5：Structured Sparse Pattern 能真正映射到 Fast GPU Kernel
 
 证据：
 
@@ -4849,93 +4849,93 @@ $$
 
 ---
 
-# 六十、最容易学错的十六个地方
+## 六十、最容易学错的十六个地方
 
-## 错法 1：MInference 用来扩大 RoPE Context
+### 错法 1：MInference 用来扩大 RoPE Context
 
 错误。
 
 它主要加速已经具备 long-context 能力的模型。
 
-## 错法 2：Attention Sparse，所以直接固定 Top-K Index
+### 错法 2：Attention Sparse，所以直接固定 Top-K Index
 
 错误。
 
 indices 是 input-dependent。
 
-## 错法 3：Pattern Dynamic，所以每次都要重新搜索 Pattern Type
+### 错法 3：Pattern Dynamic，所以每次都要重新搜索 Pattern Type
 
 错误。
 
 pattern family 主要 offline per-head 确定；online 更新具体 indices。
 
-## 错法 4：96.8% = 所有场景都能删 96.8%
+### 错法 4：96.8% = 所有场景都能删 96.8%
 
 错误。
 
 是特定实验统计。
 
-## 错法 5：Top-K 越细粒度一定越快
+### 错法 5：Top-K 越细粒度一定越快
 
 错误。
 
 GPU irregular sparse execution 可能很差。
 
-## 错法 6：Block-Sparse 就是把 Q/K 压缩后直接做最终 Attention
+### 错法 6：Block-Sparse 就是把 Q/K 压缩后直接做最终 Attention
 
 错误。
 
 pooling 只负责选 block；最终使用原 Q/K/V。
 
-## 错法 7：last 64 Q 是数学上充分统计量
+### 错法 7：last 64 Q 是数学上充分统计量
 
 错误。
 
 是低成本 empirical probe。
 
-## 错法 8：Sparse Kernel 内 Softmax 是近似的
+### 错法 8：Sparse Kernel 内 Softmax 是近似的
 
 不完全准确。
 
 在保留的 entries 上可使用精确 online softmax；近似来自 mask omission。
 
-## 错法 9：95% Kernel Sparsity = 20× End-to-End Speedup
+### 错法 9：95% Kernel Sparsity = 20× End-to-End Speedup
 
 错误。
 
 还有 index overhead、FFN、projection 等。
 
-## 错法 10：MInference 加速 Decode
+### 错法 10：MInference 加速 Decode
 
 论文主方法针对 prefill；decode保留 dense。
 
-## 错法 11：Prefill Sparse 后 KV Cache 也自动压缩
+### 错法 11：Prefill Sparse 后 KV Cache 也自动压缩
 
 错误。
 
 这是不同问题。
 
-## 错法 12：MInference 与 DCA 是二选一
+### 错法 12：MInference 与 DCA 是二选一
 
 错误。
 
 一个改 pair selection，一个改 relative-position organization。
 
-## 错法 13：Sparse Benchmark 略高于 Dense，说明 Sparse 更强
+### 错法 13：Sparse Benchmark 略高于 Dense，说明 Sparse 更强
 
 证据不足。
 
-## 错法 14：Short Prompt 也应该启用 Sparse
+### 错法 14：Short Prompt 也应该启用 Sparse
 
 不一定。
 
 可能没有 break-even。
 
-## 错法 15：Training-Free = No Engineering
+### 错法 15：Training-Free = No Engineering
 
 完全错误。
 
-## 错法 16：Qwen2.5 的 1M 只靠 MInference
+### 错法 16：Qwen2.5 的 1M 只靠 MInference
 
 错误。
 
@@ -4943,7 +4943,7 @@ pooling 只负责选 block；最终使用原 Q/K/V。
 
 ---
 
-# 六十一、把整篇 MInference 压成一条因果链
+## 六十一、把整篇 MInference 压成一条因果链
 
 ~~~{mermaid}
 flowchart TD
@@ -4964,33 +4964,33 @@ flowchart TD
 
 ---
 
-# 六十二、一句话记忆
+## 六十二、一句话记忆
 
 > **MInference 的关键不是“Attention 很稀疏”，而是发现“Head 的稀疏几何类型相对稳定、具体索引随输入变化”，从而把 expensive dynamic Top-K 问题拆成 offline pattern selection + cheap online index prediction，再把选择结果映射到真正 GPU 友好的结构化 sparse kernels。**
 
 ---
 
-# 六十三、从 Qwen2.5 回看 Long-Context 技术栈
+## 六十三、从 Qwen2.5 回看 Long-Context 技术栈
 
 现在可以把 [Qwen2.5](../../B/05-moe-complete-llm/B012-qwen2.5.md) 中容易混成一句话的长上下文能力彻底拆开。
 
-## Layer 1：模型真的训练过长序列吗？
+### Layer 1：模型真的训练过长序列吗？
 
 Progressive long-context training。
 
-## Layer 2：超训练长度后位置怎么表达？
+### Layer 2：超训练长度后位置怎么表达？
 
 [YaRN](../03-transformer/A018-yarn.md)。
 
-## Layer 3：不同距离 query-key relation 怎么组织？
+### Layer 3：不同距离 query-key relation 怎么组织？
 
 [Dual Chunk Attention](A053-dual-chunk-attention.md)。
 
-## Layer 4：百万 prompt 的 full prefill 怎么跑得动？
+### Layer 4：百万 prompt 的 full prefill 怎么跑得动？
 
 MInference。
 
-## Layer 5：Decode 历史 KV 怎么省？
+### Layer 5：Decode 历史 KV 怎么省？
 
 GQA / MLA / KV-cache compression。
 
@@ -5014,7 +5014,7 @@ $$
 
 ---
 
-# 六十四、下一步：FlashAttention 已经成为真正阻塞依赖
+## 六十四、下一步：FlashAttention 已经成为真正阻塞依赖
 
 读完 DCA 和 MInference，有一个 system node 已经反复出现：
 
@@ -5038,7 +5038,7 @@ $$
 
 ---
 
-# 六十五、最终自检
+## 六十五、最终自检
 
 读完 MInference，至少应该能回答：
 

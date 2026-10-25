@@ -1,11 +1,13 @@
+# Batch Normalization：算法、反向传播与机制解释边界
+
 > **V2 重写 · A004 / Paperlist 第 4 篇**  
 > Sergey Ioffe & Christian Szegedy, [*Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift*](https://arxiv.org/abs/1502.03167)，ICML 2015。本文以 [原论文 PDF](https://arxiv.org/pdf/1502.03167) 为主线，并将 arXiv 源文档中的 Figure 1/2 原始图形资产整理进 `figures/A004/`；来源映射见 [figure_manifests/A004.json](../../../figure_manifests/A004.json)。
 >
 > **机制解释边界**：原作者把 BN 的主要动机描述为缓解 *internal covariate shift*（ICS）。这是理解 2015 论文行文必须保留的历史语境，但不应把它写成已经被后续研究唯一确认的因果机制。Santurkar 等 2018 的 [后续研究](https://arxiv.org/abs/1805.11604) 对“稳定中间激活分布就是主要原因”的解释提出了挑战，并把注意力转向损失/梯度的平滑性。本文因此严格分开：**BN 算法做了什么**、**原作者当时怎样解释它**、**后续证据怎样修正解释**。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
-## 1. BatchNorm 不是优化器，而是进入前向函数的一层运算
+### 1. BatchNorm 不是优化器，而是进入前向函数的一层运算
 
 Adam/AdamW 是：
 
@@ -43,7 +45,7 @@ $$
 
 它不是一个在 `optimizer.step()` 中才出现的技巧。
 
-## 2. 原论文的问题链条
+### 2. 原论文的问题链条
 
 2015 年作者面对的训练直觉可以沿这条链读：
 
@@ -71,7 +73,7 @@ Batch Normalization
 
 **主要类型：A 原始方法论文。** 它提出一种可嵌入多类网络的标准化层，而不是一份固定参数量模型报告。
 
-## 3. 从全白化退到逐特征归一化，不是“少做一点”这么简单
+### 3. 从全白化退到逐特征归一化，不是“少做一点”这么简单
 
 完整白化对随机向量 $x\in\mathbb R^D$ 可写成
 
@@ -104,7 +106,7 @@ BN 的关键简化是：**不试图消掉不同 feature 之间的协方差，只
 
 这牺牲了完整白化，但得到可扩展、可微、容易插入深层网络的模块。
 
-## 4. 技术树定位
+### 4. 技术树定位
 
 ~~~text
 神经网络训练
@@ -126,9 +128,9 @@ BN 与 LayerNorm/RMSNorm 不能只说成“公式差不多”。最关键的分�
 
 *教学解释图｜训练期 batch statistics、仿射变换与推理期 running statistics 构成两套不同的数据路径。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
-## 1. 全连接场景：对哪个轴统计？
+### 1. 全连接场景：对哪个轴统计？
 
 设一层输出
 
@@ -169,7 +171,7 @@ $$
 
 BN 不改变特征维度。
 
-## 2. 卷积场景：为什么不是只对 $B$ 个数求均值？
+### 2. 卷积场景：为什么不是只对 $B$ 个数求均值？
 
 若卷积输出
 
@@ -230,7 +232,7 @@ $$
 
 不是 $[B,C,H,W]$。
 
-## 3. 训练与推理不是同一个统计过程
+### 3. 训练与推理不是同一个统计过程
 
 | 内容 | Training | Inference |
 |---|---|---|
@@ -247,7 +249,7 @@ $$
 
 训练时，同一批中的其他样本改变，会改变本样本的 $\mu_{\mathcal B},\sigma_{\mathcal B}^2$，所以输出也会改变。这种**跨样本依赖**是 BN 的结构性质，不是实现 bug。
 
-## 4. 为什么 $\gamma,\beta$ 必须存在？
+### 4. 为什么 $\gamma,\beta$ 必须存在？
 
 如果永远强制
 
@@ -273,9 +275,9 @@ $$
 
 因此 BN 的目标不是把所有层永远钉死在“均值 0、方差 1”的最终表示，而是提供一个**更容易优化的参数化接口**。
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
-## 1. 原论文 Algorithm 1 的真实数据流
+### 1. 原论文 Algorithm 1 的真实数据流
 
 对一个 minibatch
 
@@ -332,7 +334,7 @@ flowchart TD
 
 原论文通常把 BN 放在线性/卷积变换之后、非线性之前。现代架构可能改变 normalization 的位置，但不能回写成本文原始配置。
 
-## 2. Figure 1(a)：先看训练速度，不要把横轴误读成 epoch
+### 2. Figure 1(a)：先看训练速度，不要把横轴误读成 epoch
 
 ![原论文 Figure 1(a)：MNIST 网络在有无 BatchNorm 时的验证准确率](../../../figures/A004/fig1a-mnist-accuracy.svg)
 
@@ -348,7 +350,7 @@ flowchart TD
 
 所以作者紧接着放 Figure 1(b)/(c)，转向**内部激活统计**。
 
-## 3. Figure 1(b)：没有 BN，sigmoid 输入的分位数不断漂移
+### 3. Figure 1(b)：没有 BN，sigmoid 输入的分位数不断漂移
 
 ![原论文 Figure 1(b)：没有 BN 时某个 sigmoid 输入分布的分位数随训练变化](../../../figures/A004/fig1b-without-bn.svg)
 
@@ -362,7 +364,7 @@ flowchart TD
 
 这与论文定义的 ICS 叙事形成视觉对应。
 
-## 4. Figure 1(c)：有 BN，分位数更稳定
+### 4. Figure 1(c)：有 BN，分位数更稳定
 
 ![原论文 Figure 1(c)：加入 BN 后同类 sigmoid 输入的分位数更稳定](../../../figures/A004/fig1c-with-bn.svg)
 
@@ -388,7 +390,7 @@ flowchart TD
 
 后续研究正是从这里继续追问。
 
-## 5. Figure 2：BN-Baseline 与 BN-x5 不是同一种消融
+### 5. Figure 2：BN-Baseline 与 BN-x5 不是同一种消融
 
 ![原论文 Figure 2：Inception 与 BN-Inception 的 ImageNet 验证准确率随训练步骤变化](../../../figures/A004/fig2-inception-compare.svg)
 
@@ -416,9 +418,9 @@ $$
 
 如果想讨论“仅插 BN”的独立效果，更合理对照是 Inception vs BN-Baseline，而不是直接拿 BN-x5。
 
-# 关键技术
+## 关键技术
 
-## 1. 为什么不能把 normalization 当成训练前一次性 preprocessing？
+### 1. 为什么不能把 normalization 当成训练前一次性 preprocessing？
 
 对原始输入图片做标准化，统计量固定，当然可以在训练前完成。
 
@@ -448,11 +450,11 @@ $$
 
 因为 $\mu$ 和 $\sigma^2$ 也依赖所有 $x_j$。
 
-## 2. 从全白化到标量 BN 的两步简化
+### 2. 从全白化到标量 BN 的两步简化
 
 原论文 §3 明确做两次近似。
 
-### 简化 1：不做完整 covariance whitening
+#### 简化 1：不做完整 covariance whitening
 
 对每个标量 feature 单独归一化：
 
@@ -465,7 +467,7 @@ $$
 
 这样不处理不同 feature 之间的 covariance，但复杂度从矩阵操作降为逐特征归约。
 
-### 简化 2：不用完整数据集统计，改用 minibatch
+#### 简化 2：不用完整数据集统计，改用 minibatch
 
 如果每一步都要遍历全训练集计算 $\mu,\sigma^2$，就无法进行高效 SGD。
 
@@ -481,7 +483,7 @@ $$
 
 BN 的设计不是“完美标准化”，而是**在可训练性、计算成本和统计精度之间做工程折中**。
 
-## 3. 为什么 $\epsilon$ 不只是“防止除零”？
+### 3. 为什么 $\epsilon$ 不只是“防止除零”？
 
 归一化分母：
 
@@ -509,7 +511,7 @@ $$
 
 所以它既是数值稳定项，也会在低方差通道中改变实际缩放。
 
-## 4. 从链式法则完整推导 BN 的输入梯度
+### 4. 从链式法则完整推导 BN 的输入梯度
 
 对单个 feature 的 $m$ 个值，定义
 
@@ -592,7 +594,7 @@ $$
 \sum_i d_i.
 $$
 
-### 对方差求导
+#### 对方差求导
 
 因为
 
@@ -622,7 +624,7 @@ $$
 \sum_i a_iq_i.
 $$
 
-### 对均值求导
+#### 对均值求导
 
 $q_i=x_i-\mu$，因此直接项给出
 
@@ -676,7 +678,7 @@ $$
 }.
 $$
 
-### 对某个 $x_j$ 求导
+#### 对某个 $x_j$ 求导
 
 首先
 
@@ -741,7 +743,7 @@ $$
 
 所以 BN 的 backward 天生是**跨样本耦合的**。
 
-## 5. 一个可以手算的前向例子
+### 5. 一个可以手算的前向例子
 
 取单 feature 的 minibatch：
 
@@ -808,7 +810,7 @@ $$
 
 这说明 BN 不是“标准化后就结束”。可学习 $\gamma,\beta$ 会立即把标准化坐标重新映射到任务需要的工作区间。
 
-## 6. 为什么极小 effective batch 可能退化？
+### 6. 为什么极小 effective batch 可能退化？
 
 如果单 feature 只有两个有效值，忽略 $\epsilon$，归一化结果常被强约束到近似
 
@@ -830,7 +832,7 @@ $$
 
 因此“batch size 越小 BN 一定怎样”不能只看 $B$，还要看**真实归约轴和有效样本数**。
 
-## 7. 最小 PyTorch：手写 BN2d 并核对公式语义
+### 7. 最小 PyTorch：手写 BN2d 并核对公式语义
 
 ~~~python
 import torch
@@ -902,7 +904,7 @@ Shape 对应：
 
 当前 MCP 默认 Python 没有安装 PyTorch，因此这段代码完成了公式、Shape 与 API 语义审查，但**不能声称在当前环境运行通过**。
 
-## 8. 原论文 ImageNet 实验：必须拆开哪些变量同时改变了
+### 8. 原论文 ImageNet 实验：必须拆开哪些变量同时改变了
 
 | 设置 | 关键变化 | 达到 72.2% validation accuracy 所需 steps | 最大 validation accuracy | 解读 |
 |---|---|---:|---:|---|
@@ -920,7 +922,7 @@ Shape 对应：
 
 > “只插一个 BN 层，就严格让任何模型训练快 14 倍。”
 
-# 预训练与后训练
+## 预训练与后训练
 
 本文没有现代意义上的 LLM pretraining / SFT / RLHF 流水线。
 
@@ -938,7 +940,7 @@ $$
 
 的网络映射内部。
 
-## $\gamma,\beta$ 与 running statistics 是两类完全不同的状态
+### $\gamma,\beta$ 与 running statistics 是两类完全不同的状态
 
 $\gamma,\beta$：
 
@@ -970,7 +972,7 @@ train()
 
 所以“冻结 BN 参数”和“冻结 BN 行为”不是同一个操作。
 
-## 为什么大语言模型后来更常用 LayerNorm / RMSNorm？
+### 为什么大语言模型后来更常用 LayerNorm / RMSNorm？
 
 不能简单说“BN 不适合 Transformer，所以失效”。
 
@@ -983,9 +985,9 @@ train()
 
 所以这是**统计轴与服务语义匹配**的问题，而不是某种归一化绝对更“先进”。
 
-# 推理与部署
+## 推理与部署
 
-## 1. 推理时为什么 Conv + BN 可以融合？
+### 1. 推理时为什么 Conv + BN 可以融合？
 
 推理统计固定后：
 
@@ -1071,7 +1073,7 @@ $$
 b=0.
 $$
 
-## 2. 为什么训练时不能提前这样融合？
+### 2. 为什么训练时不能提前这样融合？
 
 因为训练时
 
@@ -1089,7 +1091,7 @@ $$
 
 所以训练 BN 不是固定 affine transform，不能在训练开始前就永久折进 Conv。
 
-## 3. FLOPs 不是全部成本
+### 3. FLOPs 不是全部成本
 
 BN 的逐元素 FLOPs 相对大卷积通常不高，但它包含：
 
@@ -1108,7 +1110,7 @@ BN 的逐元素 FLOPs 相对大卷积通常不高，但它包含：
 
 **Prefill / Decode / KV Cache 与原论文 BN 无直接对应关系。**
 
-## 技术 → 模型
+### 技术 → 模型
 
 - **Batch Normalization → 本文**：`PROPOSES`
 - **BatchNorm → BN-Inception**：`IMPLEMENTS`
@@ -1116,15 +1118,15 @@ BN 的逐元素 FLOPs 相对大卷积通常不高，但它包含：
 - **BatchNorm → LayerNorm / GroupNorm / RMSNorm 研究脉络**：后者属于 `DERIVED_FROM / EXTENDS` 更广归一化问题，但统计规则并不相同
 - **Internal Covariate Shift explanation → 2015 BN paper**：作者 `PROPOSES` 的机制解释；后续工作对其充分性提出修正
 
-## 模型 → 技术
+### 模型 → 技术
 
 - **BN-Inception**：`DERIVED_FROM` Inception；`ADOPTS` BN；进一步 recipe 版本还 `IMPLEMENTS` 更大学习率和其他训练调整
 - **ResNet v1**：`ADOPTS` BN；核心 `PROPOSES` 是下一篇的 residual learning
 - **典型 Decoder-only Transformer**：通常不 `ADOPTS` BatchNorm，而 `IMPLEMENTS` LayerNorm/RMSNorm 等单样本归一化
 
-# 论文细读
+## 论文细读
 
-## 1. Abstract：先给“训练深网很难”，再立刻给一个机制名字
+### 1. Abstract：先给“训练深网很难”，再立刻给一个机制名字
 
 **定位：PDF p.1，Abstract。**
 
@@ -1152,7 +1154,7 @@ SGD 已经很成熟
 
 但细读必须保留证据层次：**术语定义不是因果证明。**
 
-## 2. Abstract 后半：为什么作者一次列出高 learning rate、少初始化敏感、regularization？
+### 2. Abstract 后半：为什么作者一次列出高 learning rate、少初始化敏感、regularization？
 
 摘要没有只说“更快”。
 
@@ -1172,7 +1174,7 @@ SGD 已经很成熟
 
 不过 2015 论文会把这些结果主要挂到 ICS 上；后续机制研究说明，这种解释可能过于单一。
 
-## 3. Introduction 第一个关键转折：为什么从“参数更新”谈到“数据分布变化”？
+### 3. Introduction 第一个关键转折：为什么从“参数更新”谈到“数据分布变化”？
 
 作者先描述 mini-batch SGD：
 
@@ -1190,7 +1192,7 @@ SGD 已经很成熟
 
 需要注意：它是类比和机制假说，不是说隐藏层输入真的满足经典 covariate-shift 文献中的所有统计假设。
 
-## 4. 为什么 Introduction 特别拿 sigmoid 饱和做例子？
+### 4. 为什么 Introduction 特别拿 sigmoid 饱和做例子？
 
 sigmoid：
 
@@ -1220,7 +1222,7 @@ $$
 
 这也是 Figure 1(b)/(c) 为什么观察 sigmoid 输入分位数。
 
-## 5. §2：为什么作者先批评“训练后再 normalize 一下”的朴素方案？
+### 5. §2：为什么作者先批评“训练后再 normalize 一下”的朴素方案？
 
 这部分很容易被跳过，但它决定了 BN 为什么必须进入计算图。
 
@@ -1240,7 +1242,7 @@ $$
 
 这一段是后面 Algorithm 1 的逻辑前提。
 
-## 6. §3 开头：为什么作者先说 full whitening 太贵，再给两次简化？
+### 6. §3 开头：为什么作者先说 full whitening 太贵，再给两次简化？
 
 这是一种很标准的工程论文论证：
 
@@ -1264,7 +1266,7 @@ minibatch statistics
 
 > BN 是从“完整白化”逐步让步得到的可训练近似，而不是凭空猜出一个 normalize 公式。
 
-## 7. $\gamma,\beta$ 为什么紧跟 normalization 出现？
+### 7. $\gamma,\beta$ 为什么紧跟 normalization 出现？
 
 作者在提出标准化后立刻讨论：
 
@@ -1290,7 +1292,7 @@ $$
 允许网络重新选择尺度和中心
 ~~~
 
-## 8. “BN transform does not independently process each example” 为什么重要？
+### 8. “BN transform does not independently process each example” 为什么重要？
 
 原文明确强调，训练时一个样本的归一化值依赖同 batch 的其他样本。
 
@@ -1306,7 +1308,7 @@ $$
 
 后文 train/inference 差异其实都从这一句话生出来。
 
-## 9. 反向传播公式放在方法章的意义
+### 9. 反向传播公式放在方法章的意义
 
 作者不仅给 forward Algorithm 1，还明确给 $\partial L/\partial x_i$、$\partial L/\partial\gamma$、$\partial L/\partial\beta$ 的链式关系。
 
@@ -1318,7 +1320,7 @@ $$
 
 公式把这种误读彻底排除了。
 
-## 10. 卷积 BN 段落：为什么统计还要跨空间位置？
+### 10. 卷积 BN 段落：为什么统计还要跨空间位置？
 
 卷积核在不同 spatial location 共享参数，因此同一个 feature map 的不同位置被作者视为同类 feature 的样本。
 
@@ -1336,7 +1338,7 @@ $$
 2. 再说明如何适配 convolution；
 3. 然后才进入具体视觉实验。
 
-## 11. §3.2 / inference：为什么训练结束后必须换统计量？
+### 11. §3.2 / inference：为什么训练结束后必须换统计量？
 
 训练时 batch mean / variance 是随机的。
 
@@ -1352,7 +1354,7 @@ $$
 
 这段是从**训练算法**自然过渡到**部署语义**的关键桥梁。
 
-## 12. §3.3 中关于 gradient propagation 的措辞为什么要谨慎？
+### 12. §3.3 中关于 gradient propagation 的措辞为什么要谨慎？
 
 作者进一步讨论 BN 可能怎样改变 Jacobian 和梯度尺度。
 
@@ -1368,7 +1370,7 @@ $$
 - 局部导数公式：可严格推导；
 - “因此训练会更容易”的全局解释：机制推断。
 
-## 13. §3.4：为什么作者把 batch 随机性也看成 regularizer？
+### 13. §3.4：为什么作者把 batch 随机性也看成 regularizer？
 
 同一个训练样本在不同 minibatch 中会使用不同的
 
@@ -1388,7 +1390,7 @@ $$
 
 两者的噪声结构和数学机制完全不同。
 
-## 14. §4.1 + Figure 1：作者怎样把“机制”与“结果”连起来？
+### 14. §4.1 + Figure 1：作者怎样把“机制”与“结果”连起来？
 
 Figure 1(a) 给结果：
 
@@ -1406,7 +1408,7 @@ Figure 1(b)/(c) 给机制相关现象：
 
 所以它是**与机制一致的 evidence**，不是“ICS 是唯一原因”的决定性证明。
 
-## 15. §4.2：最容易被误读的“14× faster”
+### 15. §4.2：最容易被误读的“14× faster”
 
 作者先构造 **BN-Baseline**，再说：
 
@@ -1430,7 +1432,7 @@ Figure 1(b)/(c) 给机制相关现象：
 
 二手总结若删掉这段，就会把一个组合干预伪装成单变量消融。
 
-## 16. Conclusion 与后续机制研究：哪些东西今天应保留，哪些应修正？
+### 16. Conclusion 与后续机制研究：哪些东西今天应保留，哪些应修正？
 
 应保留的确定事实：
 
@@ -1456,7 +1458,7 @@ Figure 1(b)/(c) 给机制相关现象：
 
 这也是阅读经典论文时非常重要的一类能力：**方法可以长期有效，而第一版解释未必是最终理论。**
 
-## 本篇最小闭环
+### 本篇最小闭环
 
 读完应该能独立回答：
 

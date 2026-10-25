@@ -54,6 +54,34 @@ flowchart LR
 
 *自制硬件数据流图，非原论文 Figure。原文 Figure 的重点还包括按层/Batch 的执行时间线与显存峰值，不能只凭三级存储示意断言 I/O 已隐藏。*
 
+## 计算–搬运时间线：Offloading 里的“快”究竟来自哪里？
+
+设单张 GPU 显存 $C_G=16$ GiB，需要运行一个 30B FP16 模型，仅权重就约 60GB，明显放不下。若其中每层权重被分批从 CPU/SSD 搬入 GPU，单纯逐 Token 每层搬一次就会重复读取极大量的数据。做 Batch 吞吐优化时可以复用已经搬入的 Layer Weight，在相同权重驻留期间执行多个 Sequence 的计算。
+
+为建立下界，假设一轮需要跨 PCIe 搬运 10 GB 权重，有效带宽为 20 GB/s，那么**仅 Host→GPU 搬运**至少需
+
+$$
+T_{\rm H2D}\ge 10/20=0.5\ {\rm s}.
+$$
+
+如果单 Token 只获得一轮的计算成果，这会造成巨大交互延迟；若一次权重搬运在 Block Schedule 中让 32 条 Sequence 各推进一枚 Token，忽略其他开销，摊销权重搬运仅为 $0.5/32\approx15.6$ ms/Token。它不是每条请求都在 15.6 ms 后得到响应，**吞吐的均摊成本与单请求时延仍是两种量**。
+
+### 为什么不能简单让所有东西都 Offload 到 SSD？
+
+若读取频繁的历史 KV 也全部存磁盘，每次生成时会增加大量往返流量；若激活也存 SSD，计算块之间需频繁传输。FlexGen 把 Weight、KV、Activation 的放置比例作为不同变量，在 GPU、CPU、SSD 容量与带宽限制下同时优化。对于某一个 Tensor $X$，三处驻留比例满足
+
+$$
+g_X+c_X+d_X=1,\qquad g_X,c_X,d_X\ge0.
+$$
+
+各存储层还有占用约束 $\sum_XM_Xg_X\le C_G$、$\sum_XM_Xc_X\le C_C$，以及按时间线得到的有效带宽和执行重叠条件。注意这是用于说明放置决策的 LP 简化，并非原论文完整线性规划公式。
+
+## Zig-Zag Schedule 为什么不同于把 Batch 简单叠大？
+
+若 Batch 增加，GPU 同时保留的 KV/Activation 也会上涨，因此根本无法无限扩 Batch。Zig-Zag 的思想是在层顺序、生成块与设备数据搬运之间重排计算，使已经驻留的某层 Weight 被多个 Microbatch 复用，同时数据传输可与其它可并行操作重叠。硬件要支持合法的计算依赖；若 Microbatch 下一层需要上一层输出但该 Tensor 还在 SSD，仍然必须等数据就绪。
+
+[ICML 2023 官方论文](https://proceedings.mlr.press/v202/sheng23a.html) 的性能结论主要服务于吞吐优先的离线情境。要对比它与现代 [PagedAttention](../01-distributed-training/C012-vllm-pagedattention.md) 的在线服务，不仅要统一模型和 GPU，还要统一 TTFT、TPOT、Batch 和 Host/SSD 带宽，不能把“同一 GPU 可运行更大模型”误说成更低交互延迟。
+
 ## 为什么 Quantization 是让 Offloading 可行的另一轴？
 
 如果每次从 SSD/CPU 搬 $B_W$，4-bit 体积理论上只有 FP16 的四分之一，带宽受限时可能显著降低搬运时间。但低比特权重必须解码，且 KV 和 Activation 仍占空间。FlexGen 使用其压缩与 offloading 策略联合优化；[GPTQ](C041-gptq.md) 更侧重权重保真压缩，[Atom](C044-atom.md) 更侧重服务器侧能实际使用的 4-bit 计算算子。**压缩能让模型跑起来**与**算得更快**是两个独立条件。

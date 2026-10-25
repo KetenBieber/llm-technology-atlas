@@ -1,6 +1,8 @@
+# Switch Transformer：把 Top-K MoE 简化成 Top-1 路由
+
 > **原文**：William Fedus, Barret Zoph, Noam Shazeer, *Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity*, 2021，[arXiv](https://arxiv.org/abs/2101.03961)。对应 Paperlist A/05 第 2 篇。Switch Transformer 把此前 Top-k MoE 进一步简化成**每个 token 只路由到一个 expert（Top-1）**，重点解决大规模稀疏模型训练时的通信、capacity、数值稳定与工程复杂度问题。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
 **主要类型：A 原始方法论文；次要属性：C 大规模 MoE 训练系统。**
 
@@ -46,7 +48,7 @@ Switch 的贡献不能只写成“把 k=2 改成 k=1”。真正问题是：**�
 
 *教学解释图｜Top-1 routing、capacity 与 overflow 共同决定 Switch Transformer 的稀疏执行行为。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
 输入 token：
 
@@ -115,7 +117,7 @@ $$
 I\in\mathbb N^N.
 $$
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
 ~~~mermaid
 flowchart TD
@@ -148,9 +150,9 @@ token → expert A
 
 所以 dispatch volume 与 expert FLOPs 都更简单。
 
-# 关键技术
+## 关键技术
 
-## 1. 为什么 Top-1 可以显著降低系统复杂度
+### 1. 为什么 Top-1 可以显著降低系统复杂度
 
 Top-k expert compute：
 
@@ -197,7 +199,7 @@ $$
 
 完全可以继续增大。
 
-## 2. 为什么 Top-1 不等于 Router 不需要概率
+### 2. 为什么 Top-1 不等于 Router 不需要概率
 
 虽然 expert id 是：
 
@@ -217,7 +219,7 @@ $$
 
 所以 Switch 不是把 router 退化成不可训练的硬 hash function。
 
-## 3. Capacity Factor 完整推导
+### 3. Capacity Factor 完整推导
 
 总 token 数：
 
@@ -288,7 +290,7 @@ $$
 
 Switch 的实现需要决定这些 token 如何处理；论文讨论 dropped token / residual bypass 等策略。
 
-## 4. 为什么 capacity factor 是效率—质量 trade-off
+### 4. 为什么 capacity factor 是效率—质量 trade-off
 
 增大 `c`：
 
@@ -316,17 +318,17 @@ $$
 
 例如：
 
-### c=1.0
+#### c=1.0
 
 总 slot ≈ N，最省，但任何不均衡都会 overflow。
 
-### c=2.0
+#### c=2.0
 
 总 slot ≈ 2N，容错强，但最坏一半 slot 是空的。
 
 所以 router balancing 与 capacity 是联动的：balance 越好，可以用更低 capacity factor。
 
-## 5. Switch load-balancing loss 为什么同时看概率与实际分配
+### 5. Switch load-balancing loss 为什么同时看概率与实际分配
 
 定义 batch 中 expert `i` 实际 token fraction：
 
@@ -417,7 +419,7 @@ $$
 
 比只看 probability mass 更直接反映实际 load。
 
-## 6. 为什么 bfloat16 训练 Router 可能不稳定
+### 6. 为什么 bfloat16 训练 Router 可能不稳定
 
 Expert FFN 的大矩阵乘适合 BF16。
 
@@ -456,7 +458,7 @@ $$
 
 这是一种“只把数值敏感的小模块保留高精度”的工程设计。
 
-## 7. Router z-loss 为什么抑制过大 logits
+### 7. Router z-loss 为什么抑制过大 logits
 
 Softmax 对统一平移不敏感：
 
@@ -502,7 +504,7 @@ $$
 
 它们解决不同问题。
 
-## 8. 为什么 Top-1 仍然可以形成专家 specialization
+### 8. 为什么 Top-1 仍然可以形成专家 specialization
 
 即便每 token 只进一个 expert，router 可以根据 hidden：
 
@@ -543,7 +545,7 @@ experts 就会在不同子分布上优化。
 
 等混合模式分工。
 
-## 9. 一个 4-expert 数字例子
+### 9. 一个 4-expert 数字例子
 
 4 个 token 的 router：
 
@@ -601,7 +603,7 @@ $$
 
 完全均衡最优基线是 1，因此当前 routing 被惩罚。
 
-## 10. 最小 PyTorch：Switch Top-1 + balancing
+### 10. 最小 PyTorch：Switch Top-1 + balancing
 
 ~~~python
 import torch
@@ -702,7 +704,7 @@ assert aux.ndim == 0
 
 教学代码没有 capacity/drop、distributed dispatch、expert parallel 或 fused grouped GEMM。
 
-## 11. 实验结果与证据边界
+### 11. 实验结果与证据边界
 
 Switch Transformer 将 sparse MoE 扩展到万亿参数级，并在 T5 风格预训练/迁移任务上比较 dense 与 sparse 模型。论文报告 sparse 模型在相近计算预算下能显著提高 sample efficiency，并展示 Top-1 routing 足以获得很强结果。
 
@@ -720,7 +722,7 @@ Switch Transformer 将 sparse MoE 扩展到万亿参数级，并在 T5 风格预
 - Top-1 在所有模型规模都优于 Top-2；
 - experts 数越多无限增加都有效。
 
-# 预训练与后训练
+## 预训练与后训练
 
 Switch 替换 Transformer 的 FFN：
 
@@ -760,9 +762,9 @@ $$
 
 这不是新的 SFT/RLHF 方法。
 
-# 推理与部署
+## 推理与部署
 
-## Active compute
+### Active compute
 
 每 token 只有一个 expert：
 
@@ -772,7 +774,7 @@ $$
 
 因此 expert active FLOPs 比 Top-2 近似减半。
 
-## Total parameters
+### Total parameters
 
 仍可：
 
@@ -784,11 +786,11 @@ $$
 
 推理显存必须容纳或分布这些 expert weights。
 
-## Small-batch Decode
+### Small-batch Decode
 
 单 token 只去一个 expert，计算少；但若 experts 分布在多卡，路由通信 latency 可能突出。
 
-## Large-batch Prefill
+### Large-batch Prefill
 
 大量 token 可按 expert regroup：
 
@@ -802,11 +804,11 @@ inverse permutation
 
 更容易利用 GPU。
 
-## Capacity at inference
+### Capacity at inference
 
 在线 serving 也可能出现瞬时 expert hot spot。训练均衡不代表任意请求 batch 都严格均衡。
 
-## 技术 → 模型
+### 技术 → 模型
 
 - Sparsely-Gated MoE → Switch：`DERIVED_FROM / SIMPLIFIES`
 - Top-1 routing → Switch Transformer：`PROPOSES/POPULARIZES`
@@ -814,7 +816,7 @@ inverse permutation
 - selective FP32 router → Switch：`IMPLEMENTS`
 - Switch → 后续 large MoE LLM：`ADOPTS/INSPIRES`
 
-## 模型 → 技术
+### 模型 → 技术
 
 - Switch Transformer：`IMPLEMENTS` Top-1 sparse expert routing
 - original sparse MoE：通常 `IMPLEMENTS` Top-k noisy gating

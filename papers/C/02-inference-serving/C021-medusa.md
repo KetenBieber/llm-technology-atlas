@@ -97,6 +97,24 @@ $$
 
 如果扩树使接受 Token 平均数只增加一点，却让 Tree Verification 的计算变重，整体加速反而变差。这是**树宽、深度、校验成本与接受率**的联合优化，不是 Heads 越多越好。
 
+## 为什么多头输出不是“几组独立 Token 直接拼起来”？
+
+假设 Medusa Head 1 给 `a,b` 两个候选，Head 2 给 `c,d`，便有四条路径 `ac,ad,bc,bd`。如果让 Target 使用一组普通顺序 Causal Mask，原本对应 `bc` 的节点可能看到 `ac` 分支中的 `a`，这会把错误的候选历史输入到 Target。
+
+对树形候选，正确的 Attention Mask 必须是**祖先闭包**。以节点顺序 $[a,b,c_a,d_a,c_b,d_b]$ 表示，如果 `c_a` 是 `a` 的后继、`c_b` 是 `b` 的后继，那么 `c_a` 只能读 `a`，`c_b` 只能读 `b`；它们都不能读与自己无关的兄弟 Token。这与 [SpecInfer](C027-specinfer.md) 的 Tree Verification 一脉相承。
+
+此外，Medusa 的 Heads 给的是**未来位置预测分布**，不是按照每条 Branch 已有前缀自回归条件化的独立 Draft。假设 Head 2 的输出对所有 Branch 都相同，这种信息缺失会使不同分支的提案错误高度相关；[Hydra](C025-hydra.md) 才尝试把此前候选 Token 送入后续 Head 中改变这种条件不足。
+
+### 为什么四条候选路径不意味着四倍 Target Forward 计算？
+
+树里根层 `a,b` 加二层 4 个节点，共 6 个待验证 Token Position，而逐路径计算 $4\times 2=8$ 个位置；树复用减少了两处重复根层节点。但验证树仍然要做 6 个 Position 的 Attention/QKV 和 Mask 组织，不是只对 2 个头各运行一次线性层就结束。**Head 数、每头候选数、树节点上限与 Target 验证成本都是独立变量**。
+
+## Figure 1 与 Medusa-1/2 为什么不能读成一个统一算法？
+
+[ICML 2024 Medusa 原论文](https://proceedings.mlr.press/v235/cai24b.html) 的模型结构图说明 Medusa Head 在 Base 顶部生成候选；后文 Tree Attention 与 Acceptance Diagram 才给出“验证哪些分支”以及“哪些 Token 最终被提交”的逻辑。训练章节要分开看 Medusa-1 与 Medusa-2：冻结 Base 和联合微调 Base 会改变“是否仍在验证最初 Target 模型”这一命题。
+
+尤其在 Random Sampling 场景，一旦使用启发式 Typical Acceptance，就不能因为模型结果自然流畅而声称数学上保留了目标 $p(x)$；必须回到 [Speculative Decoding 的接受–残差证明](C020-speculative-decoding.md) 区分**概率严格相等**与**近似质量相当**。这比记住 2.2× / 2.8× 的 headline 更重要。
+
 ## 六、论文结果与证据边界
 
 ICML 2024 的原始实验报告：**Medusa-1 超过 2.2×** 的加速（满足对应无损条件），**Medusa-2 约 2.3–2.8×** 的加速区间；对照任务和评估协议以论文为准。它不能证明对所有模型、所有部署 batch、所有采样温度都能达到相同倍率。使用 Typical Acceptance 的实验要另行说明质量/等价性条件。

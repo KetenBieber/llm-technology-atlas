@@ -47,6 +47,34 @@ flowchart LR
 
 注意原论文并不保证“未来 Query 总会关注同样位置”。用户接着要求模型对长文其他主题作答案，预观察窗口可能漏掉其证据；检索精度下降风险是真实的。**KV 驱逐是有损近似**，不是 [FlashAttention](../../A/10-gpu-operators/A055-flashattention.md) 那样不改变 Attention 数学结果的 IO 优化。
 
+## 先把 Score 聚合、局部 Pool、TopK 按顺序串起来
+
+设输入 Prompt 长 $L$，Observation Window 长 $w$，在某层某个 Head 中有 Query–Key Attention 矩阵 $A\in\mathbb R^{L\times L}$（实际实现无需永久保留这个完整矩阵）。对历史位置 $j<L-w$ 先累积末端 Query 注意力：
+
+$$
+s_j=\sum_{i=L-w+1}^{L}A_{ij}.
+$$
+
+再对沿**序列轴**邻近的 $s_j$ 进行局部 Pooling，例如使用奇数核宽 $k$ 的最大池化：
+
+$$
+\widetilde s_j=\max_{r\in[j-\lfloor k/2\rfloor,j+\lfloor k/2\rfloor]}s_r.
+$$
+
+最终为每个 Head 选出固定预算内的历史位置 $I_h=\operatorname{TopK}(\widetilde s,K)$，再把最近 Observation Window 的 KV 与选中历史 KV 组合。这段演示刻意区分**时间窗口**和**Pool Kernel**：前者决定观察哪些 Query，后者决定历史重要性索引的局部聚合；把两者都叫一个 Window 会导致实现时维度错误。
+
+### 数字例子：为什么没有 Pooling 时可能错过连续结构？
+
+假设某 Head 对历史六个位置的 Score 为 §[0.02,0.45,0.05,0.40,0.03,0.05]§。直接 Top-2 选择位置 2、4；若 $k=3$ 的 Max-Pool，位置 1–3 可能都被“位置 2 很重要”带动而得较高分，位置 3–5 则被位置 4 带动。此时 TopK 会倾向保留一段局部相关位置附近的 Key。它既可能有利于保留完整知识片段，也可能把某个尖峰膨胀成冗余占用，因此实际需消融 Kernel Size 和 K。
+
+上面仅是示意值，真实作者实现的 Pool Mode、Tie-breaking 和 Keep-Recent 规则应按代码/论文版本核对，不能把教学核假定成唯一的具体实现。
+
+## Prefill/Decode 必须分开测
+
+SnapKV 的压缩动作发生在 Prompt Prefill 后、真正的生成前；它减少的是**随后 Decode 反复读取的 KV 数量**。这并不自动降低为了第一次处理长 Prompt 所需的 Attention 计算，也不能让远超过模型位置能力的 Prompt 突然变得完全可理解。
+
+[NeurIPS 2024 SnapKV 正式摘要](https://proceedings.neurips.cc/paper_files/paper/2024/hash/28ab418242603e0f7323e54185d19bde-Abstract-Conference.html) 明确写出 16K Context 下最高 3.6× 生成速度与 8.2× 内存效率，以及 A100 80GB 上 380K Token 输入的演示。读作者针对每 Head 的 Figure 时要关心：保留位置是否在不同 Head 重合？Window $w$ 改变后能否覆盖答案相关段落？Needle Retrieval 的效果与 Long-Context QA 是否一致？不能只看“最大长度”这一数字。
+
 ## 原文实验结论为何要看平台与序列设置？
 
 [NeurIPS 2024 正式论文](https://proceedings.neurips.cc/paper_files/paper/2024/hash/28ab418242603e0f7323e54185d19bde-Abstract-Conference.html) 报告在 **16K Prompt** 条件下相对基线约 **3.6× 生成速度**、**8.2× 内存效率**，在 16 项长序列数据集上保持可比效果；并有单张 A100 80GB + HuggingFace 实现运行更长 Prompt 的演示。这里“可运行更长 Context”并不保证模型的训练/位置外推能力同步改善。

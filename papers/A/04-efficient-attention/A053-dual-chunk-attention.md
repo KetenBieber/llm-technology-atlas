@@ -42,7 +42,7 @@ $$
 
 ---
 
-## 阅读导航
+### 阅读导航
 
 建议先掌握：
 
@@ -86,9 +86,9 @@ $$
 
 *教学解释图｜chunk 划分、三类相对位置关系与全局 softmax 归并共同构成 DCA 的位置重组织机制。*
 
-# 一、先把问题从 RoPE frequency 换成 Relative-Position Matrix
+## 一、先把问题从 RoPE frequency 换成 Relative-Position Matrix
 
-## 1. 标准 RoPE 最终到底把什么交给 Attention？
+### 1. 标准 RoPE 最终到底把什么交给 Attention？
 
 标准 attention：
 
@@ -154,7 +154,7 @@ $$
 
 ---
 
-## 2. 为什么把 RoPE 看成矩阵 $M$ 很有用？
+### 2. 为什么把 RoPE 看成矩阵 $M$ 很有用？
 
 假设 sequence length：
 
@@ -214,7 +214,7 @@ $$
 
 ---
 
-## 3. 原论文 Figure：标准 RoPE 超窗时发生什么？
+### 3. 原论文 Figure：标准 RoPE 超窗时发生什么？
 
 ![标准 RoPE 的相对位置矩阵](../../../figures/A053/fig1-rope-relative-matrix.svg)
 
@@ -258,7 +258,7 @@ $$
 
 ---
 
-## 4. 为什么“RoPE 是相对位置”仍然解决不了？
+### 4. 为什么“RoPE 是相对位置”仍然解决不了？
 
 这和 [YaRN](../03-transformer/A018-yarn.md) 里的结论一致：
 
@@ -292,9 +292,9 @@ $$
 
 ---
 
-# 二、已有方法：统一缩放 Relative Position
+## 二、已有方法：统一缩放 Relative Position
 
-## 5. Position Interpolation 在矩阵 $M$ 视角下是什么？
+### 5. Position Interpolation 在矩阵 $M$ 视角下是什么？
 
 PI 令：
 
@@ -352,7 +352,7 @@ $$
 
 ---
 
-## 6. DCA 为什么不满意“把所有距离一起缩小”？
+### 6. DCA 为什么不满意“把所有距离一起缩小”？
 
 因为它会同时压缩：
 
@@ -388,9 +388,9 @@ DCA 的设计目标更激进：
 
 ---
 
-# 三、DCA 第一层：先切 Chunk
+## 三、DCA 第一层：先切 Chunk
 
-## 7. 基本变量
+### 7. 基本变量
 
 定义：
 
@@ -445,7 +445,7 @@ token 8 9 10 11
 
 ---
 
-## 8. Key position 为什么循环复用？
+### 8. Key position 为什么循环复用？
 
 DCA 为 key 定义：
 
@@ -487,13 +487,13 @@ key 的 RoPE position 永远没有离开 pretraining range。
 
 ---
 
-## 9. 但是这会不会把不同 chunk 的 token 混成同一个 key？
+### 9. 但是这会不会把不同 chunk 的 token 混成同一个 key？
 
 不会。
 
 这里必须区分：
 
-### Content vector
+#### Content vector
 
 不同 token 有不同：
 
@@ -501,7 +501,7 @@ $$
 k_j=W_kh_j.
 $$
 
-### RoPE positional phase
+#### RoPE positional phase
 
 不同 chunk 的 key 可以复用同一个：
 
@@ -535,9 +535,9 @@ DCA alias 的只是：
 
 ---
 
-# 四、Intra-Chunk Attention：局部位置一个都不要丢
+## 四、Intra-Chunk Attention：局部位置一个都不要丢
 
-## 10. 同 chunk 的 query position
+### 10. 同 chunk 的 query position
 
 对 intra-chunk：
 
@@ -573,7 +573,7 @@ $$
 
 ---
 
-## 11. 为什么这精确保留局部 relative distance？
+### 11. 为什么这精确保留局部 relative distance？
 
 设：
 
@@ -633,7 +633,7 @@ $$
 
 ---
 
-## 12. Intra-Chunk 最大 relative distance
+### 12. Intra-Chunk 最大 relative distance
 
 由于：
 
@@ -673,7 +673,7 @@ $$
 
 ---
 
-## 13. 只用 Intra-Chunk 会发生什么？
+### 13. 只用 Intra-Chunk 会发生什么？
 
 如果每个 chunk 只看自己：
 
@@ -711,9 +711,9 @@ retrieval 必然失败。
 
 ---
 
-# 五、为什么循环 Position ID 不能直接跨 Chunk？
+## 五、为什么循环 Position ID 不能直接跨 Chunk？
 
-## 14. 一个最直接的失败例子
+### 14. 一个最直接的失败例子
 
 假设：
 
@@ -773,7 +773,7 @@ $$
 
 ---
 
-## 15. 为什么 DCA 保持 $P_k$ 不动，主要改 query position？
+### 15. 为什么 DCA 保持 $P_k$ 不动，主要改 query position？
 
 论文给出的工程考虑之一是：
 
@@ -802,9 +802,9 @@ $$
 
 ---
 
-# 六、Inter-Chunk Attention：远距离可以粗，但不能 OOD
+## 六、Inter-Chunk Attention：远距离可以粗，但不能 OOD
 
-## 16. 最简单的目标
+### 16. 最简单的目标
 
 对于很早的 chunk，我们至少希望：
 
@@ -832,7 +832,7 @@ $$
 
 ---
 
-## 17. Inter-Chunk relative distance
+### 17. Inter-Chunk relative distance
 
 于是：
 
@@ -876,7 +876,7 @@ $$
 
 ---
 
-## 18. 这是一种什么信息压缩？
+### 18. 这是一种什么信息压缩？
 
 假设：
 
@@ -930,7 +930,7 @@ $$
 
 ---
 
-## 19. 为什么这种 aliasing 仍可能有用？
+### 19. 为什么这种 aliasing 仍可能有用？
 
 因为 long-context task 并不总要求模型知道：
 
@@ -954,7 +954,7 @@ DCA 用：
 
 ---
 
-## 20. 一个必须保留的边界：DCA 没有保存精确远距离
+### 20. 一个必须保留的边界：DCA 没有保存精确远距离
 
 所以不能说：
 
@@ -980,9 +980,9 @@ $$
 
 ---
 
-# 七、Inter-Chunk 还不够：相邻 Chunk 的 Locality 被毁了
+## 七、Inter-Chunk 还不够：相邻 Chunk 的 Locality 被毁了
 
-## 21. 看 chunk 边界的两个相邻 token
+### 21. 看 chunk 边界的两个相邻 token
 
 论文例子：
 
@@ -1048,7 +1048,7 @@ $$
 
 ---
 
-## 22. 为什么这会明显伤 PPL？
+### 22. 为什么这会明显伤 PPL？
 
 next-token prediction 高度依赖最近 token。
 
@@ -1084,9 +1084,9 @@ $$
 
 ---
 
-# 八、Successive-Chunk Attention：专门修复 Chunk Boundary
+## 八、Successive-Chunk Attention：专门修复 Chunk Boundary
 
-## 23. 目标是什么？
+### 23. 目标是什么？
 
 对于 immediately previous chunk：
 
@@ -1110,7 +1110,7 @@ $$
 
 ---
 
-## 24. Successive query position
+### 24. Successive query position
 
 论文构造：
 
@@ -1164,7 +1164,7 @@ $$
 
 ---
 
-## 25. 为什么这样能恢复边界 locality？
+### 25. 为什么这样能恢复边界 locality？
 
 看当前 chunk 第一个 query：
 
@@ -1220,7 +1220,7 @@ $$
 
 ---
 
-## 26. 为什么 $w\le c-s$？
+### 26. 为什么 $w\le c-s$？
 
 Successive query 的最大精确 position：
 
@@ -1264,7 +1264,7 @@ $$
 
 ---
 
-## 27. 三类 Query Position 的统一图
+### 27. 三类 Query Position 的统一图
 
 
 这也是为什么 DCA 不能简单写成：
@@ -1281,9 +1281,9 @@ $$
 }
 $$
 
-# 九、把三种 Attention 合成一个 Piecewise Relative-Position Matrix
+## 九、把三种 Attention 合成一个 Piecewise Relative-Position Matrix
 
-## 28. 先定义 Chunk Index
+### 28. 先定义 Chunk Index
 
 对 absolute token index：
 
@@ -1324,19 +1324,19 @@ $$
 
 于是 DCA 的三类关系可以直接写成：
 
-### 同 chunk
+#### 同 chunk
 
 $$
 \Delta g=0.
 $$
 
-### 前一个 chunk
+#### 前一个 chunk
 
 $$
 \Delta g=1.
 $$
 
-### 更早 chunk
+#### 更早 chunk
 
 $$
 \Delta g>1.
@@ -1344,7 +1344,7 @@ $$
 
 ---
 
-## 29. DCA 的最终相对位置公式
+### 29. DCA 的最终相对位置公式
 
 于是：
 
@@ -1380,7 +1380,7 @@ $$
 
 ---
 
-## 30. 对应的 QK 内积
+### 30. 对应的 QK 内积
 
 定义 RoPE function：
 
@@ -1436,7 +1436,7 @@ $$
 
 ---
 
-## 31. 一个原论文公式阅读提醒
+### 31. 一个原论文公式阅读提醒
 
 DCA 论文 Inter-Chunk 小节的一处文字公式写成类似：
 
@@ -1474,7 +1474,7 @@ $$
 
 ---
 
-## 32. 原论文的三块 Relative-Position Matrix
+### 32. 原论文的三块 Relative-Position Matrix
 
 ![DCA 原论文 relative-position matrix](../../../figures/A053/fig2-dca-relative-matrix.svg)
 
@@ -1492,11 +1492,11 @@ $$
 
 ---
 
-## 33. 为什么所有 DCA relative position 都不会超出原窗口？
+### 33. 为什么所有 DCA relative position 都不会超出原窗口？
 
 分别证明。
 
-### Intra
+#### Intra
 
 $$
 0\le
@@ -1517,7 +1517,7 @@ $$
 M_{\text{Intra}}\le c-1.
 $$
 
-### Inter
+#### Inter
 
 $$
 c-s
@@ -1533,7 +1533,7 @@ $$
 M_{\text{Inter}}\le c-1.
 $$
 
-### Successive
+#### Successive
 
 在 local part：
 
@@ -1576,7 +1576,7 @@ $$
 
 ---
 
-## 34. DCA 与 Position Interpolation 最大区别
+### 34. DCA 与 Position Interpolation 最大区别
 
 PI 做的是：
 
@@ -1607,11 +1607,11 @@ $$
 
 所以两者的信息策略完全不同。
 
-### PI
+#### PI
 
 > 所有距离都保留顺序关系，但 resolution 全局下降。
 
-### DCA
+#### DCA
 
 > 局部距离尽量精确，远距离的精确 metric structure 被主动压缩。
 
@@ -1631,9 +1631,9 @@ $$
 
 ---
 
-# 十、一个完整手算例子：$c=8,s=4,l=12$
+## 十、一个完整手算例子：$c=8,s=4,l=12$
 
-## 35. Key Position
+### 35. Key Position
 
 三个 chunk：
 
@@ -1663,7 +1663,7 @@ $$
 
 ---
 
-## 36. 对 Current Chunk：Intra
+### 36. 对 Current Chunk：Intra
 
 current chunk keys：
 
@@ -1717,7 +1717,7 @@ $$
 
 ---
 
-## 37. 对 Previous Chunk：Successive
+### 37. 对 Previous Chunk：Successive
 
 这里：
 
@@ -1791,7 +1791,7 @@ $$
 
 ---
 
-## 38. 对更早 Chunk：Inter
+### 38. 对更早 Chunk：Inter
 
 query 8 看 Chunk 0。
 
@@ -1836,7 +1836,7 @@ $$
 
 ---
 
-## 39. 因此远距离 Chunk Identity 从哪里来？
+### 39. 因此远距离 Chunk Identity 从哪里来？
 
 这是一个很好的问题。
 
@@ -1877,9 +1877,9 @@ $$
 
 ---
 
-# 十一、最容易被忽略的实现问题：三次 Attention 不是三个独立 Softmax
+## 十一、最容易被忽略的实现问题：三次 Attention 不是三个独立 Softmax
 
-## 40. 为什么需要分三次算？
+### 40. 为什么需要分三次算？
 
 对当前 query $q_i$，key 被分成三个 disjoint groups：
 
@@ -1922,7 +1922,7 @@ $$
 
 ---
 
-## 41. 如果每组各做一次 Softmax，然后直接把 output 相加，会怎样？
+### 41. 如果每组各做一次 Softmax，然后直接把 output 相加，会怎样？
 
 标准 full attention：
 
@@ -1983,7 +1983,7 @@ $$
 
 ---
 
-## 42. 正确的合并公式怎么推？
+### 42. 正确的合并公式怎么推？
 
 由：
 
@@ -2033,7 +2033,7 @@ $$
 
 ---
 
-## 43. 实际实现为什么不能直接计算 $Z_g=\sum e^{z}$？
+### 43. 实际实现为什么不能直接计算 $Z_g=\sum e^{z}$？
 
 因为长序列 logits 可能很大。
 
@@ -2075,7 +2075,7 @@ output numerator 同理重标定。
 
 ---
 
-## 44. 为什么这和 FlashAttention 的 online softmax 天然兼容？
+### 44. 为什么这和 FlashAttention 的 online softmax 天然兼容？
 
 FlashAttention 本来就在做：
 
@@ -2110,9 +2110,9 @@ DCA 只是把分组边界从：
 
 ---
 
-# 十二、DCA 与 FlashAttention 的实际组织
+## 十二、DCA 与 FlashAttention 的实际组织
 
-## 45. 对一个 query，三个 Key Segment 分别多大？
+### 45. 对一个 query，三个 Key Segment 分别多大？
 
 设当前 query absolute index：
 
@@ -2132,7 +2132,7 @@ $$
 
 那么：
 
-### Current chunk
+#### Current chunk
 
 大约：
 
@@ -2142,7 +2142,7 @@ $$
 
 个 keys。
 
-### Previous chunk
+#### Previous chunk
 
 最多：
 
@@ -2152,7 +2152,7 @@ $$
 
 个 keys。
 
-### Earlier chunks
+#### Earlier chunks
 
 大约：
 
@@ -2185,7 +2185,7 @@ $$
 
 ---
 
-## 46. 所以 DCA 是 Sparse Attention 吗？
+### 46. 所以 DCA 是 Sparse Attention 吗？
 
 不是。
 
@@ -2233,7 +2233,7 @@ $$
 
 ---
 
-## 47. 那为什么叫 Chunk Attention？
+### 47. 那为什么叫 Chunk Attention？
 
 “chunk”在这里主要用于：
 
@@ -2255,7 +2255,7 @@ $$
 
 ---
 
-## 48. 原论文 Appendix 给出的三次 FlashAttention 调用
+### 48. 原论文 Appendix 给出的三次 FlashAttention 调用
 
 论文伪代码大意：
 
@@ -2290,7 +2290,7 @@ $$
 
 ---
 
-## 49. 为什么 DCA 不需要重新旋转历史 K？
+### 49. 为什么 DCA 不需要重新旋转历史 K？
 
 因为：
 
@@ -2316,15 +2316,15 @@ $$
 
 ---
 
-## 50. DCA 的 KV Cache 代价是什么？
+### 50. DCA 的 KV Cache 代价是什么？
 
-### 不需要
+#### 不需要
 
 为每种关系缓存三份 K。
 
 历史 key position scheme 是统一的。
 
-### 仍然需要
+#### 仍然需要
 
 完整历史 K/V content。
 
@@ -2344,9 +2344,9 @@ $$
 
 ---
 
-# 十三、DCA 原论文 Figure：为什么三块 Matrix 缺一不可？
+## 十三、DCA 原论文 Figure：为什么三块 Matrix 缺一不可？
 
-## 51. Intra 负责什么？
+### 51. Intra 负责什么？
 
 最小化 local language-modeling disturbance。
 
@@ -2366,7 +2366,7 @@ within chunk。
 
 ---
 
-## 52. Inter 负责什么？
+### 52. Inter 负责什么？
 
 恢复：
 
@@ -2382,7 +2382,7 @@ query 仍能和所有 older K 做 content matching。
 
 ---
 
-## 53. Successive 负责什么？
+### 53. Successive 负责什么？
 
 专门补：
 
@@ -2400,7 +2400,7 @@ $$
 
 ---
 
-## 54. 这三项其实构成一个 Pareto trade-off
+### 54. 这三项其实构成一个 Pareto trade-off
 
 可以把目标写成三个方向：
 
@@ -2444,9 +2444,9 @@ DCA：
 
 ---
 
-# 十四、为什么 DCA 叫 Training-Free？
+## 十四、为什么 DCA 叫 Training-Free？
 
-## 55. Training-Free 的精确定义
+### 55. Training-Free 的精确定义
 
 DCA 主要要求修改：
 
@@ -2476,35 +2476,35 @@ $$
 
 ---
 
-## 56. Training-Free 不等于什么？
+### 56. Training-Free 不等于什么？
 
 不等于：
 
-### 零代码改动
+#### 零代码改动
 
 错误。
 
 attention runtime 必须改。
 
-### 零计算成本
+#### 零计算成本
 
 错误。
 
 长序列仍然很贵。
 
-### 零显存成本
+#### 零显存成本
 
 错误。
 
 K/V 仍然随 length 增长。
 
-### 模型真正学过长上下文
+#### 模型真正学过长上下文
 
 错误。
 
 它没有用 long-context data 更新模型参数。
 
-### 无限 context
+#### 无限 context
 
 错误。
 
@@ -2512,7 +2512,7 @@ K/V 仍然随 length 增长。
 
 ---
 
-## 57. 为什么 training-free 仍然可能提升 long-context 能力？
+### 57. 为什么 training-free 仍然可能提升 long-context 能力？
 
 因为原模型可能已经有：
 
@@ -2541,9 +2541,9 @@ $$
 这和重新训练模型学新知识不是一回事。
 
 
-# 十五、实验怎么读：先看 Ablation，不要先看排行榜
+## 十五、实验怎么读：先看 Ablation，不要先看排行榜
 
-## 58. 原论文最重要的因果证据其实是 Ablation
+### 58. 原论文最重要的因果证据其实是 Ablation
 
 ![DCA 三分支 Ablation](../../../figures/A053/fig-ablation.svg)
 
@@ -2559,7 +2559,7 @@ $$
 
 ---
 
-## 59. Only Intra：为什么 PPL 好，Retrieval 差？
+### 59. Only Intra：为什么 PPL 好，Retrieval 差？
 
 only Intra 等价于：
 
@@ -2593,7 +2593,7 @@ $$
 
 ---
 
-## 60. 加 Inter：为什么 Retrieval 上来了，PPL 反而可能恶化？
+### 60. 加 Inter：为什么 Retrieval 上来了，PPL 反而可能恶化？
 
 Inter 让 query 可以访问历史所有 chunks。
 
@@ -2623,7 +2623,7 @@ $$
 
 ---
 
-## 61. 再加 Successive：为什么两个指标一起改善？
+### 61. 再加 Successive：为什么两个指标一起改善？
 
 Successive 只对：
 
@@ -2654,9 +2654,9 @@ $$
 
 ---
 
-# 十六、Perplexity：DCA 真能把 4K 模型直接跑到更长吗？
+## 十六、Perplexity：DCA 真能把 4K 模型直接跑到更长吗？
 
-## 62. 论文如何测 Language Modeling？
+### 62. 论文如何测 Language Modeling？
 
 主要使用长文档数据，例如：
 
@@ -2678,7 +2678,7 @@ $$
 
 ---
 
-## 63. 为什么 PPL 是必要但不充分的指标？
+### 63. 为什么 PPL 是必要但不充分的指标？
 
 PPL 测：
 
@@ -2711,7 +2711,7 @@ token，也可能在普通文本上得到不错 PPL。
 
 ---
 
-## 64. 原论文 PPL 证据应该怎样表述？
+### 64. 原论文 PPL 证据应该怎样表述？
 
 论文报告在其设置中：
 
@@ -2730,9 +2730,9 @@ token，也可能在普通文本上得到不错 PPL。
 
 ---
 
-# 十七、Passkey Retrieval：模型到底有没有看到远处？
+## 十七、Passkey Retrieval：模型到底有没有看到远处？
 
-## 65. Passkey task 在测什么？
+### 65. Passkey task 在测什么？
 
 典型构造：
 
@@ -2760,7 +2760,7 @@ What is the pass key?
 
 ---
 
-## 66. 原论文 Passkey 图
+### 66. 原论文 Passkey 图
 
 ![DCA training-free passkey retrieval](../../../figures/A053/fig-passkey.svg)
 
@@ -2784,7 +2784,7 @@ $$
 
 ---
 
-## 67. “Lost in the Beginning” 是什么？
+### 67. “Lost in the Beginning” 是什么？
 
 论文附录观察到一个很有意思的 failure pattern。
 
@@ -2810,7 +2810,7 @@ DCA 将所有很早 chunks 都压进类似 Inter positional range。
 
 ---
 
-## 68. 更长的 192K Passkey 图说明什么？
+### 68. 更长的 192K Passkey 图说明什么？
 
 ![DCA 与已有长上下文模型叠加后的 passkey](../../../figures/A053/fig-passkey-long.svg)
 
@@ -2828,11 +2828,11 @@ DCA 将所有很早 chunks 都压进类似 Inter positional range。
 
 ---
 
-# 十八、Orthogonality：为什么 DCA 可以叠加 PI / NTK / YaRN？
+## 十八、Orthogonality：为什么 DCA 可以叠加 PI / NTK / YaRN？
 
-## 69. 两类方法改的是不同对象
+### 69. 两类方法改的是不同对象
 
-### PI / NTK / YaRN
+#### PI / NTK / YaRN
 
 改：
 
@@ -2846,7 +2846,7 @@ $$
 
 > 一个给定 relative position 应该对应什么 rotary phase？
 
-### DCA
+#### DCA
 
 改：
 
@@ -2874,7 +2874,7 @@ $$
 
 ---
 
-## 70. 用函数复合看最清楚
+### 70. 用函数复合看最清楚
 
 原 RoPE：
 
@@ -2921,7 +2921,7 @@ $$
 
 ---
 
-## 71. 这正是 Qwen2.5 的 “YaRN + DCA”
+### 71. 这正是 Qwen2.5 的 “YaRN + DCA”
 
 [Qwen2.5](../../B/05-moe-complete-llm/B012-qwen2.5.md) 中的长上下文 extrapolation 不是只写一个参数。
 
@@ -2956,9 +2956,9 @@ jointly improve inference beyond training length
 
 ---
 
-# 十九、Real-World Long-Context Tasks：比 Passkey 更接近真正应用
+## 十九、Real-World Long-Context Tasks：比 Passkey 更接近真正应用
 
-## 72. 论文测了哪些任务？
+### 72. 论文测了哪些任务？
 
 包括：
 
@@ -2982,7 +2982,7 @@ jointly improve inference beyond training length
 
 ---
 
-## 73. 论文为什么强调 70B？
+### 73. 论文为什么强调 70B？
 
 很多 long-context extension 论文只验证 7B / 13B。
 
@@ -2998,7 +2998,7 @@ DCA training-free，使作者可以直接在 Llama2 70B 上做实验。
 
 ---
 
-## 74. “94% of GPT-3.5-16k”应该怎样读？
+### 74. “94% of GPT-3.5-16k”应该怎样读？
 
 论文 abstract / experiment 中有类似：
 
@@ -3023,7 +3023,7 @@ DCA training-free，使作者可以直接在 Llama2 70B 上做实验。
 
 ---
 
-## 75. 为什么 Real-World Benchmark 仍然不能完全证明 Long-Context Reasoning？
+### 75. 为什么 Real-World Benchmark 仍然不能完全证明 Long-Context Reasoning？
 
 因为一些 benchmark 可以被：
 
@@ -3046,9 +3046,9 @@ DCA training-free，使作者可以直接在 Llama2 70B 上做实验。
 
 ---
 
-# 二十、Efficiency：三次 FlashAttention 为什么论文说开销并不大？
+## 二十、Efficiency：三次 FlashAttention 为什么论文说开销并不大？
 
-## 76. 原论文 Efficiency Figure
+### 76. 原论文 Efficiency Figure
 
 ![DCA 与 FlashAttention 的推理时间和显存](../../../figures/A053/fig-efficiency.svg)
 
@@ -3056,7 +3056,7 @@ DCA training-free，使作者可以直接在 Llama2 70B 上做实验。
 
 ---
 
-## 77. 三次 Kernel Call 为什么不等于三倍计算？
+### 77. 三次 Kernel Call 为什么不等于三倍计算？
 
 因为三次不是都看完整 history。
 
@@ -3099,7 +3099,7 @@ $$
 
 ---
 
-## 78. 为什么 DCA 又没有让 Attention 更便宜？
+### 78. 为什么 DCA 又没有让 Attention 更便宜？
 
 因为 pair 总数仍是：
 
@@ -3119,7 +3119,7 @@ $$
 
 ---
 
-## 79. 超长 Prompt 下真正的新瓶颈是什么？
+### 79. 超长 Prompt 下真正的新瓶颈是什么？
 
 当：
 
@@ -3158,9 +3158,9 @@ DCA 没有解决这一层。
 
 ---
 
-# 二十一、为什么 DCA 和 StreamingLLM / Local Attention 不一样？
+## 二十一、为什么 DCA 和 StreamingLLM / Local Attention 不一样？
 
-## 80. Streaming 类方法的核心取舍
+### 80. Streaming 类方法的核心取舍
 
 某些 training-free long-context method 会只保留：
 
@@ -3176,7 +3176,7 @@ DCA 没有解决这一层。
 
 ---
 
-## 81. DCA 的选择不同
+### 81. DCA 的选择不同
 
 DCA 更愿意保留：
 
@@ -3206,9 +3206,9 @@ $$
 
 ---
 
-# 二十二、DCA 的隐含归纳偏置到底是什么？
+## 二十二、DCA 的隐含归纳偏置到底是什么？
 
-## 82. Locality 是最高优先级
+### 82. Locality 是最高优先级
 
 Intra + Successive 明确告诉模型：
 
@@ -3218,7 +3218,7 @@ Intra + Successive 明确告诉模型：
 
 ---
 
-## 83. Very Far Distance 被降成粗粒度
+### 83. Very Far Distance 被降成粗粒度
 
 Inter 告诉模型：
 
@@ -3234,7 +3234,7 @@ $$
 
 ---
 
-## 84. 所以 DCA 是一种 Hierarchical Position Prior
+### 84. 所以 DCA 是一种 Hierarchical Position Prior
 
 可以抽象成：
 
@@ -3261,9 +3261,9 @@ $$
 
 ---
 
-# 二十三、一个更第一性原理的解释：位置编码本身就是有限带宽
+## 二十三、一个更第一性原理的解释：位置编码本身就是有限带宽
 
-## 85. 为什么不可能同时免费保留无限 Range 与无限 Resolution？
+### 85. 为什么不可能同时免费保留无限 Range 与无限 Resolution？
 
 模型只有固定维度：
 
@@ -3296,7 +3296,7 @@ DCA 的答案不是假装没有 trade-off。
 
 ---
 
-## 86. 这与 YaRN 的 Range–Resolution Trade-off 是同一主题
+### 86. 这与 YaRN 的 Range–Resolution Trade-off 是同一主题
 
 YaRN 中：
 
@@ -3320,9 +3320,9 @@ $$
 
 ---
 
-# 二十四、论文中最值得保留的 Evidence Boundary
+## 二十四、论文中最值得保留的 Evidence Boundary
 
-## 87. 4K → 32K 不等于“模型学会了 8× 更长任务”
+### 87. 4K → 32K 不等于“模型学会了 8× 更长任务”
 
 DCA 没有 weight update。
 
@@ -3344,7 +3344,7 @@ DCA 没有 weight update。
 
 ---
 
-## 88. PPL 低不等于 Retrieval 强
+### 88. PPL 低不等于 Retrieval 强
 
 Ablation 自己已经证明：
 
@@ -3360,7 +3360,7 @@ $$
 
 ---
 
-## 89. Passkey 强不等于 Reasoning 强
+### 89. Passkey 强不等于 Reasoning 强
 
 Passkey 只要求找到：
 
@@ -3384,7 +3384,7 @@ $$
 
 ---
 
-## 90. Benchmark 强不等于任意 100K 输入都稳定
+### 90. Benchmark 强不等于任意 100K 输入都稳定
 
 实际文档类型可能不同：
 
@@ -3405,9 +3405,9 @@ DCA 的 position remapping 对不同 workload 的影响可能不同。
 
 ---
 
-# 二十五、为什么 Qwen2.5 同时使用 YaRN + DCA？
+## 二十五、为什么 Qwen2.5 同时使用 YaRN + DCA？
 
-## 91. 先看 Training Length
+### 91. 先看 Training Length
 
 普通 Qwen2.5：
 
@@ -3432,7 +3432,7 @@ $$
 
 ---
 
-## 92. 再看 YaRN
+### 92. 再看 YaRN
 
 YaRN 处理：
 
@@ -3450,7 +3450,7 @@ $$
 
 ---
 
-## 93. 再看 DCA
+### 93. 再看 DCA
 
 DCA 回答：
 
@@ -3460,7 +3460,7 @@ DCA 回答：
 
 ---
 
-## 94. 最后才是 MInference
+### 94. 最后才是 MInference
 
 即使：
 
@@ -3499,9 +3499,9 @@ sparse prefill / runtime acceleration
 
 ---
 
-# 二十六、为什么 DCA 特别适合和 RoPE 模型组合？
+## 二十六、为什么 DCA 特别适合和 RoPE 模型组合？
 
-## 95. 它依赖 RoPE 的一个关键性质
+### 95. 它依赖 RoPE 的一个关键性质
 
 RoPE inner product 的 position dependency 可以通过：
 
@@ -3530,7 +3530,7 @@ $$
 
 ---
 
-## 96. 如果位置编码不是 RoPE 呢？
+### 96. 如果位置编码不是 RoPE 呢？
 
 不能机械照搬。
 
@@ -3551,9 +3551,9 @@ DCA 的具体公式建立在：
 
 ---
 
-# 二十七、与 ReRoPE / SelfExtend 这类方法怎样理解关系？
+## 二十七、与 ReRoPE / SelfExtend 这类方法怎样理解关系？
 
-## 97. 共性
+### 97. 共性
 
 这类 training-free method 都在问：
 
@@ -3573,7 +3573,7 @@ $$
 
 ---
 
-## 98. DCA 的特色
+### 98. DCA 的特色
 
 DCA 特别强调：
 
@@ -3586,9 +3586,9 @@ DCA 特别强调：
 
 ---
 
-# 二十八、从工程实现角度重新走一次
+## 二十八、从工程实现角度重新走一次
 
-## 99. Prefill
+### 99. Prefill
 
 输入一条长 prompt。
 
@@ -3616,7 +3616,7 @@ $$
 
 ---
 
-## 100. Decode
+### 100. Decode
 
 新 token 到来时：
 
@@ -3632,7 +3632,7 @@ $$
 
 ---
 
-## 101. 为什么同一个 Q 要旋转三次而 K 只旋一次？
+### 101. 为什么同一个 Q 要旋转三次而 K 只旋一次？
 
 这是 DCA 最关键的系统折中。
 
@@ -3660,9 +3660,9 @@ $$
 
 ---
 
-# 二十九、DCA 的复杂度要怎样严谨表述？
+## 二十九、DCA 的复杂度要怎样严谨表述？
 
-## 102. 计算复杂度
+### 102. 计算复杂度
 
 如果每个 query 仍访问全部历史 keys：
 
@@ -3682,7 +3682,7 @@ $$
 
 ---
 
-## 103. 显存复杂度
+### 103. 显存复杂度
 
 使用 FlashAttention 时，不需要 materialize：
 
@@ -3706,7 +3706,7 @@ $$
 
 ---
 
-## 104. Kernel overhead
+### 104. Kernel overhead
 
 相比单一路径 FlashAttention，DCA 多：
 
@@ -3725,51 +3725,51 @@ $$
 
 ---
 
-# 三十、DCA 适合什么，不适合什么？
+## 三十、DCA 适合什么，不适合什么？
 
-## 105. 适合
+### 105. 适合
 
-### 已有模型无法重新训练
+#### 已有模型无法重新训练
 
 希望零 weight-update 扩 context。
 
-### 想保留 full-history access
+#### 想保留 full-history access
 
 不能接受纯 sliding window 丢掉远 token。
 
-### 使用 RoPE + FlashAttention
+#### 使用 RoPE + FlashAttention
 
 最匹配论文设计。
 
-### 需要在更大模型上快速验证
+#### 需要在更大模型上快速验证
 
 70B long-context fine-tuning 成本过高时尤其有吸引力。
 
 ---
 
-## 106. 不一定适合
+### 106. 不一定适合
 
-### 需要精确远距离 metric position
+#### 需要精确远距离 metric position
 
 DCA 会 alias far distance。
 
-### 需要百万级 full attention 低 TTFT
+#### 需要百万级 full attention 低 TTFT
 
 它不降 $O(L^2)$。
 
-### 需要真正新增长程 reasoning skill
+#### 需要真正新增长程 reasoning skill
 
 没有 long-context training signal。
 
-### 非 RoPE architecture
+#### 非 RoPE architecture
 
 需要重新分析位置机制。
 
 ---
 
-# 三十一、把 DCA 与现有站内技术放回一张图
+## 三十一、把 DCA 与现有站内技术放回一张图
 
-## 107. RoPE
+### 107. RoPE
 
 解决：
 
@@ -3779,7 +3779,7 @@ DCA 会 alias far distance。
 
 ---
 
-## 108. YaRN
+### 108. YaRN
 
 解决：
 
@@ -3789,7 +3789,7 @@ DCA 会 alias far distance。
 
 ---
 
-## 109. DCA
+### 109. DCA
 
 解决：
 
@@ -3799,7 +3799,7 @@ DCA 会 alias far distance。
 
 ---
 
-## 110. GQA / MLA
+### 110. GQA / MLA
 
 解决：
 
@@ -3811,7 +3811,7 @@ DCA 并不替代它们。
 
 ---
 
-## 111. FlashAttention
+### 111. FlashAttention
 
 解决：
 
@@ -3821,7 +3821,7 @@ DCA 依赖它来避免 materialize attention matrix。
 
 ---
 
-## 112. MInference
+### 112. MInference
 
 解决：
 
@@ -3831,9 +3831,9 @@ DCA 依赖它来避免 materialize attention matrix。
 
 ---
 
-# 三十二、一个值得迁移到机器人 / VLA 的设计思想
+## 三十二、一个值得迁移到机器人 / VLA 的设计思想
 
-## 113. 历史越远，时间精度可以越粗吗？
+### 113. 历史越远，时间精度可以越粗吗？
 
 机器人时序中也常见：
 
@@ -3860,7 +3860,7 @@ $$
 
 ---
 
-## 114. 但不能直接把 DCA 套到控制序列
+### 114. 但不能直接把 DCA 套到控制序列
 
 控制系统中精确时间间隔可能决定：
 
@@ -3879,71 +3879,71 @@ $$
 
 ---
 
-# 三十三、论文最容易学错的十二个地方
+## 三十三、论文最容易学错的十二个地方
 
-## 错法 1：DCA 是 Sparse Attention
+### 错法 1：DCA 是 Sparse Attention
 
 不准确。
 
 它主要重映射位置，仍访问全部历史 key。
 
-## 错法 2：DCA 把旧 chunk 压成一个向量
+### 错法 2：DCA 把旧 chunk 压成一个向量
 
 错误。
 
 content K/V 都保留。
 
-## 错法 3：Modulo key position 会让不同 token 完全相同
+### 错法 3：Modulo key position 会让不同 token 完全相同
 
 错误。
 
 只 alias positional phase。
 
-## 错法 4：Inter 保留精确远距离
+### 错法 4：Inter 保留精确远距离
 
 错误。
 
 它故意压缩 far distance。
 
-## 错法 5：Successive 是为了增加更多远距离信息
+### 错法 5：Successive 是为了增加更多远距离信息
 
 错误。
 
 它主要修复 boundary locality。
 
-## 错法 6：三路 softmax output 可以直接相加
+### 错法 6：三路 softmax output 可以直接相加
 
 错误。
 
 必须按 global normalizer 合并。
 
-## 错法 7：三次 FlashAttention 等于 3× QK FLOPs
+### 错法 7：三次 FlashAttention 等于 3× QK FLOPs
 
 不对。
 
 三个 key group 基本互斥，总 coverage 接近一次 full history。
 
-## 错法 8：DCA 解决 $O(L^2)$
+### 错法 8：DCA 解决 $O(L^2)$
 
 错误。
 
-## 错法 9：Training-Free = 零工程改动
+### 错法 9：Training-Free = 零工程改动
 
 错误。
 
 runtime 改动很实质。
 
-## 错法 10：Passkey 强 = long reasoning 强
+### 错法 10：Passkey 强 = long reasoning 强
 
 错误。
 
-## 错法 11：DCA 与 YaRN 是替代关系
+### 错法 11：DCA 与 YaRN 是替代关系
 
 不对。
 
 Qwen2.5 就把两者组合。
 
-## 错法 12：Qwen2.5 1M context 来自 DCA
+### 错法 12：Qwen2.5 1M context 来自 DCA
 
 完全不对。
 
@@ -3951,9 +3951,9 @@ Qwen2.5 就把两者组合。
 
 ---
 
-# 三十四、把整篇论文压成一条因果链
+## 三十四、把整篇论文压成一条因果链
 
-## 115. Failure → Design
+### 115. Failure → Design
 
 ~~~{mermaid}
 flowchart TD
@@ -3976,17 +3976,17 @@ flowchart TD
 
 ---
 
-## 116. 一句话记忆
+### 116. 一句话记忆
 
 > **DCA 不试图让模型精确理解任意大的 RoPE 距离；它把长序列重新编码成“近处精确、远处粗粒度但仍可访问”的相对位置结构，并把所有 RoPE offset 控制在模型训练过的范围内。**
 
 ---
 
-# 三十五、论文论证强度怎么分层？
+## 三十五、论文论证强度怎么分层？
 
-## 117. 强因果证据
+### 117. 强因果证据
 
-### 三分支 Ablation
+#### 三分支 Ablation
 
 Intra → +Inter → +Successive。
 
@@ -3994,17 +3994,17 @@ Intra → +Inter → +Successive。
 
 ---
 
-## 118. 强工程证据
+### 118. 强工程证据
 
-### Efficiency Figure
+#### Efficiency Figure
 
 说明 DCA 可以与 FlashAttention 结合，并在论文硬件设置下 overhead 较小。
 
 ---
 
-## 119. 中等证据
+### 119. 中等证据
 
-### PG19 PPL + passkey
+#### PG19 PPL + passkey
 
 两个指标互补，说明：
 
@@ -4015,9 +4015,9 @@ Intra → +Inter → +Successive。
 
 ---
 
-## 120. 更弱的综合能力外推
+### 120. 更弱的综合能力外推
 
-### Long benchmark aggregate
+#### Long benchmark aggregate
 
 能够说明模型在这些任务中可用。
 
@@ -4027,9 +4027,9 @@ Intra → +Inter → +Successive。
 
 ---
 
-# 三十六、从这里继续怎么读？
+## 三十六、从这里继续怎么读？
 
-## 121. 如果 Relative-Position Matrix 没建立起来
+### 121. 如果 Relative-Position Matrix 没建立起来
 
 回：
 
@@ -4051,7 +4051,7 @@ $$
 
 ---
 
-## 122. 如果不理解为什么 DCA 与 YaRN 能同时使用
+### 122. 如果不理解为什么 DCA 与 YaRN 能同时使用
 
 回：
 
@@ -4073,7 +4073,7 @@ $$
 
 ---
 
-## 123. 如果想回真实模型系统
+### 123. 如果想回真实模型系统
 
 回：
 
@@ -4091,7 +4091,7 @@ long-context pre-training
 
 ---
 
-## 124. 下一篇：MInference
+### 124. 下一篇：MInference
 
 现在真正剩下的问题已经不是：
 
@@ -4115,7 +4115,7 @@ long-context pre-training
 
 ---
 
-# 三十七、最终自检
+## 三十七、最终自检
 
 读完 DCA，至少应该能回答：
 

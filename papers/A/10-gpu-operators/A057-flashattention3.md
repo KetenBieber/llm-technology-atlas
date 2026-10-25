@@ -31,7 +31,7 @@ $$
 
 ---
 
-## 阅读导航
+### 阅读导航
 
 本文重点回答：
 
@@ -70,7 +70,7 @@ $$
 
 *教学解释图｜Hopper 的 TMA/WGMMA 与 producer-consumer 异步流水让数据搬运、GEMM 与 softmax 尽可能重叠。*
 
-# 一、先把三代 FlashAttention 的瓶颈迁移串起来
+## 一、先把三代 FlashAttention 的瓶颈迁移串起来
 
 理解 FA3 最容易犯的错误，是把它看成：
 
@@ -86,7 +86,7 @@ $$
 }
 $$
 
-## 1. Standard Attention：HBM traffic 太大
+### 1. Standard Attention：HBM traffic 太大
 
 标准 Attention：
 
@@ -120,7 +120,7 @@ $$
 
 让 $S,P$ 不再 materialize 到 HBM。
 
-## 2. FA1 之后：GPU 还是没吃满
+### 2. FA1 之后：GPU 还是没吃满
 
 HBM traffic 降下来以后，FA2 发现：
 
@@ -141,7 +141,7 @@ $$
 \boxed{\text{更好的 work ownership}}
 $$
 
-## 3. FA2 到 H100：硬件变了，旧 execution schedule 没跟上
+### 3. FA2 到 H100：硬件变了，旧 execution schedule 没跟上
 
 FA2 在 A100 上已经能达到很高的有效吞吐。
 
@@ -184,7 +184,7 @@ $$
 
 ---
 
-# 二、Hopper 的变化：GPU 不再只是“一群线程 + Tensor Core”
+## 二、Hopper 的变化：GPU 不再只是“一群线程 + Tensor Core”
 
 FA3 论文真正关心的是：
 
@@ -197,7 +197,7 @@ FA3 论文真正关心的是：
 
 为了理解后面的 pipeline，先把几个词讲清楚。
 
-## 4. Warpgroup：WGMMA 的基本协作单位
+### 4. Warpgroup：WGMMA 的基本协作单位
 
 NVIDIA 的基本 thread hierarchy：
 
@@ -233,7 +233,7 @@ $$
 
 共同发起大 tile 的 Tensor Core matrix multiply。
 
-## 5. WGMMA 的关键不是“矩阵乘更快”，而是 asynchronous
+### 5. WGMMA 的关键不是“矩阵乘更快”，而是 asynchronous
 
 如果一条普通同步 instruction：
 
@@ -283,9 +283,9 @@ $$
 
 ---
 
-# 三、TMA：把数据搬运也从普通线程里“拆出去”
+## 三、TMA：把数据搬运也从普通线程里“拆出去”
 
-## 6. 普通 tiled kernel 的 load 也有成本
+### 6. 普通 tiled kernel 的 load 也有成本
 
 过去做：
 
@@ -307,7 +307,7 @@ $$
 - registers；
 - thread execution resources。
 
-## 7. Hopper Tensor Memory Accelerator
+### 7. Hopper Tensor Memory Accelerator
 
 TMA：
 
@@ -342,11 +342,11 @@ $$
 
 ---
 
-# 四、Warp Specialization：同一个 CTA 内也应该有“岗位分工”
+## 四、Warp Specialization：同一个 CTA 内也应该有“岗位分工”
 
 FA3 把一个 CTA 内的 warps / warpgroups 分成角色。
 
-## 8. Producer warpgroup
+### 8. Producer warpgroup
 
 Producer 主要负责：
 
@@ -364,7 +364,7 @@ Producer 主要负责：
 
 因此 producer 不需要那么多 registers。
 
-## 9. Consumer warpgroup
+### 9. Consumer warpgroup
 
 Consumer 负责：
 
@@ -386,7 +386,7 @@ Consumer 负责：
 
 ---
 
-# 五、setmaxnreg：寄存器也开始按角色动态分配
+## 五、setmaxnreg：寄存器也开始按角色动态分配
 
 一个 SM 的 register file 总容量固定。
 
@@ -419,7 +419,7 @@ warp specialization 不是只把代码分支写成不同角色。
 
 ---
 
-# 六、Circular SMEM Buffer：为什么 producer 不会踩坏 consumer 正在用的数据？
+## 六、Circular SMEM Buffer：为什么 producer 不会踩坏 consumer 正在用的数据？
 
 假设 shared memory 中准备：
 
@@ -469,11 +469,11 @@ $$
 
 但如果 consumer 还没有用完这个 stage，producer 不能覆盖。
 
-## 10. 两种状态
+### 10. 两种状态
 
 每个 buffer stage 至少有两个关键事件：
 
-### ready
+#### ready
 
 producer 已经完成 TMA load：
 
@@ -481,7 +481,7 @@ $$
 \text{tile ready for consumer}.
 $$
 
-### consumed
+#### consumed
 
 consumer 已经完成所有依赖计算：
 
@@ -499,7 +499,7 @@ $$
 }
 $$
 
-## 11. 为什么 circular buffer 能隐藏 memory latency？
+### 11. 为什么 circular buffer 能隐藏 memory latency？
 
 如果只有一个 buffer：
 
@@ -546,7 +546,7 @@ $$
 
 ---
 
-# 七、但这还只是第一层异步：FA3 还有第二层
+## 七、但这还只是第一层异步：FA3 还有第二层
 
 到这里解决的是：
 
@@ -574,7 +574,7 @@ FA3 的第二个关键贡献，就是继续把这个链条挖出 overlap。
 
 ---
 
-# 八、为什么 softmax FLOPs 少，却依然很贵？
+## 八、为什么 softmax FLOPs 少，却依然很贵？
 
 现代 GPU 上：
 
@@ -604,7 +604,7 @@ $$
 \approx3.9\text{ TFLOPs/s}.
 $$
 
-## 12. Head dim = 128 的直觉计算
+### 12. Head dim = 128 的直觉计算
 
 论文指出在该设置下，matmul FLOPs 数大约是 exponential 数量的：
 
@@ -634,7 +634,7 @@ $$
 
 ---
 
-# 九、为什么 FP8 反而让 softmax 问题更严重？
+## 九、为什么 FP8 反而让 softmax 问题更严重？
 
 Hopper FP8 Tensor Core throughput 大约进一步翻倍。
 
@@ -674,7 +674,7 @@ $$
 
 ---
 
-# 十、Ping-Pong Scheduling：让不同 consumer warpgroups 交错工作
+## 十、Ping-Pong Scheduling：让不同 consumer warpgroups 交错工作
 
 ![FlashAttention-3 原论文：ping-pong scheduling](../../../figures/A057/fig1-pingpong-pipelining.png)
 
@@ -706,7 +706,7 @@ $$
 \boxed{\text{ping-pong}}
 $$
 
-## 13. Ping-pong overlap 的是谁？
+### 13. Ping-pong overlap 的是谁？
 
 不是：
 
@@ -730,11 +730,11 @@ $$
 
 ---
 
-# 十一、为什么不同 warpgroup 能帮忙？
+## 十一、为什么不同 warpgroup 能帮忙？
 
 因为 WGMMA 与 softmax 主要使用不同执行资源。
 
-## WGMMA
+### WGMMA
 
 主要占：
 
@@ -742,7 +742,7 @@ $$
 \text{Tensor Core}.
 $$
 
-## softmax
+### softmax
 
 主要依赖：
 
@@ -759,7 +759,7 @@ $$
 
 ---
 
-# 十二、2-Stage Pipeline：更进一步，在 tile 之间打破串行依赖
+## 十二、2-Stage Pipeline：更进一步，在 tile 之间打破串行依赖
 
 ![FlashAttention-3 原论文：2-stage GEMM-softmax pipeline](../../../figures/A057/fig2-2stage-pipelining.png)
 
@@ -809,7 +809,7 @@ softmax_{j+1}
 ...
 ~~~
 
-## 14. FA3 的关键重排
+### 14. FA3 的关键重排
 
 WGMMA 可以异步 issue。
 
@@ -847,7 +847,7 @@ $$
 
 ---
 
-# 十三、这为什么不违反数据依赖？
+## 十三、这为什么不违反数据依赖？
 
 因为：
 
@@ -915,7 +915,7 @@ $$
 
 ---
 
-# 十四、2-stage 为什么要多占 registers？
+## 十四、2-stage 为什么要多占 registers？
 
 为了 overlap：
 
@@ -959,7 +959,7 @@ $$
 
 ---
 
-# 十五、为什么 register pressure 会反过来伤害性能？
+## 十五、为什么 register pressure 会反过来伤害性能？
 
 一个 SM 的 registers 有限。
 
@@ -986,7 +986,7 @@ FA3 不是“pipeline stage 越多越好”。
 
 ---
 
-# 十六、3-Stage Pipeline：理论 overlap 更多，资源代价也更大
+## 十六、3-Stage Pipeline：理论 overlap 更多，资源代价也更大
 
 ![FlashAttention-3 原论文：3-stage pipeline](../../../figures/A057/fig3-3stage-pipelining.png)
 
@@ -1021,7 +1021,7 @@ $$
 
 ---
 
-# 十七、把 FA3 的前半篇压成一张执行图
+## 十七、把 FA3 的前半篇压成一张执行图
 
 现在可以把一个 tile pipeline 理解成：
 
@@ -1062,7 +1062,7 @@ $$
 
 ---
 
-# 十八、FA3 的异步思想和 CPU pipeline 有什么相似？
+## 十八、FA3 的异步思想和 CPU pipeline 有什么相似？
 
 概念上都在做：
 
@@ -1095,7 +1095,7 @@ $$
 
 ---
 
-# 十九、到这里还只是 FP16/BF16，FA3 的第三条线是 FP8
+## 十九、到这里还只是 FP16/BF16，FA3 的第三条线是 FP8
 
 Hopper 提供 FP8 Tensor Core。
 
@@ -1121,7 +1121,7 @@ FA3 必须同时解决。
 
 ---
 
-# 二十、FP8 的第一个工程问题：WGMMA layout 约束更严格
+## 二十、FP8 的第一个工程问题：WGMMA layout 约束更严格
 
 设 GEMM：
 
@@ -1155,7 +1155,7 @@ $$
 
 ---
 
-# 二十一、为什么 $V$ layout 会出问题？
+## 二十一、为什么 $V$ layout 会出问题？
 
 Attention：
 
@@ -1185,7 +1185,7 @@ $$
 
 ---
 
-# 二十二、LDSM / STSM：在 SMEM↔RMEM 路径里重排 $V$
+## 二十二、LDSM / STSM：在 SMEM↔RMEM 路径里重排 $V$
 
 FA3 利用 **ldmatrix** 与 **stmatrix**。
 
@@ -1207,7 +1207,7 @@ $$
 
 ---
 
-# 二十三、FP8 第二个 layout 难题：第一个 GEMM 的 accumulator 不能原样喂给第二个 GEMM
+## 二十三、FP8 第二个 layout 难题：第一个 GEMM 的 accumulator 不能原样喂给第二个 GEMM
 
 第一个 GEMM：
 
@@ -1243,7 +1243,7 @@ $$
 
 ---
 
-# 二十四、FA3 的解法：register byte permutation + matching V permutation
+## 二十四、FA3 的解法：register byte permutation + matching V permutation
 
 FA3 对 $P$ 在 registers 中做 byte-level rearrangement。
 
@@ -1297,7 +1297,7 @@ $$
 
 ---
 
-# 二十五、这已经不是“数学公式 → kernel”这么简单
+## 二十五、这已经不是“数学公式 → kernel”这么简单
 
 到了 FA3，真正的设计对象包含：
 
@@ -1325,7 +1325,7 @@ $$
 而不仅仅是 FLOPs。
 
 
-# 二十六、FP8 的第二个问题：动态范围和 outlier
+## 二十六、FP8 的第二个问题：动态范围和 outlier
 
 FP8 并不只是：
 
@@ -1348,7 +1348,7 @@ $$
 
 ---
 
-## 26.1 为什么 per-tensor scaling 容易被 outlier 拖累？
+### 26.1 为什么 per-tensor scaling 容易被 outlier 拖累？
 
 假设一个 tensor 绝大多数值都在：
 
@@ -1394,7 +1394,7 @@ $$
 
 ---
 
-# 二十七、Block Quantization：先把 scale 的作用域缩小
+## 二十七、Block Quantization：先把 scale 的作用域缩小
 
 FA3 的第一种办法非常自然：
 
@@ -1424,7 +1424,7 @@ $$
 
 ---
 
-## 27.1 为什么这和 FlashAttention 特别匹配？
+### 27.1 为什么这和 FlashAttention 特别匹配？
 
 FA3 本来就是：
 
@@ -1469,7 +1469,7 @@ $$
 
 ---
 
-## 27.2 Block quantization 解决什么？
+### 27.2 Block quantization 解决什么？
 
 它把：
 
@@ -1492,7 +1492,7 @@ $$
 
 ---
 
-# 二十八、但 block quantization 仍然不能彻底解决“一个 block 内有巨大 outlier”
+## 二十八、但 block quantization 仍然不能彻底解决“一个 block 内有巨大 outlier”
 
 假设某个 block：
 
@@ -1522,7 +1522,7 @@ $$
 
 ---
 
-# 二十九、Incoherent Processing：先把 outlier “摊开”
+## 二十九、Incoherent Processing：先把 outlier “摊开”
 
 FA3 对：
 
@@ -1557,7 +1557,7 @@ $$
 
 ---
 
-## 29.1 为什么 Attention score 完全不变？
+### 29.1 为什么 Attention score 完全不变？
 
 原 score：
 
@@ -1610,7 +1610,7 @@ $$
 
 ---
 
-# 三十、为什么正交混合能减轻 outlier？
+## 三十、为什么正交混合能减轻 outlier？
 
 假设原向量：
 
@@ -1654,7 +1654,7 @@ $$
 
 ---
 
-# 三十一、为什么叫 incoherent？
+## 三十一、为什么叫 incoherent？
 
 这里的 “coherent” 可以直观理解为：
 
@@ -1680,7 +1680,7 @@ $$
 
 ---
 
-# 三十二、为什么不用真正 dense random orthogonal matrix？
+## 三十二、为什么不用真正 dense random orthogonal matrix？
 
 如果直接乘：
 
@@ -1716,11 +1716,11 @@ $$
 
 ---
 
-# 三十三、教学图：为什么变换后 score 不变、量化却更容易？
+## 三十三、教学图：为什么变换后 score 不变、量化却更容易？
 
 这里要区分两个层次：
 
-## 数学层
+### 数学层
 
 $$
 (QM)(KM)^\top=QK^\top.
@@ -1728,7 +1728,7 @@ $$
 
 exact。
 
-## 数值表示层
+### 数值表示层
 
 变换后的：
 
@@ -1750,7 +1750,7 @@ $$
 
 ---
 
-# 三十四、为什么不对 $V$ 做同样的正交变换？
+## 三十四、为什么不对 $V$ 做同样的正交变换？
 
 Attention score 的不变性来自：
 
@@ -1784,7 +1784,7 @@ V 仍可以做 block quantization，但不是通过同样的 Q/K orthogonal inva
 
 ---
 
-# 三十五、Block Quantization 与 Incoherent Processing 不是同一件事
+## 三十五、Block Quantization 与 Incoherent Processing 不是同一件事
 
 可以把它们区分成：
 
@@ -1793,7 +1793,7 @@ V 仍可以做 block quantization，但不是通过同样的 Q/K orthogonal inva
 *教学解释图｜FP8 Quantization Incoherent。*
 
 
-## Block quantization
+### Block quantization
 
 解决：
 
@@ -1803,7 +1803,7 @@ $$
 
 让不同 tile 各自有 scale。
 
-## Incoherent processing
+### Incoherent processing
 
 解决：
 
@@ -1817,7 +1817,7 @@ $$
 
 ---
 
-# 三十六、论文 numerical error 实验到底怎么设计？
+## 三十六、论文 numerical error 实验到底怎么设计？
 
 为了模拟 LLM activation outlier，论文构造输入：
 
@@ -1848,7 +1848,7 @@ $$
 
 ---
 
-# 三十七、FP16：FA2 与 FA3 数值精度没有退化
+## 三十七、FP16：FA2 与 FA3 数值精度没有退化
 
 论文结果：
 
@@ -1874,7 +1874,7 @@ $$
 
 ---
 
-# 三十八、FP8：2.6× numerical error improvement 是怎么来的？
+## 三十八、FP8：2.6× numerical error improvement 是怎么来的？
 
 论文：
 
@@ -1903,7 +1903,7 @@ $$
 
 ---
 
-# 三十九、这个 ablation 有一个非常值得注意的结论
+## 三十九、这个 ablation 有一个非常值得注意的结论
 
 去掉 block quantization：
 
@@ -1941,7 +1941,7 @@ block quantization 仍有合理性，但论文这组 ablation 表明：
 
 ---
 
-# 四十、现在回到性能：FA3 到底快多少？
+## 四十、现在回到性能：FA3 到底快多少？
 
 论文在：
 
@@ -1972,7 +1972,7 @@ $$
 
 ---
 
-# 四十一、forward FLOPs 怎么算？
+## 四十一、forward FLOPs 怎么算？
 
 单 head：
 
@@ -2022,7 +2022,7 @@ $$
 
 ---
 
-# 四十二、backward 为什么仍用 2.5× forward FLOPs？
+## 四十二、backward 为什么仍用 2.5× forward FLOPs？
 
 和 FA2 一样。
 
@@ -2063,7 +2063,7 @@ $$
 
 ---
 
-# 四十三、FP16 Forward：最高约 740 TFLOPs/s
+## 四十三、FP16 Forward：最高约 740 TFLOPs/s
 
 ![FlashAttention-3 H100 FP16 Forward](../../../figures/A057/fig4-h100-fp16-fwd-hdim128.svg)
 
@@ -2101,7 +2101,7 @@ $$
 
 ---
 
-# 四十四、为什么 Attention 永远很难和纯 GEMM 一样接近 peak？
+## 四十四、为什么 Attention 永远很难和纯 GEMM 一样接近 peak？
 
 因为 Attention 除了 GEMM 还有：
 
@@ -2125,7 +2125,7 @@ $$
 
 ---
 
-# 四十五、Backward：1.5–1.75× FA2
+## 四十五、Backward：1.5–1.75× FA2
 
 ![FlashAttention-3 H100 FP16 Backward](../../../figures/A057/fig5-h100-fp16-bwd-hdim128.svg)
 
@@ -2151,7 +2151,7 @@ Backward 比 forward 更难：
 
 ---
 
-# 四十六、FP8：接近 1.2 PFLOPs/s
+## 四十六、FP8：接近 1.2 PFLOPs/s
 
 ![FlashAttention-3 H100 FP8 Forward](../../../figures/A057/fig6-h100-fp8-fwd-hdim256.svg)
 
@@ -2193,7 +2193,7 @@ $$
 
 ---
 
-# 四十七、最有价值的性能证据：Ablation
+## 四十七、最有价值的性能证据：Ablation
 
 论文固定：
 
@@ -2213,7 +2213,7 @@ $$
 
 ---
 
-# 四十八、怎么读这个 ablation？
+## 四十八、怎么读这个 ablation？
 
 Full：
 
@@ -2235,14 +2235,14 @@ $$
 
 说明两条设计都不是装饰。
 
-## Warp specialization 提供
+### Warp specialization 提供
 
 - TMA producer / WGMMA consumer 分工；
 - register redistribution；
 - better load-compute overlap；
 - cleaner instruction scheduling。
 
-## GEMM-softmax pipeline 提供
+### GEMM-softmax pipeline 提供
 
 - Tensor Core 与 CUDA/SFU concurrency；
 - 减少 softmax 暴露在 critical path 的时间。
@@ -2266,7 +2266,7 @@ $$
 
 ---
 
-# 四十九、为什么两个单独技巧的收益不能直接相加？
+## 四十九、为什么两个单独技巧的收益不能直接相加？
 
 因为 performance optimization 通常不是线性可加。
 
@@ -2314,7 +2314,7 @@ $$
 
 ---
 
-# 五十、FA3 为什么能在长 sequence 上超过 cuDNN 某些实现？
+## 五十、FA3 为什么能在长 sequence 上超过 cuDNN 某些实现？
 
 长 sequence 时：
 
@@ -2336,7 +2336,7 @@ $$
 
 ---
 
-# 五十一、为什么 FP8 在短序列 / causal 某些 setting 下未必最好？
+## 五十一、为什么 FP8 在短序列 / causal 某些 setting 下未必最好？
 
 论文明确给出一个实现边界：
 
@@ -2367,7 +2367,7 @@ $$
 
 ---
 
-# 五十二、什么是 Persistent Kernel？
+## 五十二、什么是 Persistent Kernel？
 
 普通 kernel：
 
@@ -2391,7 +2391,7 @@ FA3 discussion 明确把 FP8 persistent kernel 作为后续改进方向之一。
 
 ---
 
-# 五十三、Causal Attention 为什么更容易产生 load imbalance？
+## 五十三、Causal Attention 为什么更容易产生 load imbalance？
 
 causal mask：
 
@@ -2421,7 +2421,7 @@ persistent work scheduler 可以把 tile work 更动态地分配给 SM。
 
 ---
 
-# 五十四、FA3 还是 Exact Attention 吗？
+## 五十四、FA3 还是 Exact Attention 吗？
 
 是。
 
@@ -2450,7 +2450,7 @@ $$
 
 ---
 
-# 五十五、FP8 该怎么理解“exact”？
+## 五十五、FP8 该怎么理解“exact”？
 
 这里必须更精确。
 
@@ -2484,7 +2484,7 @@ $$
 
 ---
 
-# 五十六、Incoherent Processing 为什么特别漂亮？
+## 五十六、Incoherent Processing 为什么特别漂亮？
 
 因为它展示了系统算法里一个非常强的设计模式：
 
@@ -2532,9 +2532,9 @@ $$
 
 ---
 
-# 五十七、FA1 → FA2 → FA3：三代分别优化哪一层？
+## 五十七、FA1 → FA2 → FA3：三代分别优化哪一层？
 
-## FlashAttention-1
+### FlashAttention-1
 
 问题：
 
@@ -2556,7 +2556,7 @@ $$
 
 ---
 
-## FlashAttention-2
+### FlashAttention-2
 
 问题：
 
@@ -2578,7 +2578,7 @@ $$
 
 ---
 
-## FlashAttention-3
+### FlashAttention-3
 
 问题：
 
@@ -2604,11 +2604,11 @@ $$
 
 ---
 
-# 五十八、这三代其实是一套性能分析方法
+## 五十八、这三代其实是一套性能分析方法
 
 面对任何 kernel，可以依次问：
 
-## 第一层：Data Movement
+### 第一层：Data Movement
 
 $$
 \boxed{\text{搬了多少 bytes？}}
@@ -2616,7 +2616,7 @@ $$
 
 是否有不必要 HBM round-trip？
 
-## 第二层：Work Decomposition
+### 第二层：Work Decomposition
 
 $$
 \boxed{\text{工作怎么切给 SM / warp？}}
@@ -2624,7 +2624,7 @@ $$
 
 是否有 idle hardware / unnecessary reduction？
 
-## 第三层：Execution Overlap
+### 第三层：Execution Overlap
 
 $$
 \boxed{\text{不同硬件单元能否同时工作？}}
@@ -2632,7 +2632,7 @@ $$
 
 memory engine、matrix engine、scalar/SFU 是否被串行 schedule？
 
-## 第四层：Numerical Representation
+### 第四层：Numerical Representation
 
 $$
 \boxed{\text{能否用更低 precision？}}
@@ -2644,7 +2644,7 @@ FA1/2/3 恰好逐层走完。
 
 ---
 
-# 五十九、为什么“异步”比“更多线程”更高级一层？
+## 五十九、为什么“异步”比“更多线程”更高级一层？
 
 增加线程主要是：
 
@@ -2680,7 +2680,7 @@ $$
 
 ---
 
-# 六十、为什么这对 NPU / 专用 accelerator 同样重要？
+## 六十、为什么这对 NPU / 专用 accelerator 同样重要？
 
 很多 NPU 也有类似结构：
 
@@ -2720,7 +2720,7 @@ store(tile j-2)
 
 ---
 
-# 六十一、对机器人边缘部署最值得迁移的不是 WGMMA 指令名
+## 六十一、对机器人边缘部署最值得迁移的不是 WGMMA 指令名
 
 在 RK3588 NPU、Jetson、其他 accelerator 上未必有：
 
@@ -2741,7 +2741,7 @@ store(tile j-2)
 
 ---
 
-# 六十二、一个很有用的“流水线账本”
+## 六十二、一个很有用的“流水线账本”
 
 设计一个 accelerator kernel 时，可以画：
 
@@ -2761,7 +2761,7 @@ store(tile j-2)
 
 ---
 
-# 六十三、为什么 barrier 应该细粒度，而不是全 CTA sync？
+## 六十三、为什么 barrier 应该细粒度，而不是全 CTA sync？
 
 如果每次都：
 
@@ -2793,7 +2793,7 @@ $$
 
 ---
 
-# 六十四、FA3 和 4D Parallelism 有一个非常直接的共同抽象
+## 六十四、FA3 和 4D Parallelism 有一个非常直接的共同抽象
 
 C001 里我们写：
 
@@ -2829,11 +2829,11 @@ $$
 
 ---
 
-# 六十五、FA3 的边界
+## 六十五、FA3 的边界
 
 论文自己的边界非常值得保留。
 
-## 1. 主要针对 Hopper
+### 1. 主要针对 Hopper
 
 核心能力：
 
@@ -2844,13 +2844,13 @@ $$
 
 不能简单把同一个 kernel 原样搬到 Ampere。
 
-## 2. FP8 仍有数值风险
+### 2. FP8 仍有数值风险
 
 虽然论文 synthetic outlier benchmark 显示明显改善，但：
 
 > 大规模完整训练中的 long-term optimization / convergence effect 仍需要单独验证。
 
-## 3. FP8 implementation 当时并非所有 shape 都最优
+### 3. FP8 implementation 当时并非所有 shape 都最优
 
 特别是：
 
@@ -2860,7 +2860,7 @@ $$
 
 vendor implementation 某些 setting 仍可能更快。
 
-## 4. Inference 优化不是论文全部覆盖范围
+### 4. Inference 优化不是论文全部覆盖范围
 
 论文更聚焦 attention primitive 本身。
 
@@ -2874,7 +2874,7 @@ serving 中还要考虑：
 
 ---
 
-# 六十六、不要把 FA3 的 1.2 PFLOPs/s 直接等价成模型 end-to-end throughput
+## 六十六、不要把 FA3 的 1.2 PFLOPs/s 直接等价成模型 end-to-end throughput
 
 FA3 benchmark 测的是：
 
@@ -2909,7 +2909,7 @@ $$
 
 ---
 
-# 六十七、为什么 FA3 对“未来硬件”特别有启发？
+## 六十七、为什么 FA3 对“未来硬件”特别有启发？
 
 硬件趋势一直是 specialization：
 
@@ -2939,7 +2939,7 @@ $$
 
 ---
 
-# 六十八、最后把整篇文章压成一条主线
+## 六十八、最后把整篇文章压成一条主线
 
 FA2 在 H100 上的问题不是：
 
@@ -2981,9 +2981,9 @@ $$
 
 ---
 
-# 六十九、最值得记住的三个第一性原则
+## 六十九、最值得记住的三个第一性原则
 
-## 原则一：Dependency 才决定必须等待什么
+### 原则一：Dependency 才决定必须等待什么
 
 不要把 source-code 顺序误认为真实 mathematical dependency。
 
@@ -3005,7 +3005,7 @@ $$
 
 ---
 
-## 原则二：不同硬件单元应该同时忙
+### 原则二：不同硬件单元应该同时忙
 
 如果：
 
@@ -3030,7 +3030,7 @@ $$
 
 ---
 
-## 原则三：低精度优化必须同时设计 layout 与 numerics
+### 原则三：低精度优化必须同时设计 layout 与 numerics
 
 FP8 不是：
 
@@ -3056,7 +3056,7 @@ FA3 的 block quantization、paired permutation 与 incoherent processing 都是
 
 ---
 
-# 七十、三代 FlashAttention 的最终知识图
+## 七十、三代 FlashAttention 的最终知识图
 
 ~~~text
 Standard Attention
@@ -3105,7 +3105,7 @@ $$
 
 ---
 
-# 参考原始资料
+## 参考原始资料
 
 - Shah et al., **FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision**, arXiv:2407.08608, NeurIPS 2024.
 - Dao et al., **FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness**, arXiv:2205.14135.

@@ -11,7 +11,7 @@ def check(path):
     try: path.relative_to(ROOT)
     except ValueError: return ["File outside repository"]
     text = path.read_text(encoding="utf-8")
-    fence = None; math = False; h1 = 0; links = 0
+    fence = None; math = False; h1 = 0; links = 0; display_blocks = 0
     for no, line in enumerate(text.splitlines(), 1):
         m = re.match(r"^\s*(`{3,}|~{3,})", line)
         if m:
@@ -20,8 +20,18 @@ def check(path):
             continue
         if fence: continue
         if line.startswith("# "): h1 += 1
-        if line.strip() == "$$": math = not math
-        for m in LINK.finditer(line):
+        if line.strip() == "$$":
+            if not math: display_blocks += 1
+            math = not math
+            continue
+        elif line.strip() == "$":
+            errors.append(f"L{no}: standalone single $ cannot delimit display math; use $$")
+            continue
+        if math: continue
+        # A LaTeX tensor index can look like a Markdown link: E[g_t^2](1-\\beta).
+        # Remove inline math before resolving Markdown links, not after.
+        check_line = re.sub(r"(?<!\\)\$(?!\$).*?(?<!\\)\$(?!\$)", "", line)
+        for m in LINK.finditer(check_line):
             url = m.group(1).split("#",1)[0].split("?",1)[0]
             if not url or url.startswith(("https:","http:","mailto:","data:")): continue
             links += 1; dest = (path.parent / url).resolve()
@@ -34,6 +44,11 @@ def check(path):
     if math: errors.append("unclosed $$ block")
     if fence: errors.append("unclosed fenced block")
     if h1 != 1: errors.append(f"expected one H1, got {h1}")
+    top = "\n".join(text.splitlines()[:48])
+    if not re.search(r"https?://\S+", top):
+        errors.append("missing original/official source URL in article introduction")
+    if display_blocks < 1:
+        errors.append("no display-math derivation; check technical depth (unless paper genuinely has no math)")
     print(f"{'FAIL' if errors else 'PASS'} {path.relative_to(ROOT)}: {h1} H1, {links} local links")
     for e in errors: print("  "+e)
     return errors

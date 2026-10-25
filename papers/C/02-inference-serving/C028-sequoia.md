@@ -58,6 +58,53 @@ $$
 
 即便树 $T$ 在固定 $n$ 下有更高的 $F(T)$，**最优 $n$ 仍依赖硬件、显存预算和 offloading 代价**。这解释了作者额外加入 hardware-aware tree optimizer。
 
+## 在理想位置接受模型下，如何计算一棵树的“价值”？
+
+设树中每个深度 1 的孩子按顺序 $k=1,2,\ldots$，论文假设被接受的概率主要取决于兄弟排序位置，给出 $p_k$。对于一条路径 $u$，若从根到它依次选择排名 $k_1,\ldots,k_d$ 的孩子，概念上的路径生存概率为
+
+$$
+w(u)=\prod_{j=1}^{d}p_{k_j}.
+$$
+
+在节点分布和接受事件满足模型条件时，预期可以提交的节点数可表达为节点路径概率之和
+
+$$
+F(T)=\sum_{u\in T}w(u).
+$$
+
+这一式突出**Deep 分支需要祖先全部成功**这一点；论文的精确问题还包含采样与不放回验证的条件，不能无条件把 $p_k$ 当成真实逐 Token 独立概率。
+
+### 三节点玩具树：宽与深哪个更值得？
+
+为简单起见预算只允许三个候选节点，假设 $p_1=0.7,p_2=0.2,p_3=0.05$。三节点深链的路径权重为 $0.7,0.7^2,0.7^3$，合计
+
+$$
+F_{\rm chain}=0.7+0.49+0.343=1.533.
+$$
+
+宽度三的根层候选权重为 $0.7,0.2,0.05$，合计 $0.95$。而把前两个根层孩子与第一个孩子的后代结合，权重 $0.7,0.2,0.49$，总计 $1.39$。这些计算不等于 Sequoia 的全部 DP，因为真实树采样的 sibling acceptance 有相关性；它说明一种重要的结构性趋势：**当第一提案被接受的概率高时，更多深度可提高一轮连续提交数；当第一提案低而其他候选可能覆盖目标时，预算需向宽度转移。**
+
+严格优化里可定义 $V(n)$ 为预算 $n$ 的最优 Value。若根层可放 $k$ 个孩子，给它们分配预算 $n_1,\ldots,n_k$，递推会合并各个子树的 Conditional Expected Gain。最终的约束是 $\sum_j(n_j+1)\le n$，其中 $+1$ 为每棵子树的根层孩子本身；漏掉孩子本身容易出现 “把预算数多算一层” 的 off-by-one 错误。
+
+## 一个预算最优的树可能不是硬件速度最优
+
+目标机假设草稿开销 $D(n)$、Target 验证开销 $V(n)$、期望提交数 $A(n)$，那么平均每 Token 耗时为
+
+$$
+\tau(n)=\frac{D(n)+V(n)}{A(n)}.
+$$
+
+如果节点预算从 10 扩到 20，平均提交数从 2 提升至 2.5，但 Target Tree Forward 从 8 ms 增至 16 ms、Draft 与建树分别为 2 ms 和 4 ms，则
+
+$$
+\tau(10)=\frac{2+8}{2}=5\text{ ms/token},\quad
+\tau(20)=\frac{4+16}{2.5}=8\text{ ms/token}.
+$$
+
+**更多候选价值带来了更差的实际性能**。Sequoia 的 Hardware-aware Tree Optimizer 并非补充装饰，而是要在真实测得的 Target cost curve 上选预算与深度。
+
+[NeurIPS 2024 正式版](https://proceedings.neurips.cc/paper_files/paper/2024/hash/ea1f5f0878d43ff4fb8bf64ef4a2326c-Abstract.html) 的系统结果包含单 A100 的多种模型与 L40 上 70B Offloading。看图时要区分：验证同样树预算下的算法收益、温度变化时 Sampling without Replacement 的覆盖能力，以及 Offloading 时 Target Forward 主导的成本。若只摘录“最高 9.5×”，便遗漏了其成立的硬件条件。
+
 ## 精确报告作者成绩
 
 [NeurIPS 2024 正式论文](https://proceedings.neurips.cc/paper_files/paper/2024/hash/ea1f5f0878d43ff4fb8bf64ef4a2326c-Abstract.html) 在 A100 上报告 Llama2-7B、Llama2-13B、Vicuna-33B 最高分别 **4.04×、3.73×、2.27×**。对 Llama3-70B-Instruct 在单张 L40 上的 offloading 设置，报告 **0.60 s/token**，相对 DeepSpeed-Zero-Inference 约 **9.5×**。别与旧版 arXiv 对 Llama2-70B 的指标混为一谈。论文 Figure/表格分别支撑树结构算法、采样策略和系统 benchmark，而不是单张表能证明所有设计的因果效果。

@@ -1,8 +1,10 @@
+# Transformer：Attention 如何替代循环序列建模
+
 > **原文**：Vaswani 等，[*Attention Is All You Need*](https://arxiv.org/abs/1706.03762)，NeurIPS 2017，[全文（带公式/表格）](https://ar5iv.labs.arxiv.org/html/1706.03762)。本文以**原始 Encoder–Decoder、Post-LN Transformer** 为对象；后来的 Decoder-only GPT、Pre-LN、RoPE、GQA、FlashAttention 是相关延伸，不能倒灌成 2017 年原文提出的模块。对应 Paperlist A/03 第 3 篇。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
-## 论文属于哪一类，究竟替换了什么
+### 论文属于哪一类，究竟替换了什么
 
 **主要类型：A 原始方法论文；次要属性：可训练的完整英德/英法翻译模型报告。** 本文的核心贡献不只是「使用 Attention」——上一篇 Bahdanau 已有可微加权读取。作者真正改动的是：**让 Encoder 与 Decoder 的序列内部表示交互不再依赖逐时间步 RNN/CNN，而由 self-attention 与逐位置 FFN 构成，同时保留 Encoder–Decoder 的条件翻译框架**。
 
@@ -34,9 +36,9 @@ BERT Encoder / GPT Decoder-only / ViT / VLM / VLA 的后续技术谱系
 
 *教学解释图｜token 表示经过 Q/K/V、Attention、残差与 FFN 的主数据流，以及位置与 mask 在其中的作用位置。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
-## 首先区分翻译模型与今天的纯 Decoder 语言模型
+### 首先区分翻译模型与今天的纯 Decoder 语言模型
 
 本文目标是给源序列 `x_{1:S}` 生成目标序列 `y_{1:T}`，训练仍使用教师强制的目标输入右移。定义批量大小 `B`，源长度 `S`，目标长度 `T`，模型宽 `d_{\rm model}=512`，Attention 头数 `h=8`，每头 `d_k=d_v=64`，前馈内层宽 `d_{\rm ff}=2048`，Encoder/Decoder 各 `L=6` 层。
 
@@ -64,9 +66,9 @@ BERT Encoder / GPT Decoder-only / ViT / VLM / VLA 的后续技术谱系
 
 原文 Decoder 并非生成 B×T×512 的「动作表示」，输出是源条件的目标语言词表分布。VLM/VLA 后续可以把视觉或动作也编码为 token，但这种模态扩展不属于本文原始任务。
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
-## 标准原始六层 Encoder + 六层 Decoder
+### 标准原始六层 Encoder + 六层 Decoder
 
 ~~~mermaid
 flowchart TD
@@ -91,15 +93,15 @@ flowchart TD
 
 **位置编码**先与 Token Embedding 相加，不是被当成另一条需要 softmax 归一化的词序列。Encoder 每层先 self-attention 再逐 token FFN；Decoder 每层多出一个 Encoder–Decoder Cross-Attention 子层。每个子层用 `\operatorname{LayerNorm}(x+\operatorname{Dropout}(\operatorname{Sublayer}(x)))`（原文 Post-LN）连接；本论文并非后来的 `x+\operatorname{Sublayer}(\operatorname{LayerNorm}(x))` Pre-LN 布局。
 
-### 如果删去某个模块会怎样
+#### 如果删去某个模块会怎样
 
 删除 Encoder self-attention，源词无法融合其他源位置，Encoder Memory 将接近独立词表查值；删除 Decoder causal mask，训练时当前位置可读取未来真实词，导致数据泄漏；删除 Cross-Attention，目标生成退化为不带源条件的语言模型；删除 Positional Encoding，若其余层仅有全局 self-attention 和共享逐位置 FFN，重排输入词会造成相应的置换等变，无法表达一般的词序依赖；删除逐位置 FFN，虽然仍有 token 间消息，但每个位置的特征变换能力与非线性组合变弱。
 
 原始位置编码是固定三角函数，而词向量、QKV 和 FFN 都参与训练。论文也对可学习位置编码做过消融，不能把固定三角函数解释为**唯一**可行的序列位置信息。
 
-# 关键技术
+## 关键技术
 
-## 1. 从注意力的一般概率读取需求推导 Q/K/V
+### 1. 从注意力的一般概率读取需求推导 Q/K/V
 
 给定某目标位置的查询向量 `q`，现有源或历史序列的 `S` 个被查询 Key `k_j` 及对应 Value `v_j`，最自然的加权读取是
 
@@ -133,7 +135,7 @@ $$
 
 `M` 在合法位置为 0、非法位置为 `-\infty`；原文核心公式省略可选 Mask，而实际 Decoder 必须添加 causal mask。**softmax 沿 Key 位置轴 `S` 归一化**，因此矩阵顺序是 `[T,S]@[S,d_v]\to[T,d_v]`，不能颠倒成 `KV^\top`。
 
-## 2. 为什么除以 `\sqrt{d_k}`：方差必须具体算出来
+### 2. 为什么除以 `\sqrt{d_k}`：方差必须具体算出来
 
 假设用于分析的每个坐标满足 `\mathbb E[q_\ell]=\mathbb E[k_\ell]=0`、`\operatorname{Var}(q_\ell)=\operatorname{Var}(k_\ell)=1`，不同坐标及 `q,k` 彼此独立。这些是假定条件，不代表训练后的 Q/K 恰好独立同分布。未经缩放的内积
 
@@ -151,7 +153,7 @@ $$
 
 因此 `d_k=64` 时标准差为 8；除以 `\sqrt{64}=8`，理论标准差回到 1 的数量级。softmax 在 logits 绝对值差距过大时接近 one-hot，其他位置梯度很小，缩放可缓解此效应。若 Q/K 坐标相关或做了其他归一化，这个方差论证不再精确；**`\sqrt{d_k}` 是这组常见假设下的尺度控制，不是普适概率等式**。[原文 `3.2.1](https://ar5iv.labs.arxiv.org/html/1706.03762)
 
-### 两个 Key 的小数字例子
+#### 两个 Key 的小数字例子
 
 取 `d_k=2`、`q=(1,1)`、`k_1=(1,1)`、`k_2=(0,1)`、Value 分别 `v_1=(2,0)`、`v_2=(0,4)`。未归一化分数是 `[2,1]`，缩放后 `[1.4142,0.7071]`；softmax 近似 `[0.6698,0.3302]`，输出
 
@@ -162,7 +164,7 @@ $$
 
 这个向量不是简单复制任何一个 Value，而是从候选位置按查询相关性汇总信息；当位置被 causal mask 时，该位置概率**严格变为 0**（有限精度实现下需使用足够小的数、mask 语义正确）。
 
-## 3. 多头为何不等于「把相同 Attention 重复 8 次」
+### 3. 多头为何不等于「把相同 Attention 重复 8 次」
 
 单头如果只有一组 `W_Q,W_K,W_V`，网络必须用同一相关性表示来兼顾句法、指代、词组搭配等不同关系。多头对相同输入采用**不同可学习投影**：
 
@@ -180,7 +182,7 @@ $$
 
 单层 Decoder self-attention 的 `Q,K,V:[B,8,T,64]`，每头输出 `[B,T,64]`，拼接后 `[B,T,512]`；Cross-Attention 改变的是 `K,V` 的位置长度从 `T` 变成 `S`，并不要求 `S=T`。
 
-## 4. 自注意力没有时间递推，为什么位置编码不能省
+### 4. 自注意力没有时间递推，为什么位置编码不能省
 
 设输入序列 `X=[x_1,\ldots,x_T]`，对任何位置置换矩阵 `P`，若只保留无 mask 的 self-attention 和逐位置 FFN，则 `Q'=PQ,K'=PK,V'=PV`。其相关矩阵
 
@@ -209,7 +211,7 @@ $$
 
 不同通道具有不同频率，覆盖近到远的序列位置。三角恒等式 `\sin(a+b)=\sin a\cos b+\cos a\sin b` 说明位置偏移可以在线性变换意义下从这对通道表示中组合出来，给网络学习相对位置信号的机会，但**原文并没有保证模型能精确外推到任何未训练长度**。
 
-## 5. 逐位置 FFN、Residual 和 Post-LN：注意力之外还做了什么
+### 5. 逐位置 FFN、Residual 和 Post-LN：注意力之外还做了什么
 
 Encoder/Decoder 各层的 FFN 对任意位置表示 `x\in\mathbb R^{512}` 使用共享两层 MLP：
 
@@ -227,7 +229,7 @@ $$
 
 梯度仍有残差的 `I` 支路，但经过后置 LayerNorm 的 Jacobian，不能直接照搬 Pre-LN 长网络中「未经 Norm 的恒等梯度可贯穿所有层」的结论。以后阅读 RMSNorm、Pre-LN、HyperConnections 时，应记录它们改变的是**归一化/残差流结构**，不是本篇已拥有这些设计。
 
-## 6. PyTorch 最小程序：完整显式 QKV、自/交叉 Attention 与 Post-LN 的张量流
+### 6. PyTorch 最小程序：完整显式 QKV、自/交叉 Attention 与 Post-LN 的张量流
 
 ~~~python
 import math
@@ -314,7 +316,7 @@ print("encoder memory / causal self / cross / backward shapes OK")
 
 逐行对应：`wq,wk,wv` 是三组**独立学习**矩阵，`split` 把宽度 `32` 分成四个 `d=8` 头；`scores` 对 Query 和 Key 的最后维度做点积并除 `sqrt(d)`；`causal` 用严格上三角 mask 抹掉未来 Key 的概率，不能用于 Encoder 或普通 Cross-Attention；`alpha@v` 完成按 Key 长度加权；`transpose+reshape` 拼接头，`wo` 回到原始 `width`；两个 Block 均按原论文 Post-LN 组织残差，Decoder 多一个 Cross-Attention；末尾两个 alpha 张量分别体现 `[T,T]` 与 `[T,S]`，其不必是相同正方矩阵；第一个目标位置对未来 token 的注意力和为 0，最后 `backward` 证明目标梯度能穿过 Cross-Attention 回到 Encoder。为突出张量依赖，上述示例省略 PAD masks、位置编码、dropout、目标词 Embedding 和实际翻译训练；完整原文实验须添加它们。
 
-## 7. 实验解读：作者真正控制了哪些因素
+### 7. 实验解读：作者真正控制了哪些因素
 
 | 原文实验/表 | 试图检验的关系 | 作者报告 | 不能因此声称 |
 |---|---|---|---|
@@ -326,7 +328,7 @@ print("encoder memory / causal self / cross / backward shapes OK")
 
 [原文 `5、Table 2–4](https://ar5iv.labs.arxiv.org/html/1706.03762)。**模型最终 BLEU、单步训练 FLOPs、集群 wall-clock、参数量和单 token 推理延迟是不同度量**；不能只因为 GPU 训练更能并行，就推断 autoregressive decoder 一次只生成一个 token 的串行依赖被消除了。
 
-# 预训练与后训练
+## 预训练与后训练
 
 **论文主体是有监督机器翻译训练，不提出现代 LLM CPT/SFT/RLHF/DPO 流程。** WMT’14 英德训练集约 450 万句对，英法约 3600 万句对；原文将文本分割为 subword 单元，英德共享 BPE 词表约 37K。对于目标输入前缀 `y_{<t}` 的因果遮罩 Decoder，优化
 
@@ -358,13 +360,13 @@ $$
 
 前 4000 步近似线性 warmup，之后按 `step^{-1/2}` 下降。这是**优化器调度**，不是 Attention 的一部分；原文 Post-LN、残差 dropout 等也属于训练/架构具体实现。
 
-# 推理与部署
+## 推理与部署
 
-## 不许混淆数学计算、注意力矩阵存储和 HBM 访存
+### 不许混淆数学计算、注意力矩阵存储和 HBM 访存
 
 对于单层 Decoder self-attention，长度为 `T`、宽度为 `d_{\rm model}`、`h` 头：线性投影近似 `O(BTd_{\rm model}^2)`；`QK^\top` 和 `AV` 的主项约 `O(BhT^2d_k)`；若朴素显式存储全部注意力矩阵，`A:[B,h,T,T]` 占 `BhT^2` 元素。**原始 Transformer 没有把标准 Attention 数学 FLOPs 从 `O(T^2)` 降到线性**；后来的 FlashAttention 主要优化中间张量 materialization/HBM IO，而不取消精确 dense Attention 的 `T^2` 点积数量级。
 
-### 一次实际的机器翻译请求
+#### 一次实际的机器翻译请求
 
 ~~~text
 输入源文本 → BPE/Embedding + PE
@@ -387,7 +389,7 @@ Decoder 的 Cross-Attention K/V 另约 `2BLS\,h\,d_ks`（各层 Cross-Attention 
 
 例如 `B=1,L=6,T=512,h=8,d_k=64,s=2` bytes 时，Decoder self-KV 约 `2\times1\times6\times512\times8\times64\times2\approx6.29` MB（十进制），**不含 Encoder Memory 与 Cross-KV**。Prefill 可对已有目标前缀并行注意力；Decode 每次新增一个 token 的 self-attention 单步工作量约 `O(BhTd_k)`，但仍须读取模型权重、历史 KV，并按自回归顺序依次生成 `T_{\rm gen}` 个输出；这些硬件瓶颈不能从训练表格的 8 GPU 用时直接推断。
 
-## 技术 → 模型
+### 技术 → 模型
 
 - `Scaled Dot-Product Multi-Head Self-Attention → Transformer`：`PROPOSES` 将缩放点积与多头设计用于完全基于 Attention 的主架构。
 - `Additive Attention → Transformer Cross-Attention`：`DERIVED_FROM` 动态读取源序列的任务结构；`EXTENDS` 为点积式多头而不是照抄加性 scorer。
@@ -395,7 +397,7 @@ Decoder 的 Cross-Attention K/V 另约 `2BLS\,h\,d_ks`（各层 Cross-Attention 
 - `Transformer Encoder → BERT、ViT`：`ADOPTS/EXTENDS` 可并行处理可见上下文的骨干思想，具体预训练目标与视觉 Patch 表示需逐篇核实。
 - `Transformer Decoder → GPT 家族`：`ADOPTS/EXTENDS` Masked self-attention、自回归生成，通常不再使用本文独立 Encoder→Cross-Attention 的完整翻译框架。
 
-## 模型 → 技术
+### 模型 → 技术
 
 - `Transformer Base`：`PROPOSES` 完整六层 Encoder/Decoder 全 Attention 架构；`IMPLEMENTS` 8 heads、512 宽、2048 FFN、固定正弦位置；`ADOPTS` Adam、监督翻译 CE、残差和 LayerNorm。
 - `Bahdanau RNNsearch`：`ADOPTS` RNN Encoder–Decoder 和动态源信息检索；`PROPOSES` 加性打分与 soft alignment，仍使用 RNN 递推。

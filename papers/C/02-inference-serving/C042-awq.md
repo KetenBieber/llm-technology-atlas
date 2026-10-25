@@ -46,6 +46,26 @@ flowchart LR
 
 *自制解释图，非原论文 Figure。原论文 Figures 2/3 更集中展示显著通道及 Scaling 对量化误差的影响；TinyChat 属于其配套推理系统，不能把它与量化算法本体视为同一个贡献。*
 
+## 一个量化误差会随着通道 Scaling 如何变化的手算例子
+
+设两个输入通道均为 1，一个 Weight 为 $w_1=0.1$，另一个为 $w_2=0.9$。对称整数 2-bit 为了便于演示，令统一 Scale $s_q=1$，权重只能映到 $\{-1,0,1\}$。简单 Round 得 $\hat w_1=0$、$\hat w_2=1$，输出残差可以互相抵消，但逐通道误差分别为 $0.1$ 和 $-0.1$。
+
+现在将第一通道按 $D=\operatorname{diag}(5,1)$ 放大权重，获得 $Dw=[0.5,0.9]^\top$；若仍使用同样的离散网格并规定 `round(0.5)=1`，反量化前第一通道误差为 0.5，经输入侧除 5 后折算为 0.1。它没有改善原值。此反例说明：**对通道施加任何大于 1 的 Scale 不会自动提高量化精度**；量化 Group Scale 与 Round/Clip 的边界必须一起考虑。AWQ 的设计是根据 Calibration Activation 统计搜索有用的尺度，而不是“重要通道一律乘 5”。
+
+若按某一通道 $j$ 的量化权重误差 $\epsilon_j=Q(s_jw_j)-s_jw_j$，经过对应逆尺度的激活后，输出误差项可表达为
+
+$$
+\Delta y_j=x_j\,\frac{\epsilon_j}{s_j}.
+$$
+
+增加 $s_j$ 在有利的网格配置下可能减小有效误差 $\epsilon_j/s_j$，但 $\epsilon_j$ 本身也会因 Round、Group 范围改变，不能当作与 $s_j$ 无关的常数。AWQ 的 Scaling Search 正是平衡二者。
+
+## 1% 保护实验究竟支持哪个结论？
+
+[MLSys 2024 AWQ 正式论文](https://proceedings.mlsys.org/paper_files/paper/2024/hash/42a452cbafa9dd64e9ba4aa95cc1ef21-Abstract-Conference.html) 通过将不同百分比的显著权重保留为高精度，显示保护少量高敏感项即可显著改善量化误差，这个**观察结果**是引入 Activation-aware Search 的动机；最终的 AWQ 实现不要求真的把整段稀疏权重都交由 FP16 Sparse GEMM 运算。读原论文 Figure 1 的显著权重保护现象时应关注保护比例和 Loss 的对应关系，后续 Figure/表的 TinyChat 速度又额外依赖 Kernel。
+
+要做公平消融，至少固定相同 Group Size 与 Bit Width 对比：无缩放 RTN、按 Weight AbsMax 缩放、按 Activation 搜索最佳 Scale。前两者是有价值的简单对照，第三者如果准确率更好，才支持“Activation 不只是口头设计动机”。
+
 ## 为什么强调“不依赖 Backpropagation/重建优化”？
 
 GPTQ 的二阶补偿对 Calibration 数据构造误差模型并依次更新未量化权重；AWQ 则使用 Activation 驱动的通道重缩放搜索，不需要为量化做反向传播训练。对于大小不同、分布不稳定的指令模型或多模态模型，这可能减轻训练数据过拟合风险，但“无需反向传播”**不表示完全不使用 Calibration 数据**。它仍要通过一小批 Activation 统计选取显著性与 Scale。

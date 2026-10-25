@@ -49,6 +49,35 @@ flowchart TD
 
 词表大小 $V$、隐藏维度 $d$ 时，一个新的独立输出投影约有 $Vd$ 参数（不计 Bias）。若每层都加一个不同 Head，额外存储可能抵消自推测不用额外模型的意义；LayerSkip 共享 Head，使早退层学会使用已有词表投影。与此同时，早退训练可能影响完整深层最终性能，必须与不加 early exit loss 的训练进行受控比较。
 
+## 浅层共享 Head 并不意味着可直接读取深层输出
+
+一个 $L$ 层 Transformer 的每层隐藏状态 $h_\ell\in\mathbb R^{d}$，语言模型头 $W_{\rm lm}\in\mathbb R^{d\times V}$。训练阶段使用共享 LM Head 对多个深度输出 Logits：
+
+$$
+z_\ell=h_\ell W_{\rm lm},\qquad
+\mathcal L_{\rm train}=
+\mathcal L_{L}+\sum_{\ell\in\mathcal I}\lambda_\ell
+\operatorname{CE}(\operatorname{softmax}(z_\ell),y).
+$$
+
+如果不额外训练，浅层 $h_\ell$ 可能尚未具备足够的语义区分性，即使 $W_{\rm lm}$ 与最终层相同，$\operatorname{argmax}z_\ell$ 仍会与最终层有很大差异。LayerSkip 将训练期 Layer Dropout 和多出口 Loss 组合起来，**主动让中间层更早具备生成词表概率的能力**；这与 [Draft & Verify](C032-draft-and-verify.md) 的纯推理路径调整不同。
+
+### 为什么 Layer Dropout 要随深度增加？
+
+浅层负责输入特征的基本表达，若频繁跳过会使更深层拿不到稳定的表征；靠后的层更接近输出，可以在训练中对它们使用更高概率 Dropout，迫使模型在缺少部分后层时仍能依赖前层的特征完成预测。此为训练配方的设计动机，**不是严格定理保证后层比前层不重要**。要证明效果必须对照不同 Layer Dropout Schedule、只加 Exit Loss、两者联合的受控消融。
+
+## 共享的部分计算如何真正节省显存？
+
+若前 $L_e$ 层已为多枚 Draft Token 建立中间 Activation/KV，Target Verification 可以复用它们，继续执行 $L_e+1$ 到 $L$ 的层计算，避免同一候选序列的浅层重复前向。设一次浅层计算耗时 $T_e$，剩余深层验证 $T_r(K)$，每轮预测 $K$ 枚 Draft 且确认 $A$ 枚，示意平均成本
+
+$$
+\bar t=\frac{K T_e + T_r(K)+T_{\rm cache}}{A}.
+$$
+
+实际执行时 $T_{\rm cache}$ 不能省略：多分支候选或被拒绝的后继 KV 都必须回滚/释放，且验证阶段某些浅层结果必须在正确祖先前缀下保持一致。**只有共享的 Activation 真实被重用**，这笔加速才能算在自推测设计上。
+
+[ACL 2024 官方论文](https://aclanthology.org/2024.acl-long.681/) 与 [Meta 作者说明](https://ai.meta.com/research/publications/layerskip-enabling-early-exit-inference-and-self-speculative-decoding/) 的主张分开三段：训练方法提升 Early Exit Accuracy、推理机制复用浅层计算，以及任务相关的端到端速度。不能从最高 2.16× 的 CNN/DM 单次结果推断全部三个组件对所有任务均是正收益。
+
 ## 与 Draft & Verify 的实质差异
 
 | 维度 | Draft & Verify | LayerSkip |

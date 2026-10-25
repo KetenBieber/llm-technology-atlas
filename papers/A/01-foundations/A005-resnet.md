@@ -1,11 +1,13 @@
+# ResNet：残差学习为什么缓解深层网络的退化问题
+
 > **V2 重写 · A005 / Paperlist 第 5 篇**  
 > Kaiming He、Xiangyu Zhang、Shaoqing Ren、Jian Sun，[*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385)，CVPR 2016。本文以 [原论文 PDF](https://arxiv.org/pdf/1512.03385) 为主线，原始 Figure 1–5 直接从 arXiv 源文件中的矢量图资产渲染到 `figures/A005/`，来源映射见 [figure_manifests/A005.json](../../../figure_manifests/A005.json)。
 >
 > **版本边界**：本文讨论的是原始 **ResNet v1**：残差相加以后再经过 ReLU。2016 年后续 [*Identity Mappings in Deep Residual Networks*](https://arxiv.org/abs/1603.05027) 的 pre-activation 结构不是这篇论文的原始架构，因此不能把 pre-activation 的更纯净恒等梯度性质反写成本文已经拥有。本文的 Jacobian、部署和现代 Transformer 对照属于教学扩展，原文贡献仍以 residual learning、identity shortcut 与 ImageNet/CIFAR 实验为准。
 
-# 模型定位与谱系
+## 模型定位与谱系
 
-## 1. 论文解决的不是“如何让网络更深”，而是“为什么更深反而训练得更差”
+### 1. 论文解决的不是“如何让网络更深”，而是“为什么更深反而训练得更差”
 
 在 ResNet 之前，视觉模型已经沿着 AlexNet → VGG / GoogLeNet 的路线持续加深。一个很自然的直觉是：
 
@@ -35,7 +37,7 @@ training error 自己就更高
 
 **主要类型：A 原始方法论文。** 它既提出一般可复用的 residual learning 参数化，也实例化成 ResNet-18/34/50/101/152 架构族。
 
-## 2. “存在更好的解”为什么不等于“SGD 找得到”？
+### 2. “存在更好的解”为什么不等于“SGD 找得到”？
 
 设一个浅网络已经学习到映射
 
@@ -72,7 +74,7 @@ $$
 
 ResNet 的目标是改变后者。
 
-## 3. Residual Learning 的第一性原理
+### 3. Residual Learning 的第一性原理
 
 原本希望一组层直接逼近
 
@@ -116,7 +118,7 @@ $$
 
 原文使用的是 **“We hypothesize that it is easier…”**。这非常重要：作者把“residual 更容易优化”作为假设，再用实验支撑，而不是先给一个全局优化定理。
 
-## 4. 技术树
+### 4. 技术树
 
 ~~~text
 深层 CNN
@@ -149,9 +151,9 @@ BatchNorm、ReLU、SGD 都是本文 **ADOPTS** 的技术，不是本文提出。
 
 *教学解释图｜identity shortcut 同时改写前向映射与反向梯度路径，使深层网络拥有稳定的残差通道。*
 
-# 输入、输出与任务
+## 输入、输出与任务
 
-## 1. ImageNet 输入输出
+### 1. ImageNet 输入输出
 
 论文 ImageNet 分类：
 
@@ -181,7 +183,7 @@ $$
 
 ResNet 的创新不依赖 224×224 尺寸；真正的结构约束来自**残差两路必须能够逐元素相加**。
 
-## 2. Basic Block 的 Shape
+### 2. Basic Block 的 Shape
 
 设输入
 
@@ -220,7 +222,7 @@ $$
 
 时，identity shortcut 才能直接相加。
 
-## 3. 维度变化时为什么需要特殊 shortcut？
+### 3. 维度变化时为什么需要特殊 shortcut？
 
 假设 stage 切换：
 
@@ -245,7 +247,7 @@ $$
 
 原论文考虑：
 
-### Option A：identity + zero padding
+#### Option A：identity + zero padding
 
 空间通过 stride 下采样，新增通道用 0 填充。
 
@@ -258,7 +260,7 @@ $$
 
 - 新增通道没有来自 shortcut 的可学习信息。
 
-### Option B：只在维度变化处做 projection
+#### Option B：只在维度变化处做 projection
 
 用
 
@@ -268,13 +270,13 @@ $$
 
 匹配 Shape，典型实现为 stride 2 的 $1\times1$ convolution。
 
-### Option C：所有 shortcut 都做 projection
+#### Option C：所有 shortcut 都做 projection
 
 参数和计算更多。
 
 论文实验显示 A/B/C 都比 plain 好，B 略好于 A，C 仅略好于 B，因此作者后续深模型主要采用 **B**：只在维度变化处 projection。
 
-## 4. ResNet-34 的完整 Shape 流
+### 4. ResNet-34 的完整 Shape 流
 
 原文 Table 1：
 
@@ -327,7 +329,7 @@ $$
 
 这里的“34 layers”按论文惯例计 weighted layers；projection shortcut 的 $1\times1$ 通常不因此改变模型命名。
 
-## 5. Bottleneck 的 Shape
+### 5. Bottleneck 的 Shape
 
 ResNet-50/101/152 使用：
 
@@ -356,9 +358,9 @@ $$
 
 $1\times1$ 并不是“提取空间局部特征”的主力，它主要在这里承担**通道维压缩和恢复**，让昂贵的 $3\times3$ 在较窄通道上运行。
 
-# 骨干架构与信息交互
+## 骨干架构与信息交互
 
-## 1. Figure 1：degradation problem 的第一张证据图
+### 1. Figure 1：degradation problem 的第一张证据图
 
 ![原论文 Figure 1：CIFAR-10 plain networks 中更深网络训练误差更高](../../../figures/A005/fig1-cifar-degradation.svg)
 
@@ -385,7 +387,7 @@ $1\times1$ 并不是“提取空间局部特征”的主力，它主要在这里
 
 > 任意深层网络都必然存在这种退化。
 
-## 2. Figure 2：整篇论文最重要的一张结构图
+### 2. Figure 2：整篇论文最重要的一张结构图
 
 ![原论文 Figure 2：Residual learning building block](../../../figures/A005/fig2-residual-block.svg)
 
@@ -443,7 +445,7 @@ $$
 
 Shape 不变，主分支被明确解释成“对现有表示的修正”。
 
-## 3. Figure 3：为什么 plain-34 与 ResNet-34 可以做较干净对照？
+### 3. Figure 3：为什么 plain-34 与 ResNet-34 可以做较干净对照？
 
 ![原论文 Figure 3：VGG-19、plain-34 与 ResNet-34 的 ImageNet 架构比较](../../../figures/A005/fig3-imagenet-architecture.svg)
 
@@ -462,7 +464,7 @@ Shape 不变，主分支被明确解释成“对现有表示的修正”。
 
 这比直接拿 ResNet-152 和 VGG-19 排名更有因果解释力。
 
-## 4. Figure 4：ImageNet 上 plain / residual 的训练轨迹
+### 4. Figure 4：ImageNet 上 plain / residual 的训练轨迹
 
 ![原论文 Figure 4：ImageNet plain networks 与 ResNets 的训练/验证误差](../../../figures/A005/fig4-imagenet-training.svg)
 
@@ -503,7 +505,7 @@ Residual:
 性能变好
 ~~~
 
-## 5. Figure 5：为什么深层 ResNet 要换 bottleneck？
+### 5. Figure 5：为什么深层 ResNet 要换 bottleneck？
 
 ![原论文 Figure 5：basic residual function 与 bottleneck residual function](../../../figures/A005/fig5-bottleneck.svg)
 
@@ -543,9 +545,9 @@ $$
 
 这不是说两者表达能力完全等价，而是说明为什么深层网络需要先缩通道再做 $3\times3$。
 
-# 关键技术
+## 关键技术
 
-## 1. 最关键的逻辑：constructed solution 是存在性论证，不是训练保证
+### 1. 最关键的逻辑：constructed solution 是存在性论证，不是训练保证
 
 原文 Introduction 有一个很漂亮的论证。
 
@@ -605,7 +607,7 @@ $$
 
 这是 ResNet 动机的逻辑核心。
 
-## 2. 为什么学习 residual 可能比直接学习 identity 更容易？
+### 2. 为什么学习 residual 可能比直接学习 identity 更容易？
 
 目标：
 
@@ -659,7 +661,7 @@ $$
 
 原文自己写的是 **hypothesize**，并在 CIFAR layer-response 实验中观察 residual responses 通常更小，以此提供经验支持。
 
-## 3. 梯度为什么多了一条 identity 路径？
+### 3. 梯度为什么多了一条 identity 路径？
 
 先忽略最终 ReLU：
 
@@ -729,7 +731,7 @@ $$
 
 这就是“shortcut 提供更直接梯度通路”的数学来源。
 
-### 但原始 ResNet v1 不能写成“梯度永远等于 1”
+#### 但原始 ResNet v1 不能写成“梯度永远等于 1”
 
 原始 v1：
 
@@ -774,7 +776,7 @@ $$
 
 后来的 pre-activation ResNet 正是继续优化这一点。
 
-## 4. Projection shortcut 时梯度公式怎样改？
+### 4. Projection shortcut 时梯度公式怎样改？
 
 若维度变化：
 
@@ -819,7 +821,7 @@ $$
 
 所以“ResNet 所有 shortcut 都是无参数 identity”是错误表述。
 
-## 5. 一个二维例子：主路学的是改变量
+### 5. 一个二维例子：主路学的是改变量
 
 假设输入
 
@@ -877,7 +879,7 @@ $$
 
 直接当作整个 block 的最终函数。
 
-## 6. 为什么 identity shortcut 的实验价值比 projection 更大？
+### 6. 为什么 identity shortcut 的实验价值比 projection 更大？
 
 若 plain 与 residual 模型主分支相同，只多出一个**无参数、几乎无 FLOPs**的 identity shortcut，那么：
 
@@ -892,7 +894,7 @@ $$
 
 它不仅是部署优点，更是**实验设计优点**。
 
-## 7. 为什么 $F$ 不是一层线性层？
+### 7. 为什么 $F$ 不是一层线性层？
 
 原文明确说，实验中的 residual function 通常有两层或三层。
 
@@ -912,7 +914,7 @@ $$
 
 > 给一个多层非线性子网络提供 identity reference。
 
-## 8. Bottleneck 为什么主要是算力问题？
+### 8. Bottleneck 为什么主要是算力问题？
 
 一个 $3\times3$ 卷积 MACs 近似：
 
@@ -962,7 +964,7 @@ $$
 
 所以不要把“1×1–3×3–1×1”当成 residual learning 的理论必要条件。
 
-## 9. 原文训练控制：为什么 Figure 4 比榜单更能说明 residual learning？
+### 9. 原文训练控制：为什么 Figure 4 比榜单更能说明 residual learning？
 
 ImageNet plain/residual 对照采用相同大框架：
 
@@ -990,7 +992,7 @@ ImageNet plain/residual 对照采用相同大框架：
 
 两类证据不要混用。
 
-## 10. 最小 PyTorch：原始 v1 BasicBlock
+### 10. 最小 PyTorch：原始 v1 BasicBlock
 
 ~~~python
 import torch
@@ -1073,9 +1075,9 @@ Shape：
 
 当前 MCP 默认 Python 没有 PyTorch，因此这里只完成代码结构、Shape 与论文 v1 布局审查，**不声称本地运行通过**。
 
-## 11. 实验：真正需要保留哪些控制变量？
+### 11. 实验：真正需要保留哪些控制变量？
 
-### ImageNet plain vs residual
+#### ImageNet plain vs residual
 
 | 模型 | Top-1 error（10-crop） |
 |---|---:|
@@ -1089,7 +1091,7 @@ Shape：
 - plain：更深变差；
 - residual：更深变好。
 
-### Shortcut A / B / C
+#### Shortcut A / B / C
 
 原文报告：
 
@@ -1105,7 +1107,7 @@ A/B/C 都显著优于 plain；B 仅略优于 A，C 又仅略优于 B。
 
 identity shortcut 才是作者希望强调的最小机制。
 
-### 50 / 101 / 152 层
+#### 50 / 101 / 152 层
 
 原文 Table 1 计算量：
 
@@ -1123,7 +1125,7 @@ identity shortcut 才是作者希望强调的最小机制。
 
 > FLOPs 越少，GPU latency 一定越低。
 
-### CIFAR-10 超深实验
+#### CIFAR-10 超深实验
 
 论文 Table 6：
 
@@ -1147,7 +1149,7 @@ identity shortcut 才是作者希望强调的最小机制。
 - plain 深网：training error 高 → optimization；
 - 1202-layer ResNet：training error 极低、test 更差 → overfitting / capacity。
 
-# 预训练与后训练
+## 预训练与后训练
 
 本文不是现代 LLM 的 pretraining / SFT / preference learning 工作。
 
@@ -1171,7 +1173,7 @@ PASCAL / COCO detection
 - detection 是下游任务迁移；
 - 但目标不是 next-token prediction、instruction tuning 或 RLHF。
 
-## 原文 ImageNet 训练 recipe
+### 原文 ImageNet 训练 recipe
 
 论文 §3.4：
 
@@ -1196,7 +1198,7 @@ PASCAL / COCO detection
 
 但 plain/residual 对照尽量保持这些 recipe 相同，因此 residual 结构仍具有较强的干预解释力。
 
-## Detection 迁移怎样读？
+### Detection 迁移怎样读？
 
 原文在相同 Faster R-CNN baseline 下，把 VGG-16 backbone 替换为 ResNet-101，报告 PASCAL/COCO detection 提升。
 
@@ -1216,9 +1218,9 @@ PASCAL / COCO detection
 
 所以竞赛最终榜单不是 residual block 单一结构的纯消融。
 
-# 推理与部署
+## 推理与部署
 
-## 1. Identity shortcut 真的“零成本”吗？
+### 1. Identity shortcut 真的“零成本”吗？
 
 从参数和主要 MACs 看，同 Shape 的 identity shortcut：
 
@@ -1237,7 +1239,7 @@ PASCAL / COCO detection
 
 > “no extra computational complexity” 是相对卷积主算力的架构级表述，不等于现代 GPU/NPU 上绝对 0 latency / 0 HBM traffic。
 
-## 2. Projection shortcut 有真实额外成本
+### 2. Projection shortcut 有真实额外成本
 
 若 shortcut 是
 
@@ -1252,7 +1254,7 @@ $1\times1$ convolution 需要实际 GEMM/Conv 计算和参数读取。
 - identity shortcut；
 - projection shortcut。
 
-## 3. FLOPs / MACs 计数口径
+### 3. FLOPs / MACs 计数口径
 
 卷积 MACs：
 
@@ -1277,7 +1279,7 @@ $$
 
 原论文给出 3.6B / 11.3B 等“FLOPs”时，应在论文自身口径下做横向比较，不应直接与现代 profiler 未核对口径的 TFLOPs 数字相减。
 
-## 4. BN 可以在 inference 融合，但 residual add 仍存在
+### 4. BN 可以在 inference 融合，但 residual add 仍存在
 
 BN 推理固定统计后可折进前一 Conv：
 
@@ -1312,7 +1314,7 @@ $$
 
 这条 merge 不能简单消失，因为它就是网络函数定义。
 
-## 5. 边缘部署为什么不能只看“层数”？
+### 5. 边缘部署为什么不能只看“层数”？
 
 ResNet-50 比某些更浅但更宽的网络：
 
@@ -1335,7 +1337,7 @@ ResNet-50 比某些更浅但更宽的网络：
 
 **Prefill / Decode / KV Cache 不适用于原始 ResNet。**
 
-## 技术 → 模型
+### 技术 → 模型
 
 - **Residual Learning → ResNet v1**：`PROPOSES`
 - **Identity Shortcut → ResNet-18/34/50/101/152**：`IMPLEMENTS`
@@ -1344,7 +1346,7 @@ ResNet-50 比某些更浅但更宽的网络：
 - **BatchNorm → ResNet v1**：`ADOPTS`
 - **Residual connection → later Transformers**：后续架构广泛 `ADOPTS` 残差思想，但 Attention/FFN 并非本文提出
 
-## 模型 → 技术
+### 模型 → 技术
 
 - **ResNet-34**：`IMPLEMENTS` $[3,4,6,3]$ basic blocks；`ADOPTS` Conv/BN/ReLU/SGD
 - **ResNet-50**：`DERIVED_FROM` residual framework；`IMPLEMENTS` bottleneck + option B projection
@@ -1352,9 +1354,9 @@ ResNet-50 比某些更浅但更宽的网络：
 - **Pre-activation ResNet**：`EXTENDS` ResNet v1，并重新安排 BN/ReLU 与 shortcut 路径
 - **Transformer**：`ADOPTS` 广义 residual stream；不应标作 `DERIVED_FROM` ResNet 的 CNN 主干
 
-# 论文细读
+## 论文细读
 
-## 1. Abstract：第一句为什么是 “Deeper neural networks are more difficult to train”？
+### 1. Abstract：第一句为什么是 “Deeper neural networks are more difficult to train”？
 
 **定位：Abstract，PDF p.1。**
 
@@ -1384,7 +1386,7 @@ ResNet-50 比某些更浅但更宽的网络：
 
 “easier to optimize” 在这里是**实验主张**，后面必须由 plain/residual training curves 支撑。
 
-## 2. Abstract 后半为什么把 152 layers、VGG complexity、竞赛结果连续写在一起？
+### 2. Abstract 后半为什么把 152 layers、VGG complexity、竞赛结果连续写在一起？
 
 作者从方法证据切到规模与应用：
 
@@ -1406,7 +1408,7 @@ ResNet-50 比某些更浅但更宽的网络：
 
 它们不是同一个消融。
 
-## 3. Introduction 第 1–3 段：为什么先强调“depth 很重要”？
+### 3. Introduction 第 1–3 段：为什么先强调“depth 很重要”？
 
 作者先回顾 CNN 在图像任务上的成功，再指出 VGG、GoogLeNet 等领先模型都依赖“very deep”架构。
 
@@ -1424,7 +1426,7 @@ $$
 \text{worth solving}.
 $$
 
-## 4. “Is learning better networks as easy as stacking more layers?” 是全文真正的问题句
+### 4. “Is learning better networks as easy as stacking more layers?” 是全文真正的问题句
 
 这一句是 Introduction 的关键转折。
 
@@ -1442,7 +1444,7 @@ $$
 
 它是在**排除一个旧解释**，为后面的 degradation problem 腾出位置。
 
-## 5. Figure 1 前后的 “Unexpectedly” 为什么重要？
+### 5. Figure 1 前后的 “Unexpectedly” 为什么重要？
 
 作者写：
 
@@ -1456,7 +1458,7 @@ $$
 
 因此 Figure 1 不是简单 benchmark 图，而是**问题定义图**。
 
-## 6. “There exists a solution by construction” 是全文最漂亮的一段逻辑
+### 6. “There exists a solution by construction” 是全文最漂亮的一段逻辑
 
 作者让我们想象：
 
@@ -1482,7 +1484,7 @@ $$
 
 Residual formulation 正好回答这个问题。
 
-## 7. “We hypothesize” 必须原样保留其证据强度
+### 7. “We hypothesize” 必须原样保留其证据强度
 
 作者说：
 
@@ -1519,15 +1521,15 @@ $$
 
 > “作者提出这一假设，并给出强经验支持。”
 
-## 8. Figure 2 段落：为什么作者强调 identity shortcut “neither extra parameter nor complexity”？
+### 8. Figure 2 段落：为什么作者强调 identity shortcut “neither extra parameter nor complexity”？
 
 这个措辞有两个层次。
 
-### 工程层
+#### 工程层
 
 identity shortcut 非常便宜。
 
-### 实验层
+#### 实验层
 
 更重要的是它让 plain/residual comparison 更公平：
 
@@ -1542,7 +1544,7 @@ identity shortcut 非常便宜。
 
 > **把方法设计成便于做干净对照。**
 
-## 9. Related Work 为什么分成 Residual Representations 与 Shortcut Connections 两条线？
+### 9. Related Work 为什么分成 Residual Representations 与 Shortcut Connections 两条线？
 
 作者不想把“residual”说成自己第一次发明的抽象思想。
 
@@ -1567,7 +1569,7 @@ identity shortcut 非常便宜。
 
 > 新意不是“世界第一次出现 shortcut”，而是这种 identity residual reformulation 在超深 CNN 中的具体设计与证据。
 
-## 10. §3.1 脚注为什么值得注意？
+### 10. §3.1 脚注为什么值得注意？
 
 作者说：
 
@@ -1595,7 +1597,7 @@ $$
 
 细读时应保留这种“假设—论证”关系。
 
-## 11. §3.1 从 “identity optimal” 到 “real cases” 的让步结构
+### 11. §3.1 从 “identity optimal” 到 “real cases” 的让步结构
 
 作者先用极端情形：
 
@@ -1619,7 +1621,7 @@ $$
 
 后面 Figure 7 观察 residual responses 更小，就是对这一弱化版本的支持。
 
-## 12. §3.2 为什么 Eq.(1) 后马上补 Eq.(2)？
+### 12. §3.2 为什么 Eq.(1) 后马上补 Eq.(2)？
 
 Eq.(1)：
 
@@ -1645,7 +1647,7 @@ $$
 
 随后又说 projection 只在 matching dimensions 时使用，重新强调 identity shortcut 的经济性。
 
-## 13. “single-layer residual function 没观察到优势”为什么值得保留？
+### 13. “single-layer residual function 没观察到优势”为什么值得保留？
 
 作者明确指出：
 
@@ -1663,7 +1665,7 @@ $$
 
 论文关注的是**多层 nonlinear mapping** 的 residual reformulation。
 
-## 14. Figure 3 / §3.3：为什么先设计 plain baseline，再从它加 shortcut？
+### 14. Figure 3 / §3.3：为什么先设计 plain baseline，再从它加 shortcut？
 
 作者先定义 plain-34：
 
@@ -1681,7 +1683,7 @@ $$
 
 > 是 shortcut 的作用，还是 width / filter / depth 配方变了？
 
-## 15. §3.4：为什么训练 recipe 要写得这么具体？
+### 15. §3.4：为什么训练 recipe 要写得这么具体？
 
 BN、初始化、SGD、batch size、lr、momentum、weight decay、data augmentation 都写清楚，是因为作者后面要声称：
 
@@ -1697,7 +1699,7 @@ BN、初始化、SGD、batch size、lr、momentum、weight decay、data augmenta
 
 > 这不是简单的经典 vanishing/exploding gradient 故事。
 
-## 16. §4.1 Plain Networks：作者为什么先只分析 plain，再转 residual？
+### 16. §4.1 Plain Networks：作者为什么先只分析 plain，再转 residual？
 
 作者没有直接把两组曲线混在一起讲。
 
@@ -1714,7 +1716,7 @@ BN、初始化、SGD、batch size、lr、momentum、weight decay、data augmenta
 
 因此读者不会把 ResNet 结果看成单纯“新模型榜单”。
 
-## 17. “We conjecture that deep plain nets may have exponentially low convergence rates” 为什么不能写成结论？
+### 17. “We conjecture that deep plain nets may have exponentially low convergence rates” 为什么不能写成结论？
 
 原文使用 **conjecture**。
 
@@ -1736,23 +1738,23 @@ BN、初始化、SGD、batch size、lr、momentum、weight decay、data augmenta
 
 它只是一个基于现象的猜想。
 
-## 18. Residual Networks 的 “three major observations” 是实验章最核心的段落
+### 18. Residual Networks 的 “three major observations” 是实验章最核心的段落
 
 作者把 Table 2 / Figure 4 总结成三点。
 
-### 第一
+#### 第一
 
 ResNet-34 优于 ResNet-18。
 
 说明 depth 的收益恢复了。
 
-### 第二
+#### 第二
 
 ResNet-34 显著优于 plain-34。
 
 说明结构改动确实缓解 degradation。
 
-### 第三
+#### 第三
 
 18-layer plain/residual 最终 accuracy 接近，但 ResNet 早期收敛更快。
 
@@ -1760,7 +1762,7 @@ ResNet-34 显著优于 plain-34。
 
 > residual 并不是只有“非常深才有效”；即使 shallow solver 最终也能找到好解，residual parameterization 仍可能让优化路径更顺。
 
-## 19. Shortcut A/B/C：为什么这个消融非常关键？
+### 19. Shortcut A/B/C：为什么这个消融非常关键？
 
 如果 projection 本身提供更多参数，读者可能怀疑：
 
@@ -1780,7 +1782,7 @@ ResNet-34 显著优于 plain-34。
 
 这比只展示 option B 的最好成绩更有机制说服力。
 
-## 20. Figure 5 与 “practical considerations” 是工程论文写法的典型
+### 20. Figure 5 与 “practical considerations” 是工程论文写法的典型
 
 作者没有假装 bottleneck 是更深理论。
 
@@ -1798,7 +1800,7 @@ ResNet-34 显著优于 plain-34。
 
 ResNet 的成功不是所有决策都由一个统一数学定理推出。
 
-## 21. CIFAR 100/1000 层：为什么 1202-layer 结果反而是论文的优点？
+### 21. CIFAR 100/1000 层：为什么 1202-layer 结果反而是论文的优点？
 
 1202-layer：
 
@@ -1809,17 +1811,17 @@ ResNet 的成功不是所有决策都由一个统一数学定理推出。
 
 这反而帮助我们分清两类问题：
 
-### Optimization degradation
+#### Optimization degradation
 
 深度加大，training error 也高。
 
-### Overfitting
+#### Overfitting
 
 training error 极低，但 test error 变差。
 
 Residual learning 主要解决前者，不保证消灭后者。
 
-## 22. Detection 结果：什么可以归因，什么不能？
+### 22. Detection 结果：什么可以归因，什么不能？
 
 作者在 Faster R-CNN baseline 中替换：
 
@@ -1835,7 +1837,7 @@ ResNet-101 backbone
 
 所以原文“strong evidence shows residual principle is generic”是作者依据跨任务结果做出的较强经验概括，而不是数学上证明 non-vision 任务也必然受益。
 
-## 本篇最小闭环
+### 本篇最小闭环
 
 真正读懂以后，应能自己回答：
 

@@ -56,6 +56,31 @@ $$
 
 这是**教学假设**，非原论文硬件读数。它说明我们需要分别测 kernel-level latency、TPOT、端到端请求吞吐与显存占用。
 
+## 四种 Decode 工作量为何对应不同 GPU Kernel 路径？
+
+设同一个 Batch 里两条请求的 KV 长度分别是 128 与 8192，Query 每条只有一个新 Token。若直接对两个请求平均分配 1 个 CTA，短请求很快完成，长请求还要持续扫描大量 KV 页面；部分 SM 将闲置。另一种做法是对长请求的 KV 按 `split-KV` 分块，让多个 CTA 各自计算一段 Partial Attention，最终再正确合并 Softmax 统计量。
+
+对分块 $b$ 计算局部最大 $m_b$、归一化分母 $l_b$、加权 Value 和 $o_b$，要合并不同 Block 的 Attention，不能仅对局部 Softmax 输出做平均。令全局最大 $m=\max_bm_b$，则
+
+$$
+l=\sum_b e^{m_b-m}l_b,\qquad
+o=\frac{\sum_b e^{m_b-m} l_b\,o_b}{l}.
+$$
+
+这是在线 Softmax 跨块合并的核心代数约束。若简单使用 $o=(o_1+o_2)/2$，对不同分块的 Logits 尺度不一致时会得到错误的输出。FlashInfer 的 Page Table 和 Split-KV 调度都必须在**不改变 Attention 数学语义**的基础上运行。
+
+### CUDA Graph 不是“变量长度全部变成常量”
+
+Graph Capture 固定的可以是 Kernel 启动形态与用于读取索引的元数据地址，而每轮的 `kv_indptr`、`kv_indices`、`qo_indptr` 等请求长度与 Page Layout 信息可以更新为新的值。以两个请求的 `kv_indptr=[0,2,10]` 为例，分别拥有 2 和 8 个物理 KV Page。下一轮增加了请求时，运行时需要更新 Indptr 和对应 Buffer Capacity，不能因为上一轮 Graph Capture 过便继续解释成只有两个请求。
+
+一个正确的服务实现必须把 Buffer Capacity、Index 本身和有效序列长度区分清楚。固定尺寸 Buffer 内的数据更新可以与 Graph Capture 相容；超出容量时仍需额外分配/重新规划。**“Graph-compatible”不等于“所有地址和动态结构完全不变”**，也不保证所有 Batch/Head Shape 都落在同一优化 Kernel。
+
+## 为什么 Figure 和系统 Benchmark 是不同层证据？
+
+[FlashInfer MLSys 2025 正式论文](https://proceedings.mlsys.org/paper_files/paper/2025/hash/dbf02b21d77409a2db30e56866a8ab3a-Abstract-Conference.html) 的方法示意说明可组合 KV Layout、Scheduler 与 CUDA Graph 协作；系统 Benchmark 的 Inter-token Latency / Prefill Throughput 则需要对照同 GPU、Batch、KV Cache Layout、Paged Block Size、Head Dimension 等条件。单层 Attention Kernel 从 10 μs 降到 5 μs 若只占整步 30%，根据 Amdahl 上界，总步时延仅从 100 μs 降到 85 μs——不能宣称“Kernel 快两倍，所以每个用户快两倍”。
+
+更严格的复现需要两个模型规模、两个 KV Length 和至少两组 Head Count，在相同动态请求分布下分别报告 CUDA Graph on/off、Split-KV on/off 与 Kernel Specialization 的端到端运行时间。没有这些变量，无法断定论文改进来自哪条系统路径。
+
 ## 四、原论文实证边界
 
 论文在所选 inference engine 与 compiler baseline 上报告约 **29–69% 的 Inter-token latency 降低**，某些 Long-context 测试约 **28–30% 延迟降低**，Parallel Generation 工作负载约 **13–17% 加速**。这三个区间是不同实验工况，不能直接相加或认为任何 kernel 都有相同改进。

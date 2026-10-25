@@ -4,6 +4,8 @@
 > **主证据**：Llama 3、Megatron-LM、GPipe、ZeRO、Ring Attention、PyTorch FSDP 与 NVIDIA Megatron Core 官方文档。  
 > **一句话定位**：超大模型训练不是“把模型扔到很多 GPU 上”，而是分别沿 layer 内 tensor、layer depth、sequence、data replica 四个正交方向分解工作，并让不同通信模式映射到合适的物理网络层级。
 
+**可核对的一手资料及各自对应的结论：**[Meta Llama 3（训练规模与 4D 并行）](https://arxiv.org/abs/2407.21783)、[Megatron-LM（Tensor Parallel）](https://arxiv.org/abs/1909.08053)、[GPipe（流水并行与 Microbatch）](https://arxiv.org/abs/1811.06965)、[ZeRO（模型状态分片）](https://arxiv.org/abs/1910.02054)、[PyTorch FSDP 官方 API](https://docs.pytorch.org/docs/stable/fsdp.html)、[NVIDIA Megatron Core 官方开发文档](https://docs.nvidia.com/megatron-core/developer-guide/latest/index.html)。本专题综合这些方法，而不是声称某一篇论文独立发明全部四种并行维度。FSDP API 与 Megatron Core 的选项会随实现版本变化，工程用法应以当前软件版本文档为准。
+
 前置阅读：
 
 - [Llama 3：完整模型级拆解](../../B/05-moe-complete-llm/B011-llama3.md)
@@ -18,7 +20,7 @@
 
 ---
 
-## 阅读导航
+### 阅读导航
 
 本文会从以下问题一路推导：
 
@@ -49,7 +51,7 @@
 
 *教学解释图｜TP、PP、CP 与 FSDP 沿四个正交方向切分同一训练任务，并映射到不同 process group 与通信模式。*
 
-# 一、先从单卡训练开始：显存到底花在哪里？
+## 一、先从单卡训练开始：显存到底花在哪里？
 
 设模型有：
 
@@ -77,7 +79,7 @@ $$
 
 这几项的 scaling law 并不一样。
 
-## 1. 模型状态：主要随参数量增长
+### 1. 模型状态：主要随参数量增长
 
 以混合精度 Adam 为例，一个常见的粗略账本是：
 
@@ -104,7 +106,7 @@ $$
 
 还没算 activation，就已经远超单卡 HBM。
 
-## 2. Activation：主要随 batch、sequence、hidden、layers 增长
+### 2. Activation：主要随 batch、sequence、hidden、layers 增长
 
 可以粗略写成：
 
@@ -140,7 +142,7 @@ $$
 
 它们是两种不同的 OOM 来源。
 
-## 3. Runtime workspace 也必须算
+### 3. Runtime workspace 也必须算
 
 还包括：
 
@@ -165,7 +167,7 @@ $$
 
 ---
 
-# 二、最简单的扩展：Data Parallelism
+## 二、最简单的扩展：Data Parallelism
 
 4 张 GPU 最自然的做法：
 
@@ -190,7 +192,7 @@ $$
 \frac{B}{d}.
 $$
 
-## 4. 为什么 DDP 不能让超大模型放得下？
+### 4. 为什么 DDP 不能让超大模型放得下？
 
 因为每张 GPU 仍长期保存：
 
@@ -214,7 +216,7 @@ $$
 
 ---
 
-# 三、4D Parallelism 是四个正交坐标
+## 三、4D Parallelism 是四个正交坐标
 
 
 
@@ -248,7 +250,7 @@ $$
 
 ---
 
-# 四、一个最容易写错的概念：FSDP 不是第五维
+## 四、一个最容易写错的概念：FSDP 不是第五维
 
 Llama 3 的四个维度是：
 
@@ -280,7 +282,7 @@ FSDP 仍保持 data-parallel 计算语义，只是改变了 model-state ownershi
 
 ---
 
-# 五、Tensor Parallelism：切开一个 layer
+## 五、Tensor Parallelism：切开一个 layer
 
 先看：
 
@@ -317,7 +319,7 @@ GPU0 保存 $W_1$，GPU1 保存 $W_2$。
 
 这就是 column-parallel linear 的基本结构。
 
-## 5.1 为什么切完不立即 gather？
+### 5.1 为什么切完不立即 gather？
 
 如果下一步是逐元素激活：
 
@@ -337,7 +339,7 @@ $$
 
 因此好的 TP 设计不是“每切一次就同步一次”，而是尽量让下游算子继续消费 local shard。
 
-## 5.2 Row Parallel：把 partial output 在最后相加
+### 5.2 Row Parallel：把 partial output 在最后相加
 
 第二个 Linear：
 
@@ -397,7 +399,7 @@ $$
 }
 $$
 
-## 5.3 Attention 的 TP：切 heads
+### 5.3 Attention 的 TP：切 heads
 
 Multi-Head Attention：
 
@@ -420,7 +422,7 @@ $$
 
 ---
 
-# 六、为什么 TP 极度依赖高速互联？
+## 六、为什么 TP 极度依赖高速互联？
 
 TP communication 发生在：
 
@@ -450,7 +452,7 @@ $$
 
 ---
 
-# 七、Pipeline Parallelism：切 layer depth
+## 七、Pipeline Parallelism：切 layer depth
 
 假设有 80 层 Transformer，PP degree：
 
@@ -484,7 +486,7 @@ $$
 
 ---
 
-# 八、Microbatch：把时间维也流水化
+## 八、Microbatch：把时间维也流水化
 
 把一个 batch 切成 $m$ 个 microbatches：
 
@@ -501,7 +503,7 @@ Stage 0 处理完 microbatch 0 后就把 activation 发给 Stage 1，自己继�
 
 ---
 
-# 九、GPipe：pipeline bubble 怎么来的？
+## 九、GPipe：pipeline bubble 怎么来的？
 
 ![Megatron-LM 原论文中的 GPipe schedule](../../../figures/C001/fig3-pipeline-gpipe.svg)
 
@@ -556,7 +558,7 @@ $$
 m\gg p.
 $$
 
-## 9.1 为什么 microbatch 不能无限增多？
+### 9.1 为什么 microbatch 不能无限增多？
 
 如果为了增大 $m$ 而把 microbatch size $b$ 压得很小：
 
@@ -580,7 +582,7 @@ $$
 
 ---
 
-# 十、GPipe 与 1F1B：主要差别是 activation lifetime
+## 十、GPipe 与 1F1B：主要差别是 activation lifetime
 
 GPipe 常表现为：
 
@@ -605,7 +607,7 @@ F B F B F B
 
 ---
 
-# 十一、Interleaved 1F1B：用 virtual stages 缩小 bubble
+## 十一、Interleaved 1F1B：用 virtual stages 缩小 bubble
 
 如果每个 physical device 持有 $v$ 个 model chunks，单 chunk 时间约变成：
 
@@ -641,7 +643,7 @@ $$
 
 ---
 
-# 十二、Sequence Parallelism 与 Context Parallelism 不一样
+## 十二、Sequence Parallelism 与 Context Parallelism 不一样
 
 Megatron 体系里这两个词容易混。
 
@@ -682,7 +684,7 @@ $$
 
 ---
 
-# 十三、为什么 Linear 可以 local，Attention 不可以？
+## 十三、为什么 Linear 可以 local，Attention 不可以？
 
 Linear：
 
@@ -724,7 +726,7 @@ $$
 
 ---
 
-# 十四、Ring Attention：不一次性 gather 全部 KV，而让 KV block 流动
+## 十四、Ring Attention：不一次性 gather 全部 KV，而让 KV block 流动
 
 假设 $c=4$：
 
@@ -764,7 +766,7 @@ CP 并不会把 exact attention 变成 sparse attention，它只是改变了计�
 
 ---
 
-# 十五、CP 也不是免费的
+## 十五、CP 也不是免费的
 
 $c\uparrow$ 时：
 
@@ -789,7 +791,7 @@ $$
 
 哪一个更划算取决于 GPU FLOPs 与网络 bandwidth 的相对价格。
 
-# 十六、FSDP：为什么它仍然属于 Data Parallelism？
+## 十六、FSDP：为什么它仍然属于 Data Parallelism？
 
 普通 DDP：
 
@@ -808,7 +810,7 @@ ZeRO 的核心观察是：
 
 ---
 
-# 十七、ZeRO 的三个经典阶段
+## 十七、ZeRO 的三个经典阶段
 
 设 DP degree 为 $d$。
 
@@ -836,7 +838,7 @@ $$
 
 ---
 
-# 十八、FSDP 的第一性原理：平时存 shard，算到该模块时临时重建
+## 十八、FSDP 的第一性原理：平时存 shard，算到该模块时临时重建
 
 ![教学解释图：FSDP Parameter Lifecycle](../../../figures/explainers/C001/05-fsdp-parameter-lifecycle.svg)
 
@@ -872,7 +874,7 @@ $$
 
 计算完成后可以重新 reshard 并释放 full parameter。
 
-## 18.1 为什么 backward 可能还要再 all-gather？
+### 18.1 为什么 backward 可能还要再 all-gather？
 
 如果 forward 后立即 reshard：
 
@@ -902,7 +904,7 @@ Llama 3 的实现选择之一就是 forward 后不立即 reshard 某些参数，
 
 ---
 
-# 十九、为什么 gradient 特别适合 reduce-scatter？
+## 十九、为什么 gradient 特别适合 reduce-scatter？
 
 普通 DDP：
 
@@ -926,7 +928,7 @@ $$
 
 ---
 
-# 二十、FSDP 的内存不能简单写成除以 d
+## 二十、FSDP 的内存不能简单写成除以 d
 
 长期 model-state memory 确实近似：
 
@@ -960,7 +962,7 @@ $$
 
 ---
 
-# 二十一、FSDP2 为什么强调 module grouping？
+## 二十一、FSDP2 为什么强调 module grouping？
 
 PyTorch 当前 FSDP2 的核心语义是：
 
@@ -988,7 +990,7 @@ $$
 
 ---
 
-# 二十二、最关键的公式：global batch 只乘 DP
+## 二十二、最关键的公式：global batch 只乘 DP
 
 设：
 
@@ -1026,7 +1028,7 @@ $$
 
 ---
 
-# 二十三、一个 16 GPU 例子
+## 二十三、一个 16 GPU 例子
 
 设：
 
@@ -1075,7 +1077,7 @@ $$
 
 ---
 
-# 二十四、一个样本到底占多少 GPU？
+## 二十四、一个样本到底占多少 GPU？
 
 定义：
 
@@ -1105,7 +1107,7 @@ $$
 
 ---
 
-# 二十五、FSDP 下为什么还叫 data replica？
+## 二十五、FSDP 下为什么还叫 data replica？
 
 必须区分：
 
@@ -1132,7 +1134,7 @@ FSDP ranks：
 
 ---
 
-# 二十六、一个 GPU 同时属于四种 process group
+## 二十六、一个 GPU 同时属于四种 process group
 
 每个 rank 可以用坐标：
 
@@ -1149,19 +1151,19 @@ $$
 
 某个 rank 同时属于：
 
-## TP group
+### TP group
 
 固定 $d,p,c$，只让 $t$ 变化。
 
-## CP group
+### CP group
 
 固定 $d,p,t$，只让 $c$ 变化。
 
-## PP chain
+### PP chain
 
 固定 $d,c,t$，只让 $p$ 变化。
 
-## DP / FSDP group
+### DP / FSDP group
 
 固定 $p,c,t$，只让 $d$ 变化。
 
@@ -1174,7 +1176,7 @@ $$
 
 ---
 
-# 二十七、Llama 3 原论文的 4D group
+## 二十七、Llama 3 原论文的 4D group
 
 ![Llama 3 原论文 Figure 5：4D parallelism](../../../figures/C001/fig1-llama3-4d-parallelism.svg)
 
@@ -1184,7 +1186,7 @@ $$
 
 ---
 
-# 二十八、为什么 process-group layout 会直接影响性能？
+## 二十八、为什么 process-group layout 会直接影响性能？
 
 通信时间可以粗略写成：
 
@@ -1215,7 +1217,7 @@ FSDP 是 module 粒度的 parameter all-gather / gradient reduce-scatter。
 
 ---
 
-# 二十九、典型 topology-aware 原则
+## 二十九、典型 topology-aware 原则
 
 一台多 GPU server 内：
 
@@ -1252,7 +1254,7 @@ $$
 
 ---
 
-# 三十、communication overlap 为什么和通信量同样重要？
+## 三十、communication overlap 为什么和通信量同样重要？
 
 完全串行：
 
@@ -1285,7 +1287,7 @@ Ring Attention 的 KV 传输、FSDP prefetch、gradient reduce-scatter overlap �
 
 ---
 
-# 三十一、Llama 3：三个真实配置
+## 三十一、Llama 3：三个真实配置
 
 405B / 8K / 8192 GPUs：
 
@@ -1340,7 +1342,7 @@ $$
 
 ---
 
-# 三十二、为什么 128K 会把 GPU 从 DP 转给 CP？
+## 三十二、为什么 128K 会把 GPU 从 DP 转给 CP？
 
 8K 时：
 
@@ -1392,7 +1394,7 @@ $$
 
 ---
 
-# 三十三、为什么不能 128K 仍然保持 DP=128？
+## 三十三、为什么不能 128K 仍然保持 DP=128？
 
 如果仍保持：
 
@@ -1434,7 +1436,7 @@ $$
 
 ---
 
-# 三十四、Llama 3 的 MFU 变化也说明并行不是免费的
+## 三十四、Llama 3 的 MFU 变化也说明并行不是免费的
 
 论文报告 BF16 MFU 大约：
 
@@ -1463,7 +1465,7 @@ $$
 
 ---
 
-# 三十五、为什么 GPU 更多甚至可能更慢？
+## 三十五、为什么 GPU 更多甚至可能更慢？
 
 如果增加 GPU 只能通过继续提高 TP / PP / CP 来使用：
 
@@ -1487,7 +1489,7 @@ $$
 
 ---
 
-# 三十六、Megatron 的关键 trade-off：TP 与 PP
+## 三十六、Megatron 的关键 trade-off：TP 与 PP
 
 固定：
 
@@ -1527,7 +1529,7 @@ $$
 
 ---
 
-# 三十七、DP 与 PP 也会互相影响
+## 三十七、DP 与 PP 也会互相影响
 
 若：
 
@@ -1563,7 +1565,7 @@ $$
 
 ---
 
-# 三十八、parallel degrees 是联合优化，不是四个旋钮独立调
+## 三十八、parallel degrees 是联合优化，不是四个旋钮独立调
 
 错误思路：
 
@@ -1605,7 +1607,7 @@ $$
 
 ---
 
-# 三十九、把问题写成一个系统优化目标
+## 三十九、把问题写成一个系统优化目标
 
 目标：
 
@@ -1634,27 +1636,27 @@ $$
 
 ---
 
-# 四十、一个实用的选择顺序
+## 四十、一个实用的选择顺序
 
 这不是绝对规则，但适合作为起点。
 
-## 1. 模型能放下时，优先 DP / FSDP 扩吞吐
+### 1. 模型能放下时，优先 DP / FSDP 扩吞吐
 
 保持较大的 GEMM granularity。
 
-## 2. 单层矩阵太大，增加 TP
+### 2. 单层矩阵太大，增加 TP
 
 优先控制在高速 intra-node domain。
 
-## 3. layer stack 太深，增加 PP
+### 3. layer stack 太深，增加 PP
 
 按 depth 切 model。
 
-## 4. long-context activation 成为瓶颈，增加 CP
+### 4. long-context activation 成为瓶颈，增加 CP
 
 直接切 sequence，而不是无限提高 TP。
 
-## 5. 剩余 GPU 用 DP / FSDP
+### 5. 剩余 GPU 用 DP / FSDP
 
 $$
 d=
@@ -1663,7 +1665,7 @@ $$
 
 ---
 
-# 四十一、为什么 long context 时 CP 常比继续加 TP 更合理？
+## 四十一、为什么 long context 时 CP 常比继续加 TP 更合理？
 
 继续加 TP 会把：
 
@@ -1694,7 +1696,7 @@ $$
 
 ---
 
-# 四十二、FSDP 和 activation checkpointing 为什么常一起用？
+## 四十二、FSDP 和 activation checkpointing 为什么常一起用？
 
 FSDP 主要压：
 
@@ -1724,27 +1726,27 @@ $$
 
 ---
 
-# 四十三、四种并行各自过度使用会发生什么？
+## 四十三、四种并行各自过度使用会发生什么？
 
-## TP 太大
+### TP 太大
 
 - sub-GEMM 太小；
 - collective 占比高；
 - 容易跨节点。
 
-## PP 太大
+### PP 太大
 
 - bubble 增长；
 - stage imbalance；
 - activation boundary 增多。
 
-## CP 太大
+### CP 太大
 
 - KV communication group 增大；
 - local workload 过小；
 - communication overlap 变难。
 
-## FSDP / DP 太大
+### FSDP / DP 太大
 
 - all-gather / reduce-scatter group 增大；
 - global batch 约束更强；
@@ -1752,7 +1754,7 @@ $$
 
 ---
 
-# 四十四、一个诊断表
+## 四十四、一个诊断表
 
 | 症状 | 优先检查 |
 | --- | --- |
@@ -1768,7 +1770,7 @@ $$
 
 ---
 
-# 四十五、和 FlashAttention-2 的联系
+## 四十五、和 FlashAttention-2 的联系
 
 FlashAttention-2 问：
 
@@ -1798,7 +1800,7 @@ $$
 
 ---
 
-# 四十六、4D 不是并行维度的上限
+## 四十六、4D 不是并行维度的上限
 
 Dense Llama 3：
 
@@ -1828,7 +1830,7 @@ $$
 
 ---
 
-# 四十七、最终应该记住什么？
+## 四十七、最终应该记住什么？
 
 不要先问：
 
@@ -1836,25 +1838,25 @@ $$
 
 先问四件事：
 
-## 第一：哪类资源放不下？
+### 第一：哪类资源放不下？
 
 $$
 \text{model states / activations / runtime}
 $$
 
-## 第二：瓶颈沿哪个逻辑维度增长？
+### 第二：瓶颈沿哪个逻辑维度增长？
 
 $$
 \text{hidden / depth / sequence / batch}
 $$
 
-## 第三：切完会产生什么 communication？
+### 第三：切完会产生什么 communication？
 
 $$
 \text{collective / p2p / KV movement / all-gather}
 $$
 
-## 第四：这种通信应该映射到哪一级网络？
+### 第四：这种通信应该映射到哪一级网络？
 
 $$
 \text{NVLink / node / rack / pod}
@@ -1874,7 +1876,7 @@ $$
 
 ---
 
-# 四十八、整条逻辑压缩
+## 四十八、整条逻辑压缩
 
 ~~~text
 单卡训练
@@ -1910,7 +1912,7 @@ logical partition
 
 ---
 
-# 参考原始资料
+## 参考原始资料
 
 - Meta AI, **The Llama 3 Herd of Models**, arXiv:2407.21783.
 - Narayanan et al., **Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM**, arXiv:2104.04473.
