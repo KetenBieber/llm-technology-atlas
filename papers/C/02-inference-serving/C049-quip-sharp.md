@@ -42,6 +42,19 @@ $$
 
 确实把集中于第一个坐标的能量分摊。但 $w=[a,a]^\top$ 反而被映成 $[\sqrt2 a,0]^\top$。因此需要随机符号等机制与统计性分析，而不是说每个确定向量经 Hadamard 都会减少最大幅值。
 
+## 从原论文 Algorithm 1 重建整条数据流
+
+原论文的 QuIP#-NoFT 并不直接把 $W$ 丢给一个 E8 Codebook：它同时取得 $W\in\mathbb R^{m\times n}$ 和由校准输入产生的 $H\in\mathbb R^{n\times n}$，执行 **Incoherence Processing with Randomized Hadamard Transform（IP-RHT）**，随后调用 **BlockLDLQ** 在变换后的权重和 Hessian 上做自适应分块舍入。
+
+用步骤表达：
+
+1. 校准阶段得到原始 $W$ 和一个度量输入方向敏感性的 $H$；二者维度必须匹配同一个乘法求和轴。
+2. 取带随机符号的左右 Hadamard 变换 $U,V$；将坐标表示变为 $\widetilde W=UWV^\top$，同时以相应的正交变换更新误差度量（具体左/右方向和转置取决于作者的 $W$ 布局）。
+3. 在**变换后的坐标系**运行 BlockLDLQ，选择 Codebook 中的块向量，利用 Hessian 相关性对尚未处理的块进行误差反馈。
+4. 存储低比特码本索引与复原所需变换信息，推理时执行与量化表示匹配的矩阵计算/恢复。
+
+这比“先打散 Outlier，再查一个 Codebook”多了一项很重要的约束：**量化误差代价受输入分布影响，不只靠未加权的欧氏距离评估**。
+
 ## 为什么从逐元素 Round 走向 8 维格码本？
 
 如果变换后的向量近似各向同性、形状像球，那么独立标量量化相当于用笛卡尔网格的小正方体格点覆盖分布，浪费球状概率密度结构。**向量量化**把一组 $d$ 个数作为整体，选择码本向量：
@@ -67,3 +80,27 @@ flowchart TD
 [ICML 2024 原论文](https://proceedings.mlr.press/v235/tseng24a.html) 将 QuIP# 描述为 4 bits/weight 以下的高保真 Weight-Only PTQ，并对无 Fine-Tuning、无格码本和旧 QuIP 的变体作消融。研究中可以固定 **真实有效 bit 数**（包括 Codebook 和元数据），再比较 PPL、逐层 MSE、预处理耗时以及 Kernel Token/s。
 
 下一篇 [AQLM](C050-aqlm.md) 仍使用码本思想，但不只从一个 Codebook 里选一个向量，而让多个 Codebook 的向量**相加共同逼近**高维权重分组。
+
+## 为什么 E8P 不是一个不能部署的 65,536 行码本？
+
+8 维向量如果以 2 bit/weight 编码，需要 16-bit 的索引，共有 $2^{16}=65{,}536$ 种可能码字。若朴素保存每种码字的 8 个 FP16 分量，存储就要 $65{,}536\times8\times2\approx1$ MB；还要考虑 GPU Cache 与 Bank Conflict 的重复缓存，访问成本可能不划算。
+
+作者的 E8P 将码本拆成**256 个基础向量查找 + 符号翻转 + 小幅平移**的结构：16-bit 编码可以分解为 8 bit Base Entry、7 bit Sign 和 1 bit Shift/Parity 相关信息。于是原本巨大的逻辑码本可由约 1KiB 的基本表加简单运算重建。这里的 1KiB 是原论文 E8P 结构化 Base Table 的量级，而非包括所有 Weight、缩放、模型元信息的总存储。
+
+[QuIP# 正式论文与 Algorithm 1/2](https://proceedings.mlr.press/v235/tseng24a.html) 把**可表达性**和**可以装进 GPU L1、解码效率高**同时当作设计约束。$E_8$ 是 8D 球堆积方面的最优结构，不意味着它在真实 Transformer 上的所有 Weighted Reconstruction Objective 都数学全局最优。
+
+### 从一个两维 Hadamard 反例辨析“打散”
+
+$$
+H_2=\frac1{\sqrt2}\begin{bmatrix}1&1\\1&-1\end{bmatrix}.
+$$
+
+对于集中向量 $w=[10,0]^\top$，有 $H_2w=[7.071,7.071]^\top$，最大坐标变小；但是 $w'=[10,10]^\top$ 被变换成 $[14.142,0]^\top$，最大坐标反而变大。**单个确定 Hadamard 不保证每个输入最大坐标都减少**。随机符号加 Hadamard 的统计打散是作者的策略，不应把这种概率性质改写成逐样本严格上界。
+
+## Figure 3 真正在对比什么？
+
+论文 [Figure 3](https://proceedings.mlr.press/v235/tseng24a.html) 用高斯源数据展示不同维度与结构码本的**元素级 MSE**。看横轴与码本 bit 后，应回答两件事：球形分布为什么更契合格向量量化？为何高维空间的码本覆盖效率更好？但该图不是完整 LLM PPL/Token/s 图，不能直接把高斯向量的 MSE 排名当成 LLaMA 下游性能排名。
+
+[QuIP# 正式论文 Figure 1（PDF 第 1 页）](https://arxiv.org/pdf/2402.04396) 还有另一层证据：横轴是**模型的压缩后总 Bits**，纵轴是 WikiText2 PPL，标注不同 bit 的 QuIP#、旧 QuIP 以及 AQLM 等对照。它说明实际 Model Size 与量化 PPL 的关系，不是在固定一个模型下单独证明 E8P 优于其他码本；不同 Model Size 的点可能还改变了参数规模。**Figure 2（PDF 第 2 页）** 只给 Hadamard → Lattice Codebook → Fine-Tuning 的方法流程，不可拿它代替 Runtime 或精度实验。
+
+因此最终需要三层证据：Figure 3 的码本表示力；消融中去掉 RHT、Codebook 或 Fine-Tuning 的误差/任务质量；以及 RTX 4090 等硬件上的实际解码/带宽利用率。作者报告原型 CUDA 内核达到约峰值显存带宽的一半以上，那是具体 Kernel 测量而不是所有完整模型的一般吞吐承诺。
