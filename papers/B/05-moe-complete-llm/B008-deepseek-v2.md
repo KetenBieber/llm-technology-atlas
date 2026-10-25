@@ -3,7 +3,7 @@
 > **论文**：DeepSeek-AI, [DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model](https://arxiv.org/abs/2405.04434)，本文以 arXiv v5（2024-06-19）为基线。  
 > **类型**：B · 完整模型技术报告；同时是 MLA 第一次被完整提出和验证的模型论文。  
 > **一句话定位**：这篇文章最值得下钻的是 **MLA 怎样把“历史多头 K/V”改写成可直接参与 Decode 的低维缓存状态，并用 weight absorption + decoupled RoPE 避免每一步重新展开完整 K/V**。  
-> **原图来源**：[figure_manifests/B008.json](../../../figure_manifests/B008.json)。  
+> **原图来源**：论文正式 PDF 与原文图注。
 > **为什么现在读它**：DeepSeek-V3 已经告诉我们结果——只缓存压缩 latent 与一小块位置状态，就能把 KV Cache 大幅降低。但如果不知道矩阵吸收为什么成立、RoPE 为什么破坏吸收、decoupled RoPE 又怎样修复它，MLA 仍然只是一个背诵名词。
 
 ## 阅读导航：这是 V3 的 Attention 技术下钻页

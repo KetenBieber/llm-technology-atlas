@@ -1,7 +1,7 @@
 # Batch Normalization：算法、反向传播与机制解释边界
 
 > **V2 重写 · A004 / Paperlist 第 4 篇**  
-> Sergey Ioffe & Christian Szegedy, [*Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift*](https://arxiv.org/abs/1502.03167)，ICML 2015。本文以 [原论文 PDF](https://arxiv.org/pdf/1502.03167) 为主线，并将 arXiv 源文档中的 Figure 1/2 原始图形资产整理进 `figures/A004/`；来源映射见 [figure_manifests/A004.json](../../../figure_manifests/A004.json)。
+> Sergey Ioffe & Christian Szegedy, [*Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift*](https://arxiv.org/abs/1502.03167)，ICML 2015。本文以 [原论文 PDF](https://arxiv.org/pdf/1502.03167) 为主线，并将 arXiv 源文档中的 Figure 1/2 原始图形资产整理进 `figures/A004/`；来源映射见 论文正式 PDF 与原文图注。
 >
 > **机制解释边界**：原作者把 BN 的主要动机描述为缓解 *internal covariate shift*（ICS）。这是理解 2015 论文行文必须保留的历史语境，但不应把它写成已经被后续研究唯一确认的因果机制。Santurkar 等 2018 的 [后续研究](https://arxiv.org/abs/1805.11604) 对“稳定中间激活分布就是主要原因”的解释提出了挑战，并把注意力转向损失/梯度的平滑性。本文因此严格分开：**BN 算法做了什么**、**原作者当时怎样解释它**、**后续证据怎样修正解释**。
 

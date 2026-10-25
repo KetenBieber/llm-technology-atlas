@@ -1,7 +1,7 @@
 # ResNet：残差学习为什么缓解深层网络的退化问题
 
 > **V2 重写 · A005 / Paperlist 第 5 篇**  
-> Kaiming He、Xiangyu Zhang、Shaoqing Ren、Jian Sun，[*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385)，CVPR 2016。本文以 [原论文 PDF](https://arxiv.org/pdf/1512.03385) 为主线，原始 Figure 1–5 直接从 arXiv 源文件中的矢量图资产渲染到 `figures/A005/`，来源映射见 [figure_manifests/A005.json](../../../figure_manifests/A005.json)。
+> Kaiming He、Xiangyu Zhang、Shaoqing Ren、Jian Sun，[*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385)，CVPR 2016。本文以 [原论文 PDF](https://arxiv.org/pdf/1512.03385) 为主线，原始 Figure 1–5 直接从 arXiv 源文件中的矢量图资产渲染到 `figures/A005/`，来源映射见 论文正式 PDF 与原文图注。
 >
 > **版本边界**：本文讨论的是原始 **ResNet v1**：残差相加以后再经过 ReLU。2016 年后续 [*Identity Mappings in Deep Residual Networks*](https://arxiv.org/abs/1603.05027) 的 pre-activation 结构不是这篇论文的原始架构，因此不能把 pre-activation 的更纯净恒等梯度性质反写成本文已经拥有。本文的 Jacobian、部署和现代 Transformer 对照属于教学扩展，原文贡献仍以 residual learning、identity shortcut 与 ImageNet/CIFAR 实验为准。
 

@@ -4,7 +4,7 @@
 > **类型**：A · 原始方法论文。  
 > **一句话定位**：DeepSeekMoE 不是继续追求“更稀疏”，而是在 **总 expert 参数与每 token active compute 基本不变** 的前提下，用 fine-grained segmentation 提高可组合粒度，再用 shared expert isolation 把共通知识从 routed experts 中剥离，目标是减少 hybridity 与 redundancy。  
 > **在当前主线中的位置**：我们先读了 DeepSeek-V3，再向下追到 DeepSeek-V2 的 MLA；现在继续沿 V2/V3 的 FFN 分支下钻，回答一个更局部的问题：**DeepSeekMoE 为什么要把专家切得更细，又为什么要专门留出永远激活的 shared experts？**  
-> **原图来源**：[figure_manifests/A034.json](../../../figure_manifests/A034.json)。
+> **原图来源**：论文正式 PDF 与原文图注。
 
 ## 阅读导航：这是 V2 / V3 的 FFN 技术下钻页
 

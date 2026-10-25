@@ -3,7 +3,7 @@
 > **论文**：DeepSeek-AI, [*DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning*](https://arxiv.org/abs/2501.12948)。本文以 arXiv v2（2026-01-04）为当前版本基线；论文已发表于 *Nature* 645, 633–638 (2025)。  
 > **类型**：B · 完整模型 / 后训练技术报告。  
 > **一句话定位**：R1 的核心不是“用了一个叫 GRPO 的算法”，而是用 R1-Zero 先验证 **reasoning behavior 可以在没有 reasoning SFT cold start 的情况下被 RL 强化出来**，再用 cold start、rejection sampling、SFT、全场景 RL 与 distillation 把这种能力工程化。  
-> **原图来源**：[figure_manifests/B010.json](../../../figure_manifests/B010.json)。  
+> **原图来源**：论文正式 PDF 与原文图注。
 > **阅读位置**：接在 [DeepSeek-V3](B009-deepseek-v3.md) 之后。V3 解决“一个强 Base / Chat 模型怎样训练出来”，R1 则把问题进一步缩到：**如果 Base 模型已经足够强，我们能不能不用大量人类 CoT 示范，直接用 RL 把更强的推理行为“激发”出来？**
 
 ## 阅读导航：R1 不是一个孤立的 RL 技巧，而是 V3 之后的一整条后训练主线

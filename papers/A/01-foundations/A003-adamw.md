@@ -1,7 +1,7 @@
 # AdamW：为什么 Weight Decay 必须从自适应梯度里解耦
 
 > **V2 重写 · A003 / Paperlist 第 3 篇**  
-> Ilya Loshchilov & Frank Hutter, [*Decoupled Weight Decay Regularization*](https://arxiv.org/abs/1711.05101)，ICLR 2019。本文以 [arXiv v3 PDF](https://arxiv.org/pdf/1711.05101) 为原文基线，并对照作者公开的 [AdamW/SGDW 实验代码](https://github.com/loshchil/AdamW-and-SGDW)。本文使用的 Figure 1/2 局部图来自 arXiv 原始图形资产；本地 SVG 仅封装 ar5iv 从对应论文源图导出的 raster panel，没有重绘数据。来源映射见 [figure_manifests/A003.json](../../../figure_manifests/A003.json)。
+> Ilya Loshchilov & Frank Hutter, [*Decoupled Weight Decay Regularization*](https://arxiv.org/abs/1711.05101)，ICLR 2019。本文以 [arXiv v3 PDF](https://arxiv.org/pdf/1711.05101) 为原文基线，并对照作者公开的 [AdamW/SGDW 实验代码](https://github.com/loshchil/AdamW-and-SGDW)。本文使用的 Figure 1/2 局部图来自 arXiv 原始图形资产；本地 SVG 仅封装 ar5iv 从对应论文源图导出的 raster panel，没有重绘数据。来源映射见 论文正式 PDF 与原文图注。
 >
 > **阅读边界**：本文核心不是“Adam 比 SGD 好”，而是一个更窄、更精确的问题：**把 $L_2$ 正则梯度直接塞进自适应优化器，是否真的等价于传统 weight decay？** 原文证明一般不等价，并提出将衰减从 adaptive-gradient 路径中解耦。本文的 PyTorch 接口说明、Transformer 参数示例属于现代教学扩展，不应倒推为 2019 原文的实验对象。
 

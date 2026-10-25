@@ -3,7 +3,7 @@
 > **论文**：DeepSeek-AI, [DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models](https://arxiv.org/abs/2402.03300)，本文以 arXiv v3（2024-04-27）为基线。  
 > **类型**：A · 原始方法论文下钻。DeepSeekMath 本身同时包含数学预训练与完整模型实验，但本文只把其中 **GRPO / RL 方法线** 拆透。  
 > **一句话定位**：GRPO 保留 PPO-style importance ratio 与 clipping，却不再训练 learned value model；它对同一 prompt 一次采样一组 responses，用组内 reward 的相对位置构造 advantage，再直接做 policy update。  
-> **原图来源**：[figure_manifests/A051.json](../../../figure_manifests/A051.json)。  
+> **原图来源**：论文正式 PDF 与原文图注。
 > **为什么现在读它**：[DeepSeek-V3](../../B/05-moe-complete-llm/B009-deepseek-v3.md) 和 [DeepSeek-R1](../../B/05-moe-complete-llm/B010-deepseek-r1.md) 都已经把 GRPO 当作后训练组件使用。模型报告只需要知道“它省掉 Critic”；到这里我们必须继续追问：**Critic 原来到底干什么？组内 baseline 是否等于 Value Function？clip 和 KL 为什么还在？group normalization 有没有统计代价？**
 
 ## 阅读导航：这是一篇“从 PPO 到 GRPO”的方法页
