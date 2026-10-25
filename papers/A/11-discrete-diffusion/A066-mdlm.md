@@ -114,6 +114,59 @@ $$
 
 **这就是加权的 Masked LM Cross-Entropy，但权重 $1/t$ 不是随便加的 Training Trick。** 它来自当前噪声残留概率 $1-\alpha_t$ 的导数；不加入该权重的“随机 Mask CE”通常不能宣称就是相同 Diffusion Model 的同一 ELBO。
 
+### 从离散 KL 一步步消出“只在 Mask 位置交叉熵”
+
+既然这个目标来自扩散模型，最应该追问的是**为何复杂的 KL 可以少掉大部分分布项**。令 $0\le s<t\le1$，当前 $z_t=M$，正确的原始词是 $x$，定义
+
+$$
+a=\frac{\alpha_s-\alpha_t}{1-\alpha_t},\qquad
+b=\frac{1-\alpha_s}{1-\alpha_t},\qquad a+b=1.
+$$
+
+真实反向后验只有两个非零项：
+
+$$
+q(z_s=x\mid z_t=M,x)=a,\qquad q(z_s=M\mid z_t=M,x)=b.
+$$
+
+SUBS 模型将 $b$ 的概率**原样固定**在 Mask；另外把 $a$ 分配给网络预测的各个非 Mask 词：
+
+$$
+p_\theta(z_s=M\mid z_t=M)=b,\qquad
+p_\theta(z_s=y\mid z_t=M)=a\,\pi_\theta(y\mid z_t),\quad y\ne M,
+$$
+
+其中 $\pi_\theta(M\mid z_t)=0$ 且 $\sum_{y\ne M}\pi_\theta(y\mid z_t)=1$。于是 KL 直接展开为
+
+$$
+\begin{aligned}
+D_{\rm KL}(q\Vert p_\theta)
+&=b\log\frac{b}{b}
++a\log\frac{a}{a\,\pi_\theta(x\mid z_t)}\\
+&=\boxed{a\big[-\log\pi_\theta(x\mid z_t)\big]}.
+\end{aligned}
+$$
+
+**第一项归零不是模型训练学来的；它已被 SUBS 的硬约束规定。** 第二项前的 $a$ 也不是人为定的超参数，而是由真实 Markov 后验决定的“本轮解除 Mask 的概率”。
+
+以 $\alpha_t=1-t,\ t=0.75,\ s=0.5$ 为例，$a=1/3,\ b=2/3$。若网络对正确词的预测概率为 $0.4$，两分布的 KL 为
+
+$$
+D_{\rm KL}=\frac13(-\log0.4)\approx0.30543.
+$$
+
+用完整三状态表直接算也一样：真实 $q$ 在 $M,x$ 上分别为 $2/3,1/3$；预测 $p_\theta$ 在 $M,x,\text{其他词}$ 上分别为 $2/3,2/15,1/5$，总和仍为 1。**其它词的概率虽为非零，却不出现在 KL 的 $q$ 权重项中**，这正是交叉熵还能反传给所有词表 Logit 的原因。
+
+如果 $z_t\ne M$，真实和模型后验都只拷贝当前词，故 KL 恒为 0。把一个时间步的两个情况加在一起，就得到
+
+$$
+\mathbb E_{z_t\mid x}\Big[
+\mathbf1[z_t=M]\,a\,(-\log\pi_\theta(x\mid z_t))
+\Big].
+$$
+
+时间划分足够细时，$a\approx[-\alpha_t'/(1-\alpha_t)](t-s)$，求和的极限才是原文 §3.4 Eq.(13) 的连续时间积分。于是 $\alpha_t=1-t$ 导出 $1/t$ 权重。**没有这个离散 KL 消项与极限，就不能仅凭“随机 Mask”倒推出 LLaDA/MDLM 的损失形式。**
+
 ### 1/t 为什么并不是“Mask 越少，Loss 就随便乘越大”？
 
 假设只看一个 Token，$m\sim\mathrm{Bernoulli}(t)$，忽略“Mask 上下文改变预测”的因素，给定 Mask 事件的损失为 $\ell$：
@@ -134,6 +187,29 @@ $$
 作者 §3.3 说得很谨慎：他们通过硬编码 Zero Mask Probability、Carry-Over，将若干已知的随机事件**解析消去**，获得更简单、更低方差的损失估计；这与 Rao–Blackwell 利用条件期望降低估计方差有相同精神，但严格说作者使用这个名称**略有术语扩展**。
 
 原论文 §3.3 和 Supplement B.1 的推导重点不是“把网络换成某种 Attention”，而是**模型分布家族的硬约束带来代数消项**。如果一个模型仍允许给 Mask 概率非零，或允许改写非 Mask Token，原来的消项就不成立，不能照抄简化权重自称实现了同样的 ELBO。
+
+### 原论文最能说明因果来源的是 Table 8，而不只是主榜 Table 1
+
+[原文 §5.3、Table 8（正式版 Supplement 的对应结果）](https://arxiv.org/html/2406.07524#S5.SS3) 在 LM1B、110M 级别模型上逐步消去设计条件；作者在**离散时间模型使用 $T=1000$**，PPL 越低越好：
+
+| 逐步变更 | PPL 上界 ↓ |
+|---|---:|
+| 完整 MDLM（连续时间） | **≤27.04 ± 0.01** |
+| 去掉连续时间（离散 $T=1000$） | ≤27.19 ± 0.07 |
+| 再去掉 Carry-Over | ≤28.56 ± 0.15 |
+| 再去掉 Zero Mask Probability | ≤28.51 ± 0.15 |
+
+这张表只能支持**按作者这一消融序列逐次变化的效果**；例如 28.56→28.51 反而略有改善，所以不能写成“Zero Mask 一定独立提升 1 点以上 PPL”。作者自己解释，虽然 SUBS 与连续时间使数学形式漂亮、训练方差更小，**最重要的综合收益之一其实来自训练实现方式的现代化**。
+
+对照 [§3.5.1 Training Considerations](https://arxiv.org/html/2406.07524#S3.SS5.SSS1)：
+
+- **Tokenizer**：D3PM LM1B 使用 8192 类 SentencePiece；MDLM 在 LM1B 采用 bert-base-uncased 分词器。更大的词表可能减少 Token 序列长度，进而改变表面上的远距离依赖难度。不同 Tokenizer 的 PPL 不可机械视为完全等条件指标。
+- **模型与位置处理**：MDLM 采用带 RoPE 的 DiT / Encoder Transformer 路线，而不是原始 D3PM 的 T5 架构。此改动可能影响表达力，不能全部归功于损失简化。
+- **数值实现**：只在实际 Mask Token 索引上计算目标，不再为通用 $K\times K$ 类别转移显式物化完整后验矩阵。
+- **噪声时间抽样**：使用 Low-Discrepancy Sampler 降低估计方差，不再让一个 Batch 的所有 $t$ 完全独立、无结构抽样。
+- **训练预算**：LM1B 33B 与 327B Token 的比较对应 1M / 10M Step；作者明确对 AR Baseline 控制**实际处理过的 Token 数**，不能只看迭代步数一致与否。
+
+因此研究结论应从“MDLM 的一条公式直接战胜所有旧工作”修正为：**吸收态的概率约束简化了目标，同时 Tokenizer、结构、训练预算与估计方差管理共同使性能提高。** 想证明某一因素独立有效，必须控制其它条件，不能拿不同论文原始主榜差值充当单因素消融。
 
 ## 为什么无需 Time Embedding，也可以选择按时间采样？
 
@@ -160,6 +236,43 @@ $$
 **Figure 1 右下**还画了早期 Diffusion-LM、D3PM、Diffusion-BERT、SEDD、MDLM 的多个数字。它用于展示研究历史而非严格相同数据/分词器/计算预算的统一消融，因此**不要把图中每一个数字当成只改变 MDLM 一项技巧的因果提升**。
 
 [Table 5（PDF 第 8 页）](https://proceedings.neurips.cc/paper_files/paper/2024/file/eb0b13cc515724ab8015bc978fdde0ad-Paper-Conference.pdf) 则验证 Semi-Autoregressive Sampler：固定生成 2048 Token、RTX 3090、200 条序列，报告 SSD-LM 的 Generative PPL 35.43、2473.9 s/seq；MDLM 为 **27.18、89.3 s/seq**。这里的 Gen. PPL 是用另一个预训练 GPT-2 给生成样本评分，与 Table 1 的**真实数据 Test PPL** 不是同一种测量对象；更不能把 27.18 与 23.00 当成一步一步提高的结果。
+
+### 一次可执行的 Reverse Sampling：哪些变量由模型产生，哪些根本不应预测？
+
+在长度 $L=4$、$T=4$ 的反向过程中，$t$ 从 1 下降到 0，每步 $s=t-1/4$。当 $\alpha_t=1-t$，若当前位置尚是 Mask，当前网络产生 Clean Token 分布 $\pi_\theta(\cdot\mid z_t)$，则：
+
+$$
+\begin{aligned}
+P(z_s=M\mid z_t=M)&=\frac{s}{t},\\
+P(z_s=y\ne M\mid z_t=M)&=\frac{t-s}{t}\pi_\theta(y\mid z_t).
+\end{aligned}
+$$
+
+已确认 Token 不参与采样；从全 Mask 起始时，各位置第一轮有 $1/4$ 概率解除 Mask，第二轮未确认位置有 $1/3$ 概率解除，第三轮 $1/2$，最后一轮 1。**这个条件概率递增并不是网络变得更有自信了，而是整个 Markov 链必须最终回到真实数据状态的数学要求。**
+
+以下代码仅演示**在已知 Denoiser 概率时的祖先采样**，使用固定的演示分布（不是经过训练的 MDLM 网络），并且显式保持已确认位置：
+
+~~~python
+import numpy as np
+
+rng = np.random.default_rng(7)
+MASK, T, L = 3, 4, 4
+z = np.full(L, MASK, dtype=np.int64)
+clean_probs = np.array([.55, .30, .15])  # 教学替身: p(x0|z_t)
+
+for step in range(T, 0, -1):
+    t, s = step / T, (step - 1) / T
+    unknown = np.flatnonzero(z == MASK)
+    # 真正的模型应在此根据整条 z 同时产生 [L,K] 条件概率
+    proposed = rng.choice(3, size=len(unknown), p=clean_probs)
+    reveal = rng.random(len(unknown)) < (t - s) / t
+    z[unknown[reveal]] = proposed[reveal]
+    print(f"t={t:.2f} -> {s:.2f}: {z}")
+
+assert MASK not in z
+~~~
+
+只在 Mask 位置运行最后两行并不意味着真实模型只处理 Mask Token：**双向 Transformer 仍读取整条 $z_t$ 作为上下文**。而这个小例子因为网络分布固定，故不会表现出上下文更新造成的词义变化；真实 MDLM/ LLaDA 的主要学习能力正来自 $\pi_\theta(\cdot\mid z_t)$ 随已确认 Token 改变。
 
 ## “可以生成任意长文本”为什么仍需分块？
 

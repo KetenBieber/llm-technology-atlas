@@ -82,6 +82,44 @@ $$
 
 差值 $(r-1)P_A$ 是理想意义上的参数节约。**执行 FLOPs** 却不是 $1/r$：$r$ 次共享 GSA 仍需要 $r$ 次相应 Attention/MLP 计算，并生成各自的 KV。模型通过增加相同参数的使用频率，改变了**参数使用效率与每 Token 计算量的关系**，不是压缩了所有运行成本。
 
+### 共享权重的梯度到底从哪里来？它并不是把 13 次 Forward 变成 1 次
+
+设共享 GSA 的参数为 $\theta$，一共在 $r=13$ 个不同深度调用，第 $j$ 次输入是 $u_j=[x_j;x_0]$，产生 $v_j=F_\theta(u_j)$；之后经过该位置独立的投影 $P_j$ 并加入自己的 Mamba Residual。
+
+因为所有调用**指向同一个参数对象 $\theta$**，最终损失的梯度包含所有调用位置经过各自计算路径传回来的贡献：
+
+$$
+\boxed{
+\frac{\mathrm d\mathcal L}{\mathrm d\theta}
+=\sum_{j=1}^{r}
+\left(\frac{\partial\mathcal L}{\partial v_j}\right)
+\frac{\partial F_\theta(u_j)}{\partial\theta}
+\quad\text{（包含跨层依赖后的总导数）}.
+}
+$$
+
+例如仅用标量玩具网络 $F_\theta(u)=\theta u$，两次调用输入 $u_1=2,u_2=3$，令损失 $\mathcal L=(F_\theta(u_1)-4)^2+(F_\theta(u_2)-6)^2$。那么
+
+$$
+\frac{\mathrm d\mathcal L}{\mathrm d\theta}
+=2(2\theta-4)\cdot2+2(3\theta-6)\cdot3
+=26\theta-52.
+$$
+
+两次调用的监督信号累加更新同一个 $\theta$；若独立参数 $\theta_1,\theta_2$，相应梯度则分别为 $8\theta_1-16$、$18\theta_2-36$。共享是**一种归纳偏置和参数约束**，不只是磁盘上少存几份复制品。此教学例子没有用于复现 Zamba 的真实 Loss。
+
+对真正的 Attention，还必须区分两个存储面：
+
+| 对象 | 13 次调用间能否共享？ | 原因 |
+|---|---|---|
+| GSA 的 $W_Q,W_K,W_V,W_O$ 和 Shared MLP Weight | **是** | 相同 $\theta$ 被重复引用 |
+| 每次调用的 Hidden Activation | 否 | 不同深度的输入 $x_\ell$ 不同 |
+| 解码时每次调用产生的历史 KV Cache | **否** | 同一 Token 在不同深度被投影出的 K/V 不同 |
+| 每次调用回到 Residual Stream 的 Linear Adapter | 否 | 原文规定是 Unshared |
+| 各个 Mamba Block 的 SSM State | 否 | 各层具有自己的动态状态与参数 |
+
+[原报告 §IV（PDF 第 6 页）](https://arxiv.org/pdf/2405.16712) 明确指出实际模型的共享 Attention **调用 13 次且有独立的 Activation 和 KV Cache**。因此“Zamba 只有一套 Attention Weight”与“Zamba 只存一份历史 KV”并不是同一陈述，甚至在该模型上后一句明确不成立。
+
 ### 为什么是同一模块共享，不是直接在所有 Mamba 层后面插入一个小 Attention Head？
 
 增加一个轻量 Attention Head 并不等价于完整 GSA。原文 GSA 是 Attention + MLP，此外还有原始 Embedding 拼接和每次调用专属 Linear。它不仅为模型提供位置级检索，也借共享 FFN 多次处理来自不同深度的特征。

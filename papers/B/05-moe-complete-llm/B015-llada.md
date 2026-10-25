@@ -74,6 +74,47 @@ $$
 
 网络的任务是根据所有可见 Token（包括左侧和右侧），对位置 2、4 分别输出正确词的分布。每一步通过全句双向信息做条件预测，但输出位置仍存在并行预测的条件独立近似；**并行输出不意味着输出联合分布没有任何相关性**，相关性可由网络上下文与多轮逆采样逐步建立。
 
+### 从 Token 到 Logits：扩散 LLM 的完整 Forward Shape
+
+令 Batch 为 $B$、Sequence Length 为 $L$、Vocabulary 为 $V$、Hidden Dimension 为 $d$。Mask Predictor 输入仍是 Token ID 张量 $X_t:[B,L]$，而不是高斯噪声向量；查 Embedding 后成为 $E(X_t):[B,L,d]$。双向 Attention 对每个 Head 构造 $[L,L]$ 的注意力权重，**没有传统自回归的下三角 Causal Mask**。经历多层 Residual/Norm/Attention/FFN 后，LM Head 返回 $Z_\theta(X_t):[B,L,V]$。
+
+一次 Forward 为**全部 $L$ 个位置**产生 Vocabulary Logits，但损失只发生在 Mask 位置。SFT 阶段还须把 Prompt/Response 的允许改变范围与 Loss Mask 严格分开：
+
+| Token 区域 | 能被模型读到？ | 随机遮盖？ | 参加 CE？ |
+|---|---|---|---|
+| Prompt 的真实 Token | 是 | 否 | 否 |
+| Response 被抽中遮盖的位置 | 是（输入为 Mask） | 是 | 是 |
+| Response 未被抽中遮盖的位置 | 是 | 否 | 否 |
+| Padding | 根据 Padding Attention Mask | 不应抽中 | 否 |
+
+若 Batch 中混入长度不同的 Prompt/Response，仅凭位置 $i$ 的固定范围很可能出错，数据管道必须创建逐 Token 的 Boolean Eligible Mask。模型虽然输出了 Prompt 和非 Mask Response 的 Logits，也**不应在这些位置做下一词 Shift CE**，否则算法已经变成另一个训练目标。
+
+### 与论文 Eq.(3)/(5) 对齐的最小 PyTorch 代码
+
+下面是教学级损失实现；假定双向模型输出全词表 Logits，不包括 LLaDA 的大规模并行训练等工程代码：
+
+~~~python
+import torch
+import torch.nn.functional as F
+
+def diffusion_loss(model, tokens, eligible, mask_id):
+    # tokens [B,L]; eligible bool[B,L]
+    batch, length = tokens.shape
+    t = torch.rand(batch, 1, device=tokens.device).clamp_min(1e-4)
+    is_masked = (torch.rand(batch, length, device=tokens.device) < t)
+    is_masked &= eligible
+    corrupted = tokens.masked_fill(is_masked, mask_id)
+    logits = model(corrupted)                        # [B,L,V]
+    ce = F.cross_entropy(logits.transpose(1, 2), tokens,
+                         reduction="none")           # [B,L]
+    weighted = ce * is_masked / t
+    return (weighted.sum(dim=1) / length).mean()
+~~~
+
+预训练时 Eligible 对所有有效 Token 为真；SFT 时仅 Response 的有效 Token 为真。这里为了对应论文的整句平均选择除以 $L$；若 Batch 中 Prompt/Response 长度变化，实际 Loss Reduction 还应核对作者的长度加权约定。**有效掩码、长度归一化以及 $\frac1t$ 是三件不同的事**，擅自变更就会影响短/长回答的相对样本权重。
+
+此实现也特意防止 $t=0$ 导致除零。极小 $t$ 下某一短序列可能完全没有 Mask，此时该样本贡献是 0，而不是程序错误。这是 Bernoulli Forward 的 Monte Carlo 情形；用“强行保证每句至少有一个 Mask”的变种可能降低方差，但须说明它已改变抽样分布。
+
 ## 为什么损失是 $1/t$，而不是 BERT 任意固定 15% Mask？
 
 [原文 §2.1 Eq.(3)](https://proceedings.neurips.cc/paper_files/paper/2025/file/48b383b24230e0e6e649d9c98dae4d8c-Paper-Conference.pdf)：
@@ -151,7 +192,42 @@ $$
 
 注意这和“每步重新 Mask 掉已确认的所有普通 Token”并不是同一回事。原始概率模型里**已经非 Mask 的位置在后续逆过程不应该再改写**。LLaDA 默认 Low-Confidence Remasking 会对这一步网络提出的候选 Token 依据 Confidence 选择哪些**继续处于 Mask 状态**，主要是选择提交时机而非修改此前已确认的内容。
 
+### 真正复原 Appendix Algorithm 5：为什么只是“按置信度排序”还不够？
+
+[正式论文 Appendix A、Algorithm 5（PDF 第 27 页）](https://proceedings.neurips.cc/paper_files/paper/2025/file/48b383b24230e0e6e649d9c98dae4d8c-Paper-Conference.pdf) 明确输入四个对象：Mask Predictor、固定 Prompt、预先选定的回答长度 $L$、采样步数 $N$。从 $t=1$ 开始，对每步 $s=t-1/N$：
+
+1. 对当前仍为 Mask 的位置，同时预测其词表分布，按 Argmax 提出 Clean Token 候选，并记录该候选的 Softmax Probability。
+2. 对已经非 Mask 的位置，**不重新预测**；候选就是原词，并将它的 Confidence 强制设为 1。
+3. 目标被确认的数量为 $n_{\rm un}=\lfloor L(1-s)\rfloor$，其余 $L-n_{\rm un}$ 个位置应保持为 Mask。
+4. 在全部 $L$ 个位置中选择 Confidence 最低的 $L-n_{\rm un}$ 个重新设为 Mask，其余提交；进入下一轮。
+
+这里最容易漏的是第 2 步。若已经提交的 Token 被重新预测并赋予很低概率，那么后来可能被错误地遮回去，违背 Absorbing Reverse Chain 的 Carry-Over。原论文 Algorithm 5 特地让已提交 Token 的 Confidence 为 1 以保证不可倒退。严格实现遇到 Confidence 1 的 Tie 时，还须明确优先保护先前提交的 Token。
+
+设 $L=6,N=2$，从全 Mask 开始：
+
+| 时间 | 本轮之前已确认 | 本轮后应确认 | 操作 |
+|---|---:|---:|---|
+| $1\to0.5$ | 0 | 3 | 给六个位置提案，只提交三枚最高置信 Token |
+| $0.5\to0$ | 3 | 6 | 前三枚保持，剩余三枚重新预测后全部提交 |
+
+这个过程与 Appendix Algorithm 4 的 **Random Remasking** 不同：后者对每个待定 Token 独立以 $s/t$ 概率继续遮盖，因而某步实际确认数具有随机波动；Algorithm 5 每一步明确控制剩余 Mask 配额。它们不是同一个随机采样分布的两个等价版本。
+
+### Table 9：采样规则本身的受控实验
+
+[正式论文 Appendix B.4、Table 9（PDF 第 31 页）](https://proceedings.neurips.cc/paper_files/paper/2025/file/48b383b24230e0e6e649d9c98dae4d8c-Paper-Conference.pdf) 固定 **LLaDA 8B Base、答案长度 256、采样 256 Steps**：
+
+| 采样方式 | BBH | GSM8K | Math | HumanEval | MBPP |
+|---|---:|---:|---:|---:|---:|
+| Random Remasking | 32.1 | 21.3 | 9.2 | 11.6 | 21.0 |
+| Low-Confidence Remasking | **45.0** | **70.0** | **30.3** | **32.9** | **40.2** |
+
+这项消融控制了模型和长度，是“按置信度选择确认位置会影响回答质量”的直接证据，而不是“低置信算法优化了训练时 ELBO”的证明。低置信策略引入 Argmax 和排序决策，已经不等于原始随机逆转移。Table 10 还表明不同 Benchmark 的最佳答案长度（256/512/1024）不一样：**生成长度、采样步数和模型能力不能缩成一个“单 Forward 并行预测 Token 数”的指标**。
+
 ### 两轮手算：同一次模型前向如何确定多个位置？
+
+![六位置回答在两轮低置信度去噪中从全 Mask 逐步提交 Token，明确区分已确认位置与仍可修改的位置](../../../figures/explainers/llada-confidence-reveal.svg)
+
+*自制解释图，非 LLaDA 原论文 Figure：绿色位置已经被提交，青色位置在下一轮才确认；概率和字母是教学示例。核心约束是已经确认的 Token 不再被低置信排序重新遮回去。*
 
 假设当前有 6 个待补位置且 $t=1\to s=0.5$，模型同时输出：
 
@@ -212,6 +288,14 @@ Figure 3 横轴是从 $10^{20}$ 到 $10^{23}$ 的 Pre-training FLOPs，纵轴是
 在这几项中，LLaDA 在 GSM8K、MMLU 接近或优于 LLaMA3，但 HellaSwag 明显更弱。因此**“它证明 AR 不再需要”不成立**。模型训练 Token 预算与数据集合不同，原文 Table 1 的结论更谨慎：Masked Diffusion 是一个可以训练到大型语言模型能力范围的替代生成范式。
 
 作者另在 Table 2 汇报 Post-trained Instruct 的分数，**LLaDA 只采用 SFT，而多个 AR 对照还使用 RL Alignment**；即便同一 Benchmark 也不能把差异严格解释为扩散模型相对于 AR 结构本身的优劣。
+
+### EOS：即使网络、权重都一样，解码规则也可能改变数学题正确率
+
+[原论文 Appendix B.4](https://proceedings.neurips.cc/paper_files/paper/2025/file/48b383b24230e0e6e649d9c98dae4d8c-Paper-Conference.pdf) 提到一个实际失败模式：Instruct SFT 为 Batch 对齐而引入大量 EOS Padding，Pure Diffusion 时模型容易在多个位置过早提出 EOS，导致回答被第一次 EOS 截断，后续推理尚未发生就结束。
+
+对一部分数学、代码任务，作者在 Low-Confidence 策略中**把 EOS 候选的 Confidence 人为置零**，令它较晚才被提交。这不是一个神经架构创新，而是纠正训练数据与采样机制不匹配的实际策略。
+
+作者还报告，Instruct 默认纯扩散策略下 GSM8K/Math 为 69.4/31.9，而某些 Block-Diffusion 采样下为 78.6/42.2。差异来自**采样配置**而非再次训练了模型参数。仅凭“LLaDA-8B Instruct”一个模型名，不注明 EOS 规则、Block Size、Answer Length、Steps，就无法保证可复现的成绩。
 
 ## “打破 Reversal Curse”究竟测了什么？
 

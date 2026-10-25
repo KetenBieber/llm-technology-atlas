@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-label="LLaDA六个Token通过两轮置信度选择从全Mask恢复">
+<rect width="1200" height="520" rx="20" fill="#f8fafc"/>
+<text x="48" y="51" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="27" font-weight="700" fill="#0f172a">多位置预测 ≠ 一次性提交所有预测</text>
+<text x="48" y="83" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="17" fill="#475569">教学构造：回答长度 L=6，逆采样 N=2；每轮对所有待定位置提案，但只确认配额允许的位置。</text>
+<rect x="45" y="111" width="1100" height="83" rx="12" fill="#e2e8f0"/>
+<text x="62" y="144" font-family="Arial,sans-serif" font-size="19" font-weight="700" fill="#334155">t = 1</text>
+<text x="62" y="171" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="15" fill="#475569">全 Mask</text>
+<g font-family="Arial,sans-serif" font-size="21" font-weight="700" text-anchor="middle">
+<rect x="255" y="124" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="304" y="160" fill="#334155">MASK</text>
+<rect x="371" y="124" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="420" y="160" fill="#334155">MASK</text>
+<rect x="487" y="124" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="536" y="160" fill="#334155">MASK</text>
+<rect x="603" y="124" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="652" y="160" fill="#334155">MASK</text>
+<rect x="719" y="124" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="768" y="160" fill="#334155">MASK</text>
+<rect x="835" y="124" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="884" y="160" fill="#334155">MASK</text>
+</g>
+<path d="M595 194 V221" stroke="#64748b" stroke-width="2.5"/><path d="M588 213 L595 225 L602 213" fill="none" stroke="#64748b" stroke-width="2.5"/>
+<text x="625" y="218" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="16" fill="#0f172a">预测 6 个候选；按置信度排序，先确认 3 个</text>
+<rect x="45" y="237" width="1100" height="112" rx="12" fill="#dbeafe"/>
+<text x="62" y="273" font-family="Arial,sans-serif" font-size="19" font-weight="700" fill="#1d4ed8">t = 0.5</text>
+<text x="62" y="303" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="15" fill="#1e40af">已确认：1 / 3 / 5</text>
+<g font-family="Arial,sans-serif" font-size="24" font-weight="700" text-anchor="middle">
+<rect x="255" y="255" width="98" height="54" rx="7" fill="#16a34a"/><text x="304" y="290" fill="white">A</text>
+<rect x="371" y="255" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="420" y="290" font-size="20" fill="#334155">MASK</text>
+<rect x="487" y="255" width="98" height="54" rx="7" fill="#16a34a"/><text x="536" y="290" fill="white">C</text>
+<rect x="603" y="255" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="652" y="290" font-size="20" fill="#334155">MASK</text>
+<rect x="719" y="255" width="98" height="54" rx="7" fill="#16a34a"/><text x="768" y="290" fill="white">E</text>
+<rect x="835" y="255" width="98" height="54" rx="7" fill="#cbd5e1"/><text x="884" y="290" font-size="20" fill="#334155">MASK</text>
+</g>
+<g font-family="Arial,sans-serif" font-size="15" text-anchor="middle" fill="#334155">
+<text x="304" y="332">0.95</text><text x="420" y="332">0.20</text><text x="536" y="332">0.75</text><text x="652" y="332">0.35</text><text x="768" y="332">0.82</text><text x="884" y="332">0.10</text>
+</g>
+<path d="M595 350 V370" stroke="#64748b" stroke-width="2.5"/><path d="M588 363 L595 375 L602 363" fill="none" stroke="#64748b" stroke-width="2.5"/>
+<text x="628" y="371" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="16" fill="#0f172a">保持 A/C/E，结合新上下文重新预测三个待定位置</text>
+<rect x="45" y="390" width="1100" height="76" rx="12" fill="#dcfce7"/>
+<text x="62" y="426" font-family="Arial,sans-serif" font-size="19" font-weight="700" fill="#166534">t = 0</text>
+<text x="62" y="451" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="15" fill="#166534">6 个位置均确认</text>
+<g font-family="Arial,sans-serif" font-size="23" font-weight="700" text-anchor="middle">
+<rect x="255" y="402" width="98" height="50" rx="7" fill="#16a34a"/><text x="304" y="435" fill="white">A</text>
+<rect x="371" y="402" width="98" height="50" rx="7" fill="#0d9488"/><text x="420" y="435" fill="white">B'</text>
+<rect x="487" y="402" width="98" height="50" rx="7" fill="#16a34a"/><text x="536" y="435" fill="white">C</text>
+<rect x="603" y="402" width="98" height="50" rx="7" fill="#0d9488"/><text x="652" y="435" fill="white">D'</text>
+<rect x="719" y="402" width="98" height="50" rx="7" fill="#16a34a"/><text x="768" y="435" fill="white">E</text>
+<rect x="835" y="402" width="98" height="50" rx="7" fill="#0d9488"/><text x="884" y="435" fill="white">F'</text>
+</g>
+<text x="48" y="500" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="14" fill="#64748b">绿色：上轮已经确定，不可再次改写；青色：下一轮才确定。具体置信度与字母全部为教学构造，非论文实测。</text>
+</svg>

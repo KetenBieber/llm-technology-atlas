@@ -120,6 +120,38 @@ $$
 
 原文第 8 页明确说 RG-LRU 的门控**不兼容静态卷积表示**；虽然数学上仍允许 Associative Scan，作者在 TPU-v3 的具体实现中发现这种并行前缀组合带来的随机访存，比定制线性 Scan 更慢。注意该实验是性能观察，不是“Associative Scan 在所有 GPU 上都比顺序循环慢”的普遍定理。
 
+### 从离散时间记忆核看 RG-LRU 的真实信息传播
+
+单通道门控更新是 $h_t=a_th_{t-1}+b_t$，其中 $b_t=\sqrt{1-a_t^2}\,i_tx_t$。将它展开而不是仅仅描述“门控能保留历史”：
+
+$$
+h_t=\Big(\prod_{k=1}^ta_k\Big)h_0
++\sum_{j=1}^t\Big(\prod_{k=j+1}^ta_k\Big)
+\sqrt{1-a_j^2}\,i_jx_j.
+$$
+
+某个旧输入 $x_j$ 对当前状态的直接影响（暂时固定其它时间的 Gate 值）是
+
+$$
+\frac{\partial h_t}{\partial x_j}\Big|_{a,i\ \mathrm{fixed}}
+=\Big(\prod_{k=j+1}^ta_k\Big)\sqrt{1-a_j^2}\,i_j.
+$$
+
+这里的导数**不包含 Gate 网络自身对输入的导数**，所以只是用于解释固定 Gate 时的状态传播直通路径；完整反向传播还包括 $\partial a_j/\partial x_j$ 和 $\partial i_j/\partial x_j$ 等项。单看直通路径就能发现：
+
+- 如果某些后续位置的 $r_k\to0$，则 $a_k\to1$，它们不会明显压低早期输入的贡献。
+- 如果连续很多位置使 $r_k\to1$，直通路径会按 $\prod a_k$ 衰减，远历史逐渐被遗忘。
+- Input Gate $i_j$ 只影响**本次新输入**是否进入状态；Recurrence Gate $r_k$ 则改变**已有历史在之后传播**的时间常数。
+
+例如令两个输入的初始状态为 0，取 $a_1=0.8,\;i_1x_1=2$，则 $h_1=0.6\cdot2=1.2$。第二步若“跳过无关词”使 $a_2=0.999$，且 $i_2x_2=10$，得到
+
+$$
+h_2=0.999\times1.2+\sqrt{1-0.999^2}\times10
+\approx1.6459.
+$$
+
+尽管旧状态保留系数接近 1，输入门没有关时，**新输入仍可能很大**；这解释了为什么需要 $i_t$ 与 $r_t$ 两个不同 Gate，而不是只用一个。若同时 $i_2=0.01$、$x_2=10$，新增量则只有约 0.00447，$h_2\approx1.2033$。这种“双重保护”来自具体公式而非任何一阶递推的必然性质。
+
 ## 五、Hawk 与 Griffin 的真正差异：局部 Attention 留下了什么能力？
 
 普通 Attention 在第 $t$ 步可对全部历史 $1,\ldots,t$ 动态重新赋权；Hawk 只保留 RG-LRU 状态。Griffin 折中：**少数层保留固定窗口大小 $W$ 的 Attention，其他层由 Recurrent Mixer 承担更长范围的信息传播**。
@@ -148,6 +180,21 @@ $$
 (a)(b) 说明这些架构在收到任务监督后可以学习某些复制/归纳行为；(c) 则指出预训练模型在未经特定训练的精确检索上**弱于 Transformer**。这是关键的能力边界。不能只引用合成题经过监督后学得很好，就得出“递推压缩与 Full Attention 的精确回忆能力完全相同”。
 
 另外，[Figure 1(a)（PDF 第 2 页）](https://arxiv.org/pdf/2402.19427) 的横轴是 Training FLOPs、纵轴 Validation Loss，区分模型 Scaling。图里 Griffin 优于同配方的 MQA Baseline，在论文固定数据/超参数范围内支持混合架构有效；并不能把与外部 Llama-2、Mamba（训练 Token、数据集、调参不同）的成绩直接归因为 RG-LRU 的单一数学设计。
+
+### 原论文 Table 1 对“混合是否有用”的证据比跨模型排行榜更直接
+
+[原论文 Table 1（arXiv v1 PDF 第 6 页）](https://arxiv.org/pdf/2402.19427) 将模型训练预算与评测口径列在同一个表中：
+
+| 模型 | 参数级别 | 训练 Token | MMLU | HellaSwag | Average |
+|---|---:|---:|---:|---:|---:|
+| MQA Transformer | 3B | 300B | 31.7 | 71.0 | 59.0 |
+| Hawk | 3B | 300B | 31.3 | 71.7 | 59.5 |
+| **Griffin** | **3B** | **300B** | **32.6** | **73.5** | **60.7** |
+| Llama-2 | 7B | 2T | 45.3 | 77.2 | 65.3 |
+
+前三行作者尽量匹配了数据和训练协议，较有说服力地表明：在这组 3B 预算下，纯递推 Hawk 已有竞争力，而加入 Local Attention 的 Griffin 进一步改善部分指标。第四行**参数、数据、训练 Token 均不同**，只能说明外部参照范围，不能解释为单独加入 RG-LRU 的因果效益。
+
+同时注意 Table 1 使用的是 Character-Normalized Accuracy 等特定评估口径，而不是所有任务使用相同的 Raw Accuracy。Figure 6 的 Phonebook Lookup 无微调表现又提醒了相反的限制：**在合成复制任务能从监督学习到正确策略，不等于预训练模型能 Zero-Shot 精确取回任意过去内容**。把正反证据放在一起，才可判断“保留少量 Attention”的真实动机。
 
 ## 七、真正需要保留的四个研究边界
 

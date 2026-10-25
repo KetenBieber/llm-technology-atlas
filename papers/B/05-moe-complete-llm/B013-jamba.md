@@ -23,10 +23,10 @@ Jamba 的选择不是另外发明一套 SSM 方程，而是用**三个独立可�
 [原始 v2 Figure 1(a)(b)，PDF 第 3 页](https://arxiv.org/pdf/2403.19887) 清楚分开：
 
 - 左图 (a) 是一个 **Jamba Block**，由 $l=8$ 层组成：**1 个 Transformer Temporal Mixer + 7 个 Mamba Temporal Mixer**。
-- 图中每层仍有一个 FFN 子层；每隔 $e=2$ 层把 Dense MLP 换成 MoE。因为两项选择互相独立，所以可以有 Attention+MLP、Attention+MoE、Mamba+MLP、Mamba+MoE **四种 Layer**。
-- 右图 (b) 把这四类 Layer 的 Pre-Norm、Residual、Sequence Mixer 和 FFN 画清楚。也就是说，**MoE 不负责跨 Token 的 Attention**；它在 Token 的 Channel Mixing 阶段按 Router 分配专家。
+- 图中每层仍有一个 FFN 子层；每隔 $e=2$ 层把 Dense MLP 换成 MoE。设计空间理论上允许 Attention+MLP、Attention+MoE、Mamba+MLP、Mamba+MoE 四种 Layer，**但原始 Jamba-v0.1 实际没有采用 Attention+MoE**。
+- 右图 (b) 把这些候选 Layer 的 Pre-Norm、Residual、Sequence Mixer 和 FFN 画清楚。原论文 Figure 1 脚注还特意说明，**Attention MoE Layer 只是潜在可用的架构变体，并非作者发布的模型实际采用的层**。这一步是完整模型与设计空间的区别。MoE 也不负责跨 Token 的 Attention，而是在 Token 的 Channel Mixing 阶段按 Router 分配专家。
 
-假设示意 Block 的前 8 层从下到上：
+原始 Figure 1(a) 按从下到上的执行顺序有如下 8 层：
 
 | 层号 | Temporal Mixing | Feedforward |
 |---|---|---|
@@ -46,8 +46,8 @@ flowchart TD
  X["Block 输入 X:[B,T,d]"] --> L1["Layer1：Mamba + MLP"]
  L1 --> L2["Layer2：Mamba + MoE"]
  L2 --> L3["Layer3：Mamba + MLP"]
- L3 --> L4["Layer4：Attention + MoE"]
- L4 --> L5["Layer5：Mamba + MLP"]
+ L3 --> L4["Layer4：Mamba + MoE"]
+ L4 --> L5["Layer5：Attention + MLP"]
  L5 --> L6["Layer6：Mamba + MoE"]
  L6 --> L7["Layer7：Mamba + MLP"]
  L7 --> L8["Layer8：Mamba + MoE"]
@@ -80,6 +80,46 @@ $$
 如果相同前向使用均匀 Router、忽略 Gate/Norm 的小开销，FFN 部分每 Token 的主计算量随 2 个活跃专家而非 16 个专家增长。但 **16 个 Expert Weight 仍要存储在总设备内存/网络中**。因此“Jamba 12B Active、52B Total”不是两个模型规模，也不能将 52B 全部乘进每步 FFN FLOPs。
 
 注意 Top-$K$ 专家同时输出，按 Router 权重加权组合；这并不等价于“选择训练数据子集”，也不等价于 Attention 的历史 Key 检索。
+
+### 从 Token 到 Layer：这五个架构参数怎样落进一次前向？
+
+原文 §3.1 明确发布模型有 **4 个 Jamba Blocks × 8 层 = 32 层**；每个 Block 1 个 Attention Layer、7 个 Mamba Layer，故整模型实际上执行 **4 个 Attention + 28 个 Mamba Temporal Mixers**。MoE 取 $e=2$、$n=16$、$K=2$，对应整个模型每两层有一个 MoE FFN，剩余层仍是 Dense MLP。
+
+设某层输入 $X:[B,T,d]$，Pre-Norm 后 Temporal Mixer 接收同 Shape，输出同 Shape，再做 Residual：
+
+$$
+U=X+\operatorname{Mixer}(\operatorname{RMSNorm}(X)).
+$$
+
+这里 Mixer 若为 Attention，则会使用 Q/K/V 投影并维护该层的 KV；若为 Mamba，则按 Token 递推内部 SSM 状态并利用局部卷积缓冲。FFN 端还可用 $16$ 个专家中的 Top-2：
+
+$$
+\begin{aligned}
+g_{b,t}&=\operatorname{softmax}(W_gU_{b,t}),\quad g\in\mathbb R^{16},\\
+\mathcal S_{b,t}&=\operatorname{TopK}(g_{b,t},2),\\
+F(U_{b,t})&=\sum_{j\in\mathcal S_{b,t}}\hat g_{b,t,j}\,E_j(U_{b,t}),\\
+X_{\rm next}&=U+F(\operatorname{RMSNorm}(U)).
+\end{aligned}
+$$
+
+其中 $\hat g$ 表示按作者实际 Router 约定用于加权的门值（是否对 Top-K 再归一化要核对实现），$E_j$ 是普通 SwiGLU Expert。**MoE 的 Router 每个 Token 选择通道变换专家，不是为该 Token 选择另一个历史 Token；Temporal Mixer 才负责跨序列信息流。**
+
+这也说明“Total 52B、Active 12B”之所以有意义，是由于 Expert Weight 常驻于总体模型存储，而每个 Token 通常只穿过每个 MoE Layer 的两个 Expert。它并不暗示一个 52B 的 Full-Attention Dense 网络被严格等价压成 12B。
+
+### 一条 256K 记忆预算的必要补充
+
+如果 32 层中只有 4 层 Attention，那么只按 Attention 的 KV Header 数量计算会得到 $4/32=1/8$ 的缩小比例。但是 GPU 的总模型内存至少还包括：
+
+$$
+M_{\rm total}\approx
+M_{\rm weights}
++M_{\rm KV}(4\text{ Attention})
++M_{\rm state}(28\text{ Mamba})
++M_{\rm conv\ cache}
++M_{\rm workspace}.
+$$
+
+仅用原论文 Table 1 的 **4GB KV** 不能逆推出“整个 Jamba-v0.1 只用 4GB 显存”；原文 §3.1 明确该模型为了在单张 A100 80GB 上容纳权重及输入，采用 **INT8 Weight**。这与通常的 FP16 KV 缓存计量是两个互不相同的数据类型和成本口径。
 
 ## 1:7 的 Attention/Mamba 比例为什么会改变 KV Cache 的增长系数？
 
