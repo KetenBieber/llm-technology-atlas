@@ -70,6 +70,11 @@ flowchart TD
   QLORA --> LOFTQ["LoftQ：量化误差低秩初始化"]
   QLORA --> BITNET["BitNet：二值预训练（方法路径对照）"]
   BITNET --> BIT158["BitNet b1.58：三值权重"]
+  SMOOTH --> QUAROT["QuaRot：随机旋转 W4A4KV4"]
+  QUIP --> QUAROT
+  QUAROT --> SPINQUANT["SpinQuant：正交流形学习"]
+  SPINQUANT --> FLATQUANT["FlatQuant：Kronecker 可逆仿射"]
+  OMNIQUANT --> FLATQUANT
   T --> MQA["MQA"]
   MQA --> GQA["GQA"]
 
@@ -142,6 +147,7 @@ flowchart LR
 | Hadamard 正交混合、E8 码本与加法多码本有什么差别？ | {doc}`QuIP# <generated/papers/C/02-inference-serving/C049-quip-sharp>` → {doc}`AQLM <generated/papers/C/02-inference-serving/C050-aqlm>` |
 | 低显存微调冻结量化主干，能否让 Adapter 先补偿量化误差？ | {doc}`QLoRA <generated/papers/C/02-inference-serving/C051-qlora>` → {doc}`LoftQ <generated/papers/C/02-inference-serving/C052-loftq>` |
 | 从头训练 1-bit/三值模型与对 FP16 模型做 PTQ 有何根本不同？ | {doc}`BitNet <generated/papers/C/02-inference-serving/C053-bitnet>` → {doc}`BitNet b1.58 <generated/papers/C/02-inference-serving/C054-bitnet-b158>` |
+| 为什么随机正交旋转能改善 W4A4KV4，怎样学习正交旋转并用 Kronecker 仿射控制成本？ | {doc}`QuaRot <generated/papers/C/02-inference-serving/C055-quarot>` → {doc}`SpinQuant <generated/papers/C/02-inference-serving/C056-spinquant>` → {doc}`FlatQuant <generated/papers/C/02-inference-serving/C057-flatquant>` |
 | 长对话只保留最近 KV 为什么会失稳？ | {doc}`StreamingLLM <generated/papers/C/02-inference-serving/C035-streamingllm>` |
 | 保留哪些旧 Token？在线 Heavy Hitter 与 Prompt 预观察有何差别？ | {doc}`H2O <generated/papers/C/02-inference-serving/C036-h2o>` → {doc}`SnapKV <generated/papers/C/02-inference-serving/C037-snapkv>` |
 | 不删除位置如何把 KV 降到 2-bit？ | {doc}`KIVI <generated/papers/C/02-inference-serving/C038-kivi>` |

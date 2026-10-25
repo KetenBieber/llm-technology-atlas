@@ -81,6 +81,8 @@ flowchart TD
 
 下一篇 [AQLM](C050-aqlm.md) 仍使用码本思想，但不只从一个 Codebook 里选一个向量，而让多个 Codebook 的向量**相加共同逼近**高维权重分组。
 
+如果想把本篇用于 Weight-Only 的随机正交打散推广到**激活和 KV Cache 也采用 4-bit**，下一条分支是 [QuaRot](C055-quarot.md)；随后 [SpinQuant](C056-spinquant.md) 继续解决随机旋转在不同初始化下精度波动的问题，而 [FlatQuant](C057-flatquant.md) 将变换限制放宽到可逆仿射并控制算子开销。
+
 ## 为什么 E8P 不是一个不能部署的 65,536 行码本？
 
 ### 用编码位数手算码本压缩率

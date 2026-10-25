@@ -262,3 +262,11 @@ QuIP# 通过随机正交变换降低单坐标集中性，再采用适合向量�
 这里刻意将「固定低比特主干，只更新 Adapter」与「预训练时就实施量化约束」放在两条相邻但不同的路线：QLoRA 减少微调时的主干存储，LoftQ 尝试用低秩初始化修补量化误差；BitNet 系列在训练阶段直接改变权重所能采取的离散状态，从而不再依赖事后压缩任意 FP16 模型。
 
 读到 V3 / R1 时不需要把所有方法重新推一遍；直接使用文章中的站内链接回到 MLA、MoE 或 GRPO 专题，再返回模型主线即可。
+
+## 第三十八阶段：从随机旋转到可学习仿射的 4-bit 推理
+
+84. {doc}`QuaRot：随机正交重参数化与 W4A4KV4 <generated/papers/C/02-inference-serving/C055-quarot>`
+85. {doc}`SpinQuant：用 Cayley 保持正交并直接优化量化损失 <generated/papers/C/02-inference-serving/C056-spinquant>`
+86. {doc}`FlatQuant：用 Kronecker 低成本可学习仿射平坦化激活 <generated/papers/C/02-inference-serving/C057-flatquant>`
+
+在 {doc}`SmoothQuant <generated/papers/C/02-inference-serving/C040-smoothquant>` 的缩放与 {doc}`QuIP# <generated/papers/C/02-inference-serving/C049-quip-sharp>` 的 Hadamard 基础上，首先证明正交变换怎样保持 Transformer 浮点输出不变，但其量化误差与选取的坐标系有关；再研究正交流形上的可训练旋转与校准任务损失；最后解释为什么每层独立可学习的一般可逆变换需要 Kronecker 分解和 Kernel Fusion 才能实际部署。比较论文结果时，必须先对齐模型、位宽 W/A/KV、Weight Quantizer、评测数据、Batch 和硬件，不能把 Table 1 的 PPL 和 Figure 的 Kernel Speedup 当同一个指标。

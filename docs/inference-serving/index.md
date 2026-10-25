@@ -11,6 +11,7 @@
 - **长上下文 KV 策略**：StreamingLLM、H2O、SnapKV、KIVI —— 依次讨论初始 Attention Sink 保留、动态重度命中驱逐、生成前关键位置选择和非对称低比特缓存。
 - **量化与受限资源部署**：LLM.int8、SmoothQuant、GPTQ、AWQ、FlexGen、Atom —— 细化异常值、W8A8、W4A16、低比特 GEMM 与 CPU/SSD 迁移之间的技术边界。
 - **极低比特校准、码本与训练**：ZeroQuant、RPTQ、OmniQuant、SpQR、QuIP#、AQLM、QLoRA、LoftQ、BitNet、BitNet b1.58 —— 从后训练量化的误差、硬件代价走向带码本的向量量化、低秩适配与量化感知预训练。
+- **正交旋转到可学习低成本仿射**：QuaRot → SpinQuant → FlatQuant —— 先用正交变换降低坐标离群值，再在正交流形上优化量化误差，最终放宽到逐层可逆仿射与 Kronecker 分解。区分数学等价、离散 Round 后的 PPL 和 INT4 Kernel 的真实延迟。
 
 推理系统不要用同一个“更快”概括四类指标：**TTFT、TPOT/TBT、带 SLO 的 Goodput、Token/Sec** 分别测量不同对象。系统能支持更长 Context 也不表示模型一定能理解该 Context。
 
@@ -60,4 +61,7 @@
 ../generated/papers/C/02-inference-serving/C052-loftq
 ../generated/papers/C/02-inference-serving/C053-bitnet
 ../generated/papers/C/02-inference-serving/C054-bitnet-b158
+../generated/papers/C/02-inference-serving/C055-quarot
+../generated/papers/C/02-inference-serving/C056-spinquant
+../generated/papers/C/02-inference-serving/C057-flatquant
 ~~~

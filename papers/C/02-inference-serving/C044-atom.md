@@ -108,6 +108,8 @@ $$
 
 ## 技术路线闭环：该怎样选择量化？
 
+相比 Atom 在 INT4 低比特执行中采用高精度异常通道支路，[QuaRot](C055-quarot.md) 通过重参数化旋转来减弱异常值，不专门保留一组高精度 Outlier Features；两者的 W4A4 表现应以同模型、Clip/Group、GPTQ 和实际 GPU Kernel 条件公平对照。QuaRot 后续延伸为 [SpinQuant](C056-spinquant.md) 的可学习旋转与 [FlatQuant](C057-flatquant.md) 的低成本仿射。
+
 ### 为什么 Atom 必须先研究 Batch，而不是只研究单个 Weight 的误差？
 
 [Atom 原始论文 Figure 3（arXiv:2310.19102，PDF 第 3 页）](https://arxiv.org/pdf/2310.19102) 给出 Llama-7B 在 Batch 8、16、32、64 等配置下的 Runtime Breakdown：颜色分别表示 Dense Layer、Self-Attention 和其他执行。随 Batch 增大，Dense Layer 在计算中仍占重要份额，但 Attention 的比重逐渐变化；该图用于说明**在线批服务的计算密集阶段值得原生 INT4 GEMM 加速**，不是单纯说明“量化后权重文件更小”。
