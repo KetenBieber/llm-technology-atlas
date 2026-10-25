@@ -285,3 +285,11 @@ DuQuant 对照 QuaRot 的随机旋转，区分跨 Token 持续存在的 Normal O
 91. {doc}`Mamba-2：Semiseparable Matrix 与 Structured State-Space Duality <generated/papers/A/09-state-space/A060-mamba2-ssd>`
 
 本阶段从 {doc}`Transformer <generated/papers/A/03-transformer/A013-transformer-attention-is-all-you-need>` 的显式历史读取出发，研究另一种根本不同的记忆观：将整个历史压缩成固定维度状态。S4 借 LTI 同时获得递推与卷积两种等价计算；Mamba 通过使离散步长和输入/输出投影依赖 Token，学会按内容选择历史，却失去固定卷积核；Mamba-2 再利用状态递推对应的 Semiseparable 结构矩阵，为一个特定子类恢复 Attention-like 矩阵形式。须始终区分 SSD 与标准 Softmax Attention 的数学边界，不能把“某些结构化 Attention 的对偶”称为所有 Transformer 的精确等价。
+
+## 第四十一阶段：并行训练与递推记忆的三种模型架构
+
+92. {doc}`RetNet：Multi-Scale Retention、Parallel/Recurrent/Chunk 三种计算表示 <generated/papers/A/09-state-space/A061-retnet>`
+93. {doc}`RWKV-4：Token Shift、带当前 Token Bonus 的归一化 WKV 和 Receptance <generated/papers/A/09-state-space/A062-rwkv>`
+94. {doc}`xLSTM：指数门控的 sLSTM 与矩阵记忆的 mLSTM <generated/papers/A/09-state-space/A063-xlstm>`
+
+继 [S4 → Mamba → Mamba-2](state-space/index.md) 后，这三篇以**并行可训练且具有固定状态的序列模型骨干**为共同问题，却沿不同技术思路独立发展，不能被误写成严格的前后继承顺序。RetNet 的核心是具有 Query–Key 内容匹配和多尺度衰减的外积状态；RWKV-4 是逐通道归一化分子/分母与 Token Shift/Receptance 的组合；xLSTM 则比较 sLSTM 的 Hidden-to-Hidden Mixing 与 mLSTM 的输入相关 Gate 和 Matrix Memory。三篇都应明确区分“浮点数学表达等价”“训练的批处理方式”和“有限状态记忆能否精确检索历史”，不能把任意一篇的吞吐数直接推广到其他架构。

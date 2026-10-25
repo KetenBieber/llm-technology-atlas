@@ -73,6 +73,15 @@
                 "A059",
                 "A060"
               ]
+            },
+            {
+              "id": "retentive-recurrent",
+              "title": "非 Softmax 递推骨干：RetNet、RWKV、xLSTM",
+              "papers": [
+                "A061",
+                "A062",
+                "A063"
+              ]
             }
           ]
         },
@@ -639,7 +648,10 @@
               "papers": [
                 "A013",
                 "A058",
-                "A059"
+                "A059",
+                "A061",
+                "A062",
+                "A063"
               ]
             },
             {
@@ -649,6 +661,15 @@
                 "A058",
                 "A059",
                 "A060"
+              ]
+            },
+            {
+              "id": "normalized-recurrent-memory",
+              "title": "归一化递推记忆、门控与关联读出",
+              "papers": [
+                "A061",
+                "A062",
+                "A063"
               ]
             }
           ]
