@@ -48,6 +48,18 @@ flowchart TD
   SPEC --> DVERIFY["Draft & Verify：跳层草稿"]
   DVERIFY --> LSKIP["LayerSkip：早退训练"]
   SPEC --> BILD["BiLD：回退与回滚，非严格无损"]
+  VL --> STREAM["StreamingLLM：Attention Sink"]
+  STREAM --> H2O["H2O：Heavy Hitter KV 驱逐"]
+  H2O --> SNAPKV["SnapKV：Prompt 尾部预测"]
+  SNAPKV --> KIVI["KIVI：不对称 2-bit KV"]
+  GQA --> KIVI
+  VL --> LLM8["LLM.int8：异常通道混精度"]
+  LLM8 --> SMOOTH["SmoothQuant：迁移激活尺度"]
+  SMOOTH --> GPTQ["GPTQ：二阶补偿权重量化"]
+  GPTQ --> AWQ["AWQ：显著通道保护"]
+  AWQ --> ATOM["Atom：W4A4 在线服务"]
+  VL --> FLEX["FlexGen：GPU/CPU/SSD 卸载"]
+  FLEX --> ATOM
   T --> MQA["MQA"]
   MQA --> GQA["GQA"]
 
@@ -114,6 +126,12 @@ flowchart LR
 
 | 想解决的问题 | 推荐文章 |
 |---|---|
+| 长对话只保留最近 KV 为什么会失稳？ | {doc}`StreamingLLM <generated/papers/C/02-inference-serving/C035-streamingllm>` |
+| 保留哪些旧 Token？在线 Heavy Hitter 与 Prompt 预观察有何差别？ | {doc}`H2O <generated/papers/C/02-inference-serving/C036-h2o>` → {doc}`SnapKV <generated/papers/C/02-inference-serving/C037-snapkv>` |
+| 不删除位置如何把 KV 降到 2-bit？ | {doc}`KIVI <generated/papers/C/02-inference-serving/C038-kivi>` |
+| Activation Outlier 为什么让 INT8 失败，能否用等价变换消解？ | {doc}`LLM.int8 <generated/papers/C/02-inference-serving/C039-llm-int8>` → {doc}`SmoothQuant <generated/papers/C/02-inference-serving/C040-smoothquant>` |
+| GPTQ 与 AWQ 都利用 Calibration Activation，有何不同？ | {doc}`GPTQ <generated/papers/C/02-inference-serving/C041-gptq>` → {doc}`AWQ <generated/papers/C/02-inference-serving/C042-awq>` |
+| 单 GPU 显存装不下模型与在线 INT4 GEMM 吞吐不足，如何分别解决？ | {doc}`FlexGen <generated/papers/C/02-inference-serving/C043-flexgen>` → {doc}`Atom <generated/papers/C/02-inference-serving/C044-atom>` |
 | 多头为何需顺序条件，循环草稿怎样结合 Beam？ | {doc}`Hydra <generated/papers/C/02-inference-serving/C025-hydra>` → {doc}`ReDrafter <generated/papers/C/02-inference-serving/C026-redrafter>` |
 | 多条路径怎样共享前缀，固定预算下怎么规划候选树？ | {doc}`SpecInfer <generated/papers/C/02-inference-serving/C027-specinfer>` → {doc}`Sequoia <generated/papers/C/02-inference-serving/C028-sequoia>` |
 | 不训练独立草稿网络能否用 Jacobi 或检索找 Token？ | {doc}`Lookahead <generated/papers/C/02-inference-serving/C029-lookahead-decoding>` → {doc}`REST <generated/papers/C/02-inference-serving/C030-rest>` |

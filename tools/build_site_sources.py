@@ -62,6 +62,16 @@ ARTICLES = [
     {"path": "papers/C/02-inference-serving/C032-draft-and-verify.md", "title": "Draft & Verify", "paper": "Draft & Verify: Lossless Large Language Model Acceleration via Self-Speculative Decoding", "url": "https://aclanthology.org/2024.acl-long.607/", "legacy": False},
     {"path": "papers/C/02-inference-serving/C033-layerskip.md", "title": "LayerSkip", "paper": "LayerSkip: Enabling Early Exit Inference and Self-Speculative Decoding", "url": "https://aclanthology.org/2024.acl-long.681/", "legacy": False},
     {"path": "papers/C/02-inference-serving/C034-bild.md", "title": "BiLD", "paper": "Speculative Decoding with Big Little Decoder", "url": "https://papers.neurips.cc/paper_files/paper/2023/hash/7b97adeafa1c51cf65263459ca9d0d7c-Abstract-Conference.html", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C035-streamingllm.md", "title": "StreamingLLM", "paper": "Efficient Streaming Language Models with Attention Sinks", "url": "https://proceedings.iclr.cc/paper_files/paper/2024/hash/5e5fd18f863cbe6d8ae392a93fd271c9-Abstract-Conference.html", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C036-h2o.md", "title": "H2O", "paper": "H2O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models", "url": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/6ceefa7b15572587b78ecfcebb2827f8-Abstract-Conference.html", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C037-snapkv.md", "title": "SnapKV", "paper": "SnapKV: LLM Knows What You are Looking for Before Generation", "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/28ab418242603e0f7323e54185d19bde-Abstract-Conference.html", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C038-kivi.md", "title": "KIVI", "paper": "KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache", "url": "https://proceedings.mlr.press/v235/liu24bz.html", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C039-llm-int8.md", "title": "LLM.int8()", "paper": "LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale", "url": "https://arxiv.org/abs/2208.07339", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C040-smoothquant.md", "title": "SmoothQuant", "paper": "SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models", "url": "https://proceedings.mlr.press/v202/xiao23c.html", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C041-gptq.md", "title": "GPTQ", "paper": "GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers", "url": "https://openreview.net/forum?id=tcbBPnfwxS", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C042-awq.md", "title": "AWQ", "paper": "AWQ: Activation-aware Weight Quantization for On-Device LLM Compression and Acceleration", "url": "https://proceedings.mlsys.org/paper_files/paper/2024/hash/42a452cbafa9dd64e9ba4aa95cc1ef21-Abstract-Conference.html", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C043-flexgen.md", "title": "FlexGen", "paper": "FlexGen: High-Throughput Generative Inference of Large Language Models with a Single GPU", "url": "https://proceedings.mlr.press/v202/sheng23a.html", "legacy": False},
+    {"path": "papers/C/02-inference-serving/C044-atom.md", "title": "Atom", "paper": "Atom: Low-Bit Quantization for Efficient and Accurate LLM Serving", "url": "https://proceedings.mlsys.org/paper_files/paper/2024/hash/5edb57c05c81d04beb716ef1d542fe9e-Abstract-Conference.html", "legacy": False},
     {"path": "papers/A/05-moe/A032-sparsely-gated-moe.md", "title": "Sparsely-Gated MoE：条件计算怎样扩大模型容量", "paper": "Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer", "url": "https://arxiv.org/abs/1701.06538", "legacy": True},
     {"path": "papers/A/05-moe/A033-switch-transformer.md", "title": "Switch Transformer：把 Top-K MoE 简化成 Top-1 路由", "paper": "Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity", "url": "https://arxiv.org/abs/2101.03961", "legacy": True},
     {"path": "papers/A/05-moe/A034-deepseekmoe.md", "title": "DeepSeekMoE", "paper": "DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models", "url": "https://arxiv.org/abs/2401.06066", "legacy": False},
@@ -193,6 +203,9 @@ def main() -> None:
         joined = "\n".join(f"{src}: {target}" for src, target in broken)
         raise RuntimeError("Generated article links point to unpublished pages:\n" + joined)
 
+    from build_atlas_map import build_atlas_map
+    atlas_data = build_atlas_map(ARTICLES, ROOT)
+    print(f"ATLAS_MAP_DATA={atlas_data.relative_to(ROOT).as_posix()}")
     print(f"PUBLIC_ARTICLES={len(ARTICLES)}")
 
 if __name__ == "__main__":

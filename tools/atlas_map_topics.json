@@ -1,0 +1,548 @@
+{
+  "version": 1,
+  "maintainer": "authors",
+  "notes": "所有论文标题与 URL 从 tools/build_site_sources.py ARTICLES 注册表派生；维护本文件的技术分类即可，不开放访客编辑。",
+  "views": {
+    "evolution": {
+      "title": "技术发展脉络",
+      "intro": "从基础、架构、训练系统到推理部署；节点根据已登记论文自动生成。",
+      "groups": [
+        {
+          "id": "basics",
+          "title": "训练基础与优化",
+          "description": "优化动力学、归一化、Scaling Laws",
+          "children": [
+            {
+              "id": "optimization",
+              "title": "优化算法与梯度",
+              "papers": [
+                "A001",
+                "A002",
+                "A003",
+                "A004",
+                "A005",
+                "A006"
+              ]
+            },
+            {
+              "id": "scaling",
+              "title": "Scaling Laws",
+              "papers": [
+                "A009",
+                "A010"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "architecture",
+          "title": "架构演化",
+          "description": "Transformer、位置编码、KV 共享与 MoE",
+          "children": [
+            {
+              "id": "transformer",
+              "title": "Transformer 骨干",
+              "papers": [
+                "A013",
+                "A014",
+                "A016"
+              ]
+            },
+            {
+              "id": "kvshared",
+              "title": "注意力头与 KV 共享",
+              "papers": [
+                "A019",
+                "A020"
+              ]
+            },
+            {
+              "id": "moe",
+              "title": "稀疏专家与路由",
+              "papers": [
+                "A032",
+                "A033",
+                "A034"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "models",
+          "title": "完整模型路线",
+          "description": "模型报告连接训练、结构与后训练",
+          "children": [
+            {
+              "id": "deepseek",
+              "title": "DeepSeek V2 → V3 → R1",
+              "papers": [
+                "B008",
+                "B009",
+                "B010"
+              ]
+            },
+            {
+              "id": "openmodels",
+              "title": "Llama / Qwen 模型家族",
+              "papers": [
+                "B011",
+                "B012"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "training",
+          "title": "分布式训练系统",
+          "description": "内存分片、模型/流水并行、长序列通信",
+          "children": [
+            {
+              "id": "parallel",
+              "title": "数据/张量/流水并行",
+              "papers": [
+                "C001",
+                "C003",
+                "C004",
+                "C006",
+                "C007"
+              ]
+            },
+            {
+              "id": "zero",
+              "title": "优化器分片与卸载",
+              "papers": [
+                "C002",
+                "C008",
+                "C009"
+              ]
+            },
+            {
+              "id": "seqparallel",
+              "title": "长序列并行",
+              "papers": [
+                "C005",
+                "C010",
+                "C011"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "longcontext",
+          "title": "长上下文与 Attention",
+          "description": "位置外推、IO 访存与缓存压缩",
+          "children": [
+            {
+              "id": "position",
+              "title": "位置扩展与稀疏注意力",
+              "papers": [
+                "A018",
+                "A053",
+                "A054"
+              ]
+            },
+            {
+              "id": "kernel",
+              "title": "FlashAttention 内核演进",
+              "papers": [
+                "A055",
+                "A056",
+                "A057"
+              ]
+            },
+            {
+              "id": "kvmgmt",
+              "title": "上下文/KV 管理",
+              "papers": [
+                "C035",
+                "C036",
+                "C037",
+                "C038"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "serving",
+          "title": "推理服务与解码",
+          "description": "批处理、执行器、候选树及自推测",
+          "children": [
+            {
+              "id": "scheduler",
+              "title": "调度与资源分配",
+              "papers": [
+                "C012",
+                "C013",
+                "C014",
+                "C015",
+                "C016",
+                "C017",
+                "C018",
+                "C019",
+                "C043"
+              ]
+            },
+            {
+              "id": "spec",
+              "title": "投机采样与多候选树",
+              "papers": [
+                "C020",
+                "C021",
+                "C022",
+                "C023",
+                "C024",
+                "C025",
+                "C026",
+                "C027",
+                "C028"
+              ]
+            },
+            {
+              "id": "specalt",
+              "title": "检索/自推测/回退",
+              "papers": [
+                "C029",
+                "C030",
+                "C031",
+                "C032",
+                "C033",
+                "C034"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "quant",
+          "title": "模型量化与端侧部署",
+          "description": "激活异常值、权重量化、混精度系统",
+          "children": [
+            {
+              "id": "activation",
+              "title": "激活异常值与 W8A8",
+              "papers": [
+                "C039",
+                "C040"
+              ]
+            },
+            {
+              "id": "weight",
+              "title": "二阶与显著性权重量化",
+              "papers": [
+                "C041",
+                "C042"
+              ]
+            },
+            {
+              "id": "systems",
+              "title": "量化系统与内存卸载",
+              "papers": [
+                "C044"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "post",
+          "title": "对齐与推理后训练",
+          "description": "偏好优化与 Group Policy Optimization",
+          "children": [
+            {
+              "id": "alignment",
+              "title": "DPO / GRPO",
+              "papers": [
+                "A051",
+                "A052"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "challenges": {
+      "title": "技术难点 → 解决方案",
+      "intro": "从工程约束出发定位论文，同一技术可解决多个问题。",
+      "groups": [
+        {
+          "id": "stability",
+          "title": "梯度传播与训练稳定性",
+          "description": "从链式法则到优化器、残差连接与归一化",
+          "children": [
+            {
+              "id": "gradient",
+              "title": "梯度计算和一阶/二阶优化",
+              "papers": [
+                "A001",
+                "A002",
+                "A003",
+                "A006"
+              ]
+            },
+            {
+              "id": "deepnets",
+              "title": "深层网络训练退化与尺度稳定",
+              "papers": [
+                "A004",
+                "A005",
+                "A016"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "compute",
+          "title": "训练算力与显存不足",
+          "description": "显存、通信、激活重算",
+          "children": [
+            {
+              "id": "memory",
+              "title": "优化器显存与参数卸载",
+              "papers": [
+                "C002",
+                "C008",
+                "C009"
+              ]
+            },
+            {
+              "id": "parallel",
+              "title": "吞吐、流水与模型并行",
+              "papers": [
+                "C001",
+                "C003",
+                "C004",
+                "C006",
+                "C007"
+              ]
+            },
+            {
+              "id": "sequence",
+              "title": "超长序列的多卡 Attention",
+              "papers": [
+                "C005",
+                "C010",
+                "C011"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "architecture",
+          "title": "扩展模型容量但限制成本",
+          "description": "模型结构和训练效率",
+          "children": [
+            {
+              "id": "experts",
+              "title": "稀疏专家激活",
+              "papers": [
+                "A032",
+                "A033",
+                "A034",
+                "B008",
+                "B009"
+              ]
+            },
+            {
+              "id": "scale",
+              "title": "数据规模与算力最优分配",
+              "papers": [
+                "A009",
+                "A010"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "long",
+          "title": "长上下文退化或 OOM",
+          "description": "位置推断、Attention IO 与 KV 容量",
+          "children": [
+            {
+              "id": "position",
+              "title": "位置外推与有效长窗口",
+              "papers": [
+                "A014",
+                "A018",
+                "A053",
+                "A054",
+                "C035"
+              ]
+            },
+            {
+              "id": "attention",
+              "title": "Attention 访存与并行",
+              "papers": [
+                "A055",
+                "A056",
+                "A057"
+              ]
+            },
+            {
+              "id": "eviction",
+              "title": "KV 驱逐与关键位置保留",
+              "papers": [
+                "C036",
+                "C037"
+              ]
+            },
+            {
+              "id": "kvquant",
+              "title": "KV 量化而非驱逐",
+              "papers": [
+                "C038",
+                "A019",
+                "A020"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "quant",
+          "title": "低比特量化精度损失",
+          "description": "异常值、Hessian 敏感性与硬件算子",
+          "children": [
+            {
+              "id": "outlier",
+              "title": "激活异常值与量化尺度",
+              "papers": [
+                "C039",
+                "C040"
+              ]
+            },
+            {
+              "id": "weight",
+              "title": "权重量化重建与显著通道",
+              "papers": [
+                "C041",
+                "C042"
+              ]
+            },
+            {
+              "id": "kernel",
+              "title": "4-bit 算子与系统吞吐",
+              "papers": [
+                "C044"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "latency",
+          "title": "生成延迟过高",
+          "description": "减少目标前向轮数与权重访存",
+          "children": [
+            {
+              "id": "draft",
+              "title": "候选模型与特征预测",
+              "papers": [
+                "C020",
+                "C021",
+                "C022",
+                "C023",
+                "C024",
+                "C025",
+                "C026"
+              ]
+            },
+            {
+              "id": "tree",
+              "title": "并行树验证/动态预算",
+              "papers": [
+                "C027",
+                "C028"
+              ]
+            },
+            {
+              "id": "alternative",
+              "title": "检索草稿与自推测",
+              "papers": [
+                "C029",
+                "C030",
+                "C031",
+                "C032",
+                "C033",
+                "C034"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "throughput",
+          "title": "在线服务吞吐与尾延迟",
+          "description": "请求动态到达、KV 分配与多租户",
+          "children": [
+            {
+              "id": "scheduling",
+              "title": "Continuous Batching / Chunked Prefill",
+              "papers": [
+                "C013",
+                "C014",
+                "C012"
+              ]
+            },
+            {
+              "id": "split",
+              "title": "Prefill/Decode 分离",
+              "papers": [
+                "C015",
+                "C016"
+              ]
+            },
+            {
+              "id": "cache",
+              "title": "共享前缀与 Attention Kernel",
+              "papers": [
+                "C017",
+                "C018",
+                "C019"
+              ]
+            },
+            {
+              "id": "offload",
+              "title": "单卡受限与 CPU/磁盘分层",
+              "papers": [
+                "C043"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "alignment",
+          "title": "偏好对齐与复杂推理",
+          "description": "后训练与目标函数",
+          "children": [
+            {
+              "id": "policy",
+              "title": "DPO、Group Relative Policy",
+              "papers": [
+                "A051",
+                "A052",
+                "B010"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "architecture",
+          "title": "序列建模和模型体系设计",
+          "description": "更好的依赖表达、可部署的开源模型家族",
+          "children": [
+            {
+              "id": "transformer",
+              "title": "并行建模代替循环序列依赖",
+              "papers": [
+                "A013"
+              ]
+            },
+            {
+              "id": "modelroute",
+              "title": "模型家族工程与规模选择",
+              "papers": [
+                "B011",
+                "B012"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

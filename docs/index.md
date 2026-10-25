@@ -11,6 +11,33 @@
 - 遇到 MLA、DeepSeekMoE、GRPO 等关键节点时，直接跳回原始方法专题；
 - 每篇文章内部保留“前置阅读 / 相关技术 / 后续阅读”和就地跳转，形成可连续浏览的技术网络。
 
+## 大模型技术全景导图
+
+技术发展图梳理“方法从哪里来、后来发展出什么”；难点—方案图从“工程瓶颈是什么”反向定位研究路线。两张图均由本站已发表的论文注册表生成，随新论文自动补充，分类关系由作者维护。
+
+```{raw} html
+<section id="atlas-map" class="atlas-explorer" aria-label="大模型技术论文交互导图">
+  <div class="atlas-toolbar">
+    <label for="atlas-map-view">知识视角</label>
+    <select id="atlas-map-view" data-map-view aria-label="导图视角">
+      <option value="evolution">技术发展脉络</option>
+      <option value="challenges">技术难点 → 解决方案</option>
+    </select>
+    <input data-map-search type="search" aria-label="搜索论文" placeholder="搜索论文名称 / 技术编号..." />
+    <button data-map-shrink type="button" aria-label="缩小导图" title="缩小">−</button>
+    <button data-map-expand type="button" aria-label="放大导图" title="放大">+</button>
+    <button data-map-fit type="button" title="适配可视区域">适配</button>
+  </div>
+  <div class="atlas-map-surface"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="可展开的技术关系图。点击分类展开，点击论文前往正文；空白处拖动画布，Ctrl 加滚轮缩放。"></svg></div>
+  <div class="atlas-meta">
+    <div class="atlas-status" data-map-status>正在读取已发表的论文分类…</div>
+    <div class="atlas-detail" data-map-detail aria-live="polite">点击分类节点展开；点击论文节点打开原文解读。</div>
+  </div>
+</section>
+```
+
+浏览方式：点击技术分类展开/折叠，点击论文节点打开拆解文章；可以搜索文章、拖动视野、缩放。导图不接受访客编辑，避免产生与正式论文目录不一致的节点。完整线性入口仍见下方学习路线。
+
 ## 推荐入口
 
 - {doc}`学习路线 <reading-path>`：按顺序建立完整知识链。
@@ -21,6 +48,8 @@
 - {doc}`推理服务系统 <inference-serving/index>`：从 Orca/vLLM 进入 Prefill/Decode 分离、Prefix KV 共享、GPU kernel 与精确投机采样。
 - {doc}`EAGLE 后续演化 <generated/papers/C/02-inference-serving/C023-eagle2>`：从动态树预算继续到 {doc}`EAGLE-3 的多步草稿训练 <generated/papers/C/02-inference-serving/C024-eagle3>`。
 - {doc}`推测解码技术分支 <generated/papers/C/02-inference-serving/C025-hydra>`：顺序头与循环草稿 → {doc}`SpecInfer <generated/papers/C/02-inference-serving/C027-specinfer>` → {doc}`Sequoia <generated/papers/C/02-inference-serving/C028-sequoia>`；另有 {doc}`Lookahead <generated/papers/C/02-inference-serving/C029-lookahead-decoding>` 的无独立草稿路径。
+- {doc}`长上下文 KV 优化 <generated/papers/C/02-inference-serving/C035-streamingllm>`：从 Attention Sink、H2O、SnapKV 进入 {doc}`KIVI 2-bit KV <generated/papers/C/02-inference-serving/C038-kivi>`。
+- {doc}`模型量化与低显存部署 <generated/papers/C/02-inference-serving/C039-llm-int8>`：从异常值分流到 {doc}`SmoothQuant <generated/papers/C/02-inference-serving/C040-smoothquant>`、GPTQ、AWQ、FlexGen 和 {doc}`Atom <generated/papers/C/02-inference-serving/C044-atom>`。
 - {doc}`Scaling Laws <scaling/index>`：从 Kaplan 到 Chinchilla，理解模型/数据/compute 的训练规划。
 - {doc}`完整模型主线 <models/index>`：从 DeepSeek V2/V3/R1 对照到 Llama 3 与 Qwen2.5。
 - {doc}`推理后训练 <post-training/index>`：从 PPO/GRPO 进入 reasoning RL。

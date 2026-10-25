@@ -2,6 +2,7 @@
 .local/
 site/
 docs/generated/
+docs/_static/atlas-map-data.json
 dist/
 __pycache__/
 *.pyc

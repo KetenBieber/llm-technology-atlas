@@ -211,4 +211,29 @@ Lookahead 的 n-gram 来自同一个模型的 Jacobi 迭代轨迹，REST 的候�
 
 先比较单一模型跳过若干层的 Draft & Verify，与必须在训练时施加 Early Exit Loss / Layer Dropout 的 LayerSkip。最后用 BiLD 的回退和回滚策略区分两种优化命题：“输出分布严格等于 Target”与“允许任务质量差异换取时延改善”；speedup 都应附带真实质量、采样设置与硬件基线。
 
+## 第三十二阶段：KV Cache 的容量与语义保留
+
+64. {doc}`StreamingLLM：为何要保留 Attention Sink <generated/papers/C/02-inference-serving/C035-streamingllm>`
+65. {doc}`H2O：在线选择 Heavy Hitter KV <generated/papers/C/02-inference-serving/C036-h2o>`
+66. {doc}`SnapKV：用 Prompt 末端观察窗口选关键 KV <generated/papers/C/02-inference-serving/C037-snapkv>`
+67. {doc}`KIVI：Key 按通道、Value 按 Token 的低比特 KV <generated/papers/C/02-inference-serving/C038-kivi>`
+
+沿着同一内存约束分清三种方案：保留 Sink 维持长期 Streaming 稳定性；使用在线注意力统计或预生成观察窗口有损驱逐不重要的 KV；保持位置信息而对 KV 做非对称低比特量化。后两类都会引入精度风险，不可把显存缩减和完整长文推理能力画等号。
+
+## 第三十三阶段：激活异常值与权重低比特
+
+68. {doc}`LLM.int8：向量量化 + FP16 异常通道 <generated/papers/C/02-inference-serving/C039-llm-int8>`
+69. {doc}`SmoothQuant：等价迁移通道尺度实现 W8A8 <generated/papers/C/02-inference-serving/C040-smoothquant>`
+70. {doc}`GPTQ：二阶信息与误差补偿的低比特权重 <generated/papers/C/02-inference-serving/C041-gptq>`
+71. {doc}`AWQ：Activation-aware 显著通道缩放 <generated/papers/C/02-inference-serving/C042-awq>`
+
+从 $Y=XW$ 出发：为什么巨大激活会吞噬量化动态范围、LLM.int8 如何把异常特征分流、SmoothQuant 如何用 $XD^{-1}DW$ 保持浮点结果不变，最后理解只压缩权重时 GPTQ 的二阶输出误差与 AWQ 的显著性保护。浮点代数等价、量化后的精度与 GPU 实际吞吐是三个不同层面。
+
+## 第三十四阶段：低显存卸载与低比特服务系统
+
+72. {doc}`FlexGen：GPU/CPU/SSD 分层、LP 调度与 Zig-Zag 执行 <generated/papers/C/02-inference-serving/C043-flexgen>`
+73. {doc}`Atom：W4A4、混精度异常通道与 INT4 Kernel <generated/papers/C/02-inference-serving/C044-atom>`
+
+将单张 GPU 放不下模型的内存与传输约束，与在线 Batch 推理中低比特算力利用率的约束分开研究：FlexGen 偏向资源有限、可容忍高延迟的离线吞吐，Atom 面向满足延迟目标的低比特 GPU 服务。不同系统和基线的 headline speedup 不能直接排名。
+
 读到 V3 / R1 时不需要把所有方法重新推一遍；直接使用文章中的站内链接回到 MLA、MoE 或 GRPO 专题，再返回模型主线即可。

@@ -34,6 +34,8 @@ html_search_language = "zh"
 html_show_search_summary = False
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
+html_css_files.append("atlas-map.css")
+html_js_files = ["atlas-map.js"]
 
 myst_enable_extensions = [
     "colon_fence",

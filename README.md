@@ -10,6 +10,15 @@
 
 ## 本地预览
 
+### 首页只读交互导图
+
+首页提供两个可切换的论文关系视角：**技术发展路线**与**技术难点 → 解决方案**。访客只能展开、搜索、缩放和进入文章，不具备节点编辑或写回仓库的功能。
+
+- 作者在 `tools/atlas_map_topics.json` 维护分支归类与跨主题关联；同一论文可出现在不同的问题视角。
+- `tools/build_site_sources.py` 读取已经登记的论文列表，并在每次站点构建时调用 `tools/build_atlas_map.py` 自动生成 `docs/_static/atlas-map-data.json`，文章标题与地址不需要在 JSON 重复填写。
+- 今后新增论文只需注册到 `ARTICLES` 并按需修订分类；如果尚未分类，页面会自动显示“待归类新论文”，防止新文章从地图消失。
+- 访问端读取静态 JSON，导图代码是 `docs/_static/atlas-map.js`，样式 `docs/_static/atlas-map.css`；不存储访问者修改。
+
 ```powershell
 python tools/build_site_sources.py
 python -m sphinx -b html -W --keep-going docs site
