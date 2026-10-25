@@ -4,6 +4,12 @@
 
 ## 模型定位与谱系
 
+### 回到原文 Figure 1：到底需要哪一种归一化不变性？
+
+[RMSNorm 原始论文 Figure 1（arXiv:1910.07467，PDF 第 2 页）](https://arxiv.org/pdf/1910.07467) 的两幅曲线均比较**无归一化 Baseline 与 LayerNorm** 的 GRU-based RNNSearch：左图横轴是 Training Steps（以百次为单位），右图是 Training Time（分钟），纵轴为 Training Loss。左图在相同步数下 LayerNorm Loss 较低，右图同时控制了训练耗时；这两幅图是作者**引入“归一化训练更稳定但代价更高”这一问题**的动机，而不是 RMSNorm 与 LayerNorm 的最终精度对照——图例根本没有 RMSNorm。
+
+RMSNorm 的核心取舍必须回到后续公式与实验：LayerNorm 对 $x$ 先减均值再按中心化方差归一化，RMSNorm 仅以 $\sqrt{\frac1d\sum_i x_i^2+\epsilon}$ 缩放。因此若对输入加一个常数 $c\mathbf1$，两种方法一般**不会具有相同不变性**；若只按正比例 $a>0$ 缩放而忽略 $\epsilon$，RMSNorm 的输出近似不变。这就是作者要验证能否放弃 Re-centering、仍保留 Re-scaling 收益的问题。真正 RMSNorm 与 LayerNorm 的模型质量及速度要读原论文其他对照表，不能把 Figure 1 的 LayerNorm 曲线冒充 RMSNorm 实验。
+
 **主要类型：A 原始方法论文。** 本文位于 Transformer / RNN / FFN 的归一化模块层，不改变 Attention、FFN、Tokenizer 或训练目标。
 
 技术谱系：

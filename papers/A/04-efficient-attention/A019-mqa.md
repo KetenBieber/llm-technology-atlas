@@ -4,6 +4,16 @@
 
 ## 模型定位与谱系
 
+### 原论文 §2.2 的代码对照揭示了真正被压缩的轴
+
+**原始实验核查**：[Shazeer 2019 Table 1–3（PDF 第 7–8 页）](https://arxiv.org/pdf/1911.02150) 将机器翻译 Dev/Test BLEU、Perplexity 与 Billion-Word 语言建模结果、推理耗时分开。作者 Table 2 的 TPUv2 8-core 贪心解码测试中，MHA Baseline Decoder 每步约 **47 ms**，MQA Decoder 约 **3.9 ms**（按论文给定最大长度 128 的实现）；两者相对约 12 倍，但这是特定硬件、Mask/Padding 和模型形状下的 Decoder 时间，不是每个现代 GPU/Batch 的端到端 Token 加速。作者同一页指出模型质量相对 Baseline 略差，但通常优于通过直接缩小 Head 数、Key/Value Dim 实现同等缓存节约的办法。读这些表时应同时回答“改变了什么 KV 结构”和“损失了多少翻译/语言建模精度”。
+
+[Shazeer 2019 原始 PDF 第 2–3 页 §2.2](https://arxiv.org/pdf/1911.02150) 并排提供 §MultiHeadAttention§、§MultiQueryAttention§ 的 TensorFlow/Einsum 定义。以单 Query 的增量生成为例，MHA 的 Key/Value 张量在源长度 $m$ 与 Head 轴 $h$ 上具有形状 $K:[h,m,k]$、$V:[h,m,v]$；MQA 的 Query 仍为 $q:[h,k]$，但 Key/Value 共享，变成 $K:[m,k]$、$V:[m,v]$。
+
+因此从 HBM 读取 KV 的体积，从约 $hm(k+v)$ 个元素降至 $m(k+v)$，在忽略缓存重用/索引/其他算子时理论减少约 $h$ 倍。**没有被同时减少的轴是 Query Head 数**：MQA 仍然输出 $h$ 个 Query Head 的 Attention 结果，再经过输出投影融合。训练时是否能并行、增量 Decode 的 Weight/Activation 开销是否占主导，仍决定最终 Runtime，并不能由 KV 比例直接推得整模型快 $h$ 倍。
+
+以 $h=8,m=1000,k=v=64$、FP16 2 Byte 计，一层一次读取历史 MHA KV 约 $8\times1000\times128\times2=2{,}048{,}000$ Byte，MQA KV 约 $256{,}000$ Byte。这是带 Shape 的缓存理论量，*不是*原论文端到端解码 Benchmark。原论文 §3 对速度与任务质量的对照才检验共享 KV 是否值得少量精度损失。
+
 **主要类型：A 原始方法论文；次要属性：推理效率架构。**
 
 技术谱系：

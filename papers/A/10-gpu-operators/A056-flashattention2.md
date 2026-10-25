@@ -4,6 +4,8 @@
 > **类型**：A · 原始方法 / GPU 系统论文；Exact Attention + GPU Parallelism + Work Partitioning。  
 > **一句话定位**：FlashAttention-1 已经用 tiling、online softmax 与 recomputation 大幅减少 HBM traffic，但在 A100 上 forward 仍只有约 30–50% 理论峰值、backward 约 25–35%。FlashAttention-2 不再改变核心 IO 复杂度，而是继续往 GPU execution model 里下钻：**减少昂贵的非矩阵乘 FLOPs、把 sequence length 也变成 thread-block parallel dimension、并把 warp 内的 split-K 改成 split-Q，从而减少 shared-memory communication 和 synchronization。**
 
+**原始评测证据**：[FlashAttention-2 原文 arXiv:2307.08691 §4、Figure 5/6](https://arxiv.org/pdf/2307.08691) 区分无 Causal Mask 与有 Causal Mask、Forward 与 Backward 的算子吞吐。论文 Introduction 所引用的 FA1 只有 A100 理论 FLOP/s 的约 30–50% / 25–35%，来自对应 Kernel Shape 下的硬件利用率估计；FA2 的优化是在减少 **non-matmul FLOPs**、增加 Sequence 并行 CTA、改变 Warp 的 Q/K 分工后，让 Matmul Unit 被更多合法矩阵乘工作填满。性能图的纵轴要区分 TFLOP/s 和相对 Speedup，不能说所有端到端语言模型推理都自动达到 FA2 所报告的 Kernel 利用率。要证明 Work Partition 带来的因果效果，需固定矩阵形状后比较原来各 Warp 分担 K/V 并同步的写回与 FA2 让每个 Warp 持有独立 Q Tile 的访存路径。
+
 上一站 [FlashAttention-1](A055-flashattention.md) 解决的是：
 
 > **Attention 为什么不应该把 $N\times N$ 的 $S,P$ 反复写入 HBM？**

@@ -6,6 +6,22 @@
 
 ## 从 GPipe 的流水线走到 GPU 集群
 
+### 原文 Figure 2–4 把三个“并行”画在了不同的轴上
+
+[Megatron-LM SC21 论文 PDF 第 3 页 Figure 2–4](https://arxiv.org/pdf/2104.04473) 中，Figure 2 把 **Tensor Model Parallelism** 画在单个 Transformer Layer 内部，把 **Pipeline Model Parallelism** 画在相邻 Transformer Layer 之间。前者要求同层分片进行更频繁的集体通信，后者传递相邻流水级的激活及梯度。这是不同数据依赖，不是“GPU 数越多就把每层均匀分开”。
+
+Figure 3 的横轴是时间，纵轴是四张设备；蓝色表示前向、绿色表示反向，灰色是不能执行有效计算的 **Pipeline Bubble**。图中特意假设 Backward 耗时约为 Forward 的两倍，八个 Micro-batch 在所有 Forward 结束后才启动相应 Backward，并在一批结束后 Flush 更新参数。**这组颜色与数字是调度例子，不是 GPU Utilization 的真实测量曲线**。
+
+Figure 4 的上部是普通 1F1B（Forward/Backward 交替），下部是 Interleaved 1F1B：每台设备持有多个不相邻的模型 Chunk。底部灰色 Bubble 在图示中缩短，但不同设备之间要发送更多 Activation；因此 Interleaving 并不是白得的性能改进。只有将 Bubble 减少收益与阶段通信开销放在同一个成本模型中，才能解释作者为什么提出 **Interleaved Pipeline Schedule**。
+
+一个可复核的近似下界是：设 $p$ 个流水 Stage、$m$ 个 Micro-batch，各 Stage 每个 Micro-batch 的前后向总耗时近似相同为 $t$，在简化的同步 Flush 时间线里，有效计算约 $mt$，Pipeline Fill/Drain 引入约 $(p-1)t$ 的等价空转，因此
+
+$$
+\eta_{\rm pipeline}\approx\frac{m}{m+p-1}.
+$$
+
+例如 $p=4,m=8$，理论效率约 $8/11\approx72.7\%$；如果 $m=32$ 则约 $32/35\approx91.4\%$。这是假设各流水 Stage 均衡、通信可忽略的示意关系；**不是 Figure 3 的精确时隙复算**，更不能将 Micro-batch 的增加当成无成本，因为激活驻留、Kernel Launch 与通信也会随 $m$ 变化。
+
 [GPipe](C003-gpipe.md) 用 micro-batches 填满分层模型并行的执行空档。[ZeRO](C002-zero.md) 则说明同一数据并行组里，parameter、gradient、optimizer state 无须总是完整复制。我们在 [4D Parallelism](C001-4d-parallelism.md) 里已经从资源维度列出 TP/PP/CP/DP，但仅把名字罗列出来，并不能决定一个真实集群该怎样训练模型。
 
 2021 年的 Megatron-LM 论文更接近一个**系统配置与调度问题**：如果某个模型需要 1024 张 GPU，为什么不能随便取：

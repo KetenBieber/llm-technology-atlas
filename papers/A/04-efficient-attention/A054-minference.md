@@ -4,6 +4,8 @@
 > **类型**：A · 方法 / 系统交叉论文；Dynamic Sparse Attention + GPU Kernel Co-design。  
 > **一句话定位**：MInference 不负责把模型的 RoPE 从 32K 外推到 1M，也不负责训练新的 long-context reasoning。它假设模型已经具备长上下文能力，然后专门处理另一个问题：**Prefill 阶段的 Dense Attention 是 $O(L^2)$，在百万 token 时会吞掉绝大部分 TTFT；而真实 attention weight 往往高度稀疏、但稀疏位置随输入动态变化。因此可以离线为每个 head 选择 GPU 友好的稀疏结构，在线以很低成本预测当前 prompt 的具体 sparse indices，最后只计算重要 attention tiles。**
 
+**核心证据链**：[MInference NeurIPS 2024 原论文 Figure 2 与 Table 1（arXiv:2407.02490，PDF 第 3 页）](https://arxiv.org/pdf/2407.02490)：Figure 2(a) 的横轴是 10K 至 1M 的 Context Window Size，纵轴是 Prefill Latency；Attention 在百万长度附近主导绝大部分耗时。Figure 2(b) 是 LLaMA-3-8B 单 A100、128K 输入下，沿 Head/Layer 的 Top-4096 Key 列召回 Attention 权重的比例，图顶标出约 96.4% 的平均召回；Figure 2(c) 把**另一份 Prompt**里选择的 Top-4096 索引直接复用在当前 Prompt，召回降到约 83.7%。这恰好说明稀疏的存在性和**具体索引随输入动态变化**是两个独立问题。原文 Table 1 比较 A-shape、Vertical-Slash、Block-Sparse 和动态 TopK 的结构、GPU 时间与构建开销，为何选择每 Head 的可执行稀疏模式，需要同时衡量索引发现时间与 Sparse Kernel 的运行效率，不能只看 96.4% 的 Attention Mass 就宣称输出质量数学等价。
+
 这篇文章正好接在 [Dual Chunk Attention](A053-dual-chunk-attention.md) 后面。
 
 我们现在已经把 Qwen2.5 的 long-context chain 分成了三层：

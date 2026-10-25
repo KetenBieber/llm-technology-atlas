@@ -5,6 +5,20 @@
 
 ## 阅读导航
 
+### 原论文 Figure 2 为什么可以只保留两份权重？
+
+[PipeDream-2BW ICML 2021 原始 PDF 第 4 页 Figure 2](https://arxiv.org/pdf/2006.09503) 画出四个 Worker 的 1F1B Timeline，蓝色 Forward 与绿色 Backward 交错；浅色方框标记**产生新版本权重**的更新事件。Figure 2 的 Caption 明确强调：每个 Worker **只缓存两份 Weight Version**，避免 PipeDream 随在途 Micro-batch 数量增加而保留多个历史版本。
+
+论文在同页 **Semantics** 段给出延迟一轮的简化 SGD 更新：
+
+$$
+W^{(t+1)}=W^{(t)}-\nu\,\nabla f(W^{(t-1)}).
+$$
+
+这里 $\nabla f(W^{(t-1)})$ 来自上一版本计算的梯度，与同步 SGD 的 $\nabla f(W^{(t)})$ 不同；因此 2BW 并非数学上“完全没有陈旧梯度”，而是将重量级的多份 Weight Stashing 控制为有界双缓冲，并分析一轮 Staleness 对优化的影响。它必须以适当的更新时序、梯度合并和正确 Forward/Backward Weight Version 配对为前提。
+
+Figure 3 又对比 GPipe 与 PipeDream-Flush：后者在稳定段更常交替 F/B，降低同时保留的 Activation 数；代价是仍需要在权重更新点周期性 Flush。图中灰色区域为空闲，**能用来解释 Pipeline Fill/Drain 与显存占用，不能被当作收敛性证据**。收敛必须回到论文 SGD/Adam 的 Staleness 分析与实测 Training Loss。
+
 先读 [GPipe](C003-gpipe.md) 的同步 micro-batch 梯度恒等式，再读 [PipeDream](C006-pipedream.md) 的 weight stashing，否则“双缓冲”容易被误以为普通的 DMA prefetch。后面还会回到 [Megatron-LM](C004-megatron-lm.md) 比较 flush 与 interleaved 1F1B。
 
 ![自制解释图：PipeDream-2BW 的版本生命周期](../../../figures/explainers/C007/01-mechanism.svg)

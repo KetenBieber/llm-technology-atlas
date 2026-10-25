@@ -4,6 +4,14 @@
 
 ## 模型定位与谱系
 
+### 原论文 Figure 2 三列对照，不是三种不同大小的模型
+
+[GQA 原始论文 Figure 2（arXiv:2305.13245，PDF 第 2 页）](https://arxiv.org/pdf/2305.13245) 左列 Multi-Head 是八个蓝色 Query、八个红色 Key、八个黄色 Value；中列 Grouped Query 是八个 Query 共享四组 Key/Value；右列 Multi-Query 是所有 Query 共享一组 Key/Value。这个拓扑图专门说明 **Query Head 数 $H_Q$ 保持不变，而 KV Head 数 $H_{KV}$ 从 $H_Q$ 逐渐减至 1**；不是三种模型的训练参数量或者实际速度排行榜。
+
+同页 §2.2 明确说明从 MHA Checkpoint 改成 GQA 时，同组旧 Key/Value Heads 使用 **Mean Pooling** 初始化共享的新 KV Head，然后以一部分原训练预算进行 Uptraining；原论文采用约 5% 的原始 Pretraining Compute。若原来 $H_Q=8$，变成 $H_{KV}=4$，则每组共享两个 Query Head 的 KV；Decode KV 流量相对 MHA 约缩成 $4/8=1/2$，却仍是 MQA 单个 KV Head 的四倍。这是固定 Head Dim 的理想比较，还没有把其他模型层计算成本加入分母。
+
+若只做平均而从不 Uptrain，原来各 Head 学到的 Key/Value 表达可能互相抵消而导致质量下降；因此作者的质量—速度折中结论，必须同时使用 Figure 2 的结构、Uptraining Recipe 和正文质量/运行时间实验，而非只凭 Head 数目推断 GQA 必然优于 MHA。
+
 **主要类型：A 原始方法论文。**
 
 技术谱系：

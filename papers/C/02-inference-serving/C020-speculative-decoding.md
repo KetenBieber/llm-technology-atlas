@@ -4,6 +4,12 @@
 
 ## 一、解码为什么慢：串行长度还是单步算力？
 
+### 读懂原论文 Figure 1 中的绿、红、蓝三种 Token
+
+[Leviathan 等 ICML 2023 论文 Figure 1（arXiv:2211.17192，PDF 第 2 页）](https://arxiv.org/pdf/2211.17192) 用无条件生成展示了 Speculative Decoding 的真实输出推进方式。每一行表示一轮 Draft–Target 并行验证：绿色 Token 是小 Draft 模型提出且被 Target 接受的候选，红色 Token 是被拒绝的候选，蓝色 Token 是 Target 按正确残差/目标分布补上的修正。Figure Caption 明确：6M 参数 Draft 与 97M 参数 Target 的示例中，第一轮目标网络只调用一次便提交了 5 枚 Token；整段示例有 38 枚 Token，Target 只运行了 9 轮串行 Forward。
+
+这张图能验证“Target 调用次数下降”这一**执行语义**，但它并非宣称只要有 6M Draft，所有任务都能按 38/9 的比例加速。若 Target 在 GPU 上的小 Batch Compute 很低而 Draft CPU 生成慢，Wall-clock 可能不同；最终概率一致性也不是“绿字很多所以看似相同”，而是本文后续严格的接受–残差分解证明。图中的红色提议并不出现在最终输出中，蓝色修正决定了新前缀，此后必须重新产生合法的 Draft 续写。
+
 设目标自回归语言模型的下一个 Token 条件分布为：
 
 $$

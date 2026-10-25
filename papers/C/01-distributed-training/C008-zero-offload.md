@@ -5,6 +5,16 @@
 
 ## 阅读导航
 
+### 为什么 Figure 2 把 Adam 更新合并成 Update Super Node？
+
+[ZeRO-Offload USENIX ATC 2021 作者 PDF 第 5 页 Figure 2、Table 1](https://arxiv.org/pdf/2101.06840) 从原始 FP16 Forward/Backward 与 FP32 Master Weight、Momentum、Variance 的数据流开始，讨论 CPU/GPU Offload 的最少传输量。Figure 2 的左图不只是“把 Adam 移到 CPU”：原始状态中，梯度、参数更新和 FP32→FP16 的转换跨越两类内存；若在错误的位置拆开计算节点，PCIe 每迭代可能多搬整份参数状态。
+
+令模型参数量为 $M$，一个 FP32 张量占 $4M$ Byte，FP16 张量占 $2M$ Byte。论文图中的最小传输约为 $4M$ Byte 的逻辑量；若把 FP32 数据状态的 Producer/Consumer 分隔到 CPU/GPU，跨边界移动可提高到 $6M$ Byte 或更多。Table 1 将 GPU/CPU 节点分配与 Memory Reduction 逐项比较，最佳情形通过把 FP32 Optimizer Update、FP32 Master Weight/Momentum/Variance 放在 CPU，把 FP16 Forward/Backward 和 FP16 Weight 放在 GPU，最高可达到特定账本下约 **8× 模型状态显存降低**。
+
+为何这样更合理？大规模 GEMM 的复杂度随 Batch 与矩阵维度增加，GPU 在此类计算上有巨大的吞吐优势；Adam 参数更新以逐元素矢量操作为主，复杂度近似 $O(M)$，相对适合 CPU。把 FP16 Forward/Backward 搬到 CPU 会严重损害吞吐，把整个 FP32 State 留在 GPU 则浪费 HBM 容量。作者 §3.2–3.4 是通过**计算复杂度与最少传输图论约束**联合选定这一分工，而不是凭“CPU 内存更便宜”一句话。
+
+一个带边界的手算：$M=10^9$，一次 $4M$ Byte 的转移约 4 GB，若 PCIe 有效传输速度 20 GB/s，单方向理论下界约 $0.2$ s，且不含拷贝启动、CPU Adam 运算和等待。即使 ZeRO-Offload 降低内存，这条链若无法与 GPU 前后向重叠，就可能限制最终吞吐。**最高 8× 显存降低是论文状态账本的特定比较，不能当成 8× Training Throughput。**
+
 优先回到 [ZeRO](C002-zero.md) 的 $16\Psi$ bytes/parameter 混合精度 Adam 账本。ZeRO 主要把训练状态在 DP ranks 之间分片，而 Offload 改变的是**同一份状态驻留的内存层级和执行处理器**。前面两篇 [PipeDream](C006-pipedream.md) 和 [2BW](C007-pipedream-2bw.md) 探索时间流水线；Offload 改成在 GPU 与 CPU 之间建立**计算功能分工**。
 
 ![自制解释图：ZeRO-Offload 的 CPU/GPU 分工](../../../figures/explainers/C008/01-mechanism.svg)

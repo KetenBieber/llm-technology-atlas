@@ -6,6 +6,24 @@
 
 ## Target 一次能验证多个 Token，Draft 却一枚枚生成——瓶颈转移了
 
+### Figure 2 的 Forward ×6 → ×2 → ×0 是什么意思？
+
+[Ouroboros EMNLP 2024 Figure 2（正式 PDF 第 3 页）](https://aclanthology.org/2024.emnlp-main.742.pdf) 用一个带有大量可复用短语的文本生成例子将普通 Speculative Decoding 与 Ouroboros 放在同一个时间线。普通草稿若要获得较长候选，需要让小模型 Forward 多次；图左的 §Forward ×6§ 就是该例子的 Draft 调用次数。Ouroboros 将历史与正在构造的短语作为候选，在 Figure 中两个部分分别减少需要单独运行的 Draft Forward（§×2§）和用现成 Phrase 继续扩展草稿（§×0§）。**×0 只表示对那段短语不必额外调用 Draft，绝不是 Target 验证也免费**。
+
+论文 §3 明确分成两步：§3.1 Accelerating Drafting via Phrases 让一次 Draft Forward 并行产生多个 Phrase；§3.2 Lengthening Drafts via Phrases 在已经获得一段草稿后，寻找与它的**末尾 Token 相匹配的短语**，把更多可复用候选接到草稿后面。若原草稿 §d_1,\dots,d_\gamma§，选中的短语 §p_1,\dots,p_\beta§ 满足 $p_1=d_\gamma$，则新草稿是
+
+$$
+(d_1,\dots,d_\gamma,p_2,\dots,p_\beta),
+$$
+
+而不是再拼一次 $p_1$ 造成重复。这里的 Token 对齐看似琐碎，却决定实际可验证路径是否正确。
+
+### Figure 3 为什么需要自定义树形 Attention Mask？
+
+若短语池同时提供 §p^{(1)}=(a,b,c)§ 与 §p^{(2)}=(a,d,e)§，并且当前草稿末尾为 §a§，两条扩展分支应分别读取已有草稿前缀加上各自的 §b,c§ 或 §d,e§。Figure 3（正式 PDF 第 4 页）的黑/白方格构造使 Target 一次 Forward 分别计算这两条合法路径的条件概率；第二条分支的 §d§ 绝不能读取第一条分支的 §b,c§。假如 Kernel 直接使用普通下三角 Mask，排在后面的分支会“偷看”另一分支，从而把 Target 采样语义改成未出现过的历史。
+
+作者 §3.2 Eq. (7)–(9) 要比较每条扩展分支能通过的连续 Token 数，最终只能选一条合法路径提交。这里的保证首先是**每条路径在相应真实前缀下被正确验证**；如果采用随机采样，输出分布一致还取决于所用接受/残差算法，不应只凭 Phrase Hit Rate 宣称概率无损。
+
 普通推测解码每轮由小型 Draft 自回归生成 $\gamma$ 个 Token，然后 Target 一次并行验证。随着 Target Forward 次数减少，**Draft 自己连跑 $\gamma$ 步的成本**逐渐成为瓶颈。Ouroboros 认为既然文本经常包含可复用的短语，草稿阶段也可以试图按短语推进，而不总是一枚枚生成。
 
 它同时利用已有对话、已生成上下文和候选短语池，并尝试增加草稿长度而不等比例增加小模型 Forward 数。与 [REST](C030-rest.md) 只依赖文本检索取代 Draft 模型不同，Ouroboros **保留一个小型草稿模型**，短语用于辅助该模型草稿过程。

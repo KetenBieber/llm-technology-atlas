@@ -4,6 +4,8 @@
 
 ## 模型定位与谱系
 
+**原论文 Figure 1 与 Eq. (1) 追溯**：[Shazeer 等 ICLR 2017 PDF 第 2–3 页](https://arxiv.org/pdf/1701.06538) 将语言模型中的 Sparsely-Gated MoE 插入堆叠 LSTM 层之间，按每个 Token 的 Router Score 选择少数专家。方法正文 Eq. (1) 写为 $y=\sum_{i=1}^n G(x)_iE_i(x)$，而只有非零 Gate 的 Expert 才实际执行。设有 $n=64$ 个相同成本专家，Top-2 路由在理想负载均衡时每个 Token 只需要 2 个 Expert Forward，而不是 64 个；这是稀疏计算的理论值，不包括路由器、All-to-all、Batch Fragmentation 和专家负载不均的实际时间。原文 Figure 1 表达专家并行与激活子集，**并没有证明 64 个专家的模型在相同参数预算下就是 32 倍训练速度**；真实系统性能与模型质量必须看实验。
+
 **主要类型：A 原始方法论文；次要属性：C 分布式条件计算系统。**
 
 技术谱系：

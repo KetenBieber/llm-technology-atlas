@@ -4,6 +4,10 @@
 
 ## 模型定位与谱系
 
+**原论文 Figure 1 的两条横轴不是一回事**：[Switch Transformers JMLR 2022（arXiv:2101.03961）PDF 第 3 页 Figure 1](https://arxiv.org/pdf/2101.03961) 左图以 Sparse Model Parameters 为横轴、Test Loss 为纵轴，点旁的 1e、2e、4e、…、256e 表示 Expert 数逐渐增长；右图以 Training Steps 为横轴、负对数 Perplexity 为纵轴，在同一 Compute Budget 下对比不同 Expert 配置与 T5 Base。左图侧重容量扩展，右图侧重样本/训练过程效率，二者**都不是 GPU 总参数量与实际单步 FLOPs 一一对应的直线**。
+
+Switch 核心算法的因果前提是 Router 每 Token 仅选一个 Expert，避免早期 Top-2 MoE 的两路专家计算/dispatch；但路由容量限制、Dropped Token、负载均衡损失和不同专家的 All-to-all 仍影响最终训练吞吐。若因 Capacity Overflow 被丢弃 Token 的比例增大，论文质量曲线不能当成 Top-1 本身无成本的证明。因此实验读图时须保持 Expert Count、Capacity Factor、每 Token FLOPs 和训练 Token 数的比较口径一致。
+
 **主要类型：A 原始方法论文；次要属性：C 大规模 MoE 训练系统。**
 
 技术谱系：

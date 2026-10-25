@@ -5,6 +5,20 @@
 
 ## 阅读导航：从 ZeRO → Offload → Infinity
 
+### 从原论文 Eq. (1)–(3) 把“显存墙”算清楚
+
+[ZeRO-Infinity 论文 PDF 第 3 页 §3](https://arxiv.org/pdf/2104.07857) 将模型状态与 Activation 视为两类限制，并在混合精度 Adam 设置下明确假设：每参数的 FP16 Weight 与 Gradient 各 2 Byte，FP32 Master Weight、Gradient 和 Adam 两套动量状态合计额外 16 Byte，因此作者账本使用
+
+$$
+M_{\rm model\ states}=20P\ \text{Byte}.
+$$
+
+如果参数规模是 $P=10^{11}$，仅 Model States 的理论存储便是 $2\times10^{12}$ Byte，即约 2 TB（十进制）；还没包含激活、临时 Workspace 和分布式通信 Buffer。由于这个模型状态内存远超一张 80GB GPU，不能把“将几层参数保存到 NVMe”当作足够的系统方案：**何时 Prefetch、在哪里更新、如何避免梯度全量复制和怎样利用 GPU/CPU/NVMe 的合计带宽**都在关键路径上。
+
+原论文 §3 Eq. (1) 用 Transformer Layer 数 $n_l$、Hidden Dimension $h$ 推出参数数约 $12n_lh^2$，Eq. (2) 给其状态空间约 $240n_lh^2$ Byte。Eq. (3) 则针对 Activation Checkpoint 而不是优化器状态，依赖 Batch、Sequence、Hidden Dimension 和 Checkpoint Interval。这是两种完全不同的增长维度：增大 Context 不必改变 $P$，但会改变 Activation 和 Attention 运行开销。
+
+**读原文 Figure 2** 时，要将“100B 到 100T 模型所需状态内存”和“单 GPU/节点/集群实际 HBM 容量”放在同一单位，再看跨 GPU/CPU/NVMe 的层次配置。它支持容量论证，并不证明 SSD Offload 的通信免费；训练速度需要论文的 Overlap、Prefetch 与 Scaling 实验单独支持。
+
 先读 [ZeRO](C002-zero.md) 的状态分片与 [ZeRO-Offload](C008-zero-offload.md) 的 CPU optimizer。前者回答**谁持有参数分片**，后者回答**CPU/GPU 谁计算什么**。Infinity 继续把 CPU DRAM 之外的 NVMe 纳入存储层级，不能被概括为“再加一个 offload 选项”。
 
 ![自制解释图：ZeRO-Infinity 分层驻留与传输](../../../figures/explainers/C009/01-mechanism.svg)

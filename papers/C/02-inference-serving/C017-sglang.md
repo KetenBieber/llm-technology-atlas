@@ -78,6 +78,26 @@ SGLang 还提供程序式前端，表达 Prompt、生成、并行、分支与结
 
 ## 五、实验结论的归因边界
 
+### 原论文 Figure 1 先把 SGLang 拆成前端语言与后端系统
+
+[SGLang 原文 Figure 1（arXiv:2312.07104v2，PDF 第 2 页）](https://arxiv.org/pdf/2312.07104) 明确画出 Client Language Primitives → Interpreter → Runtime 的执行关系。右侧 Backend 包含 **RadixAttention（§3）**、**Compressed Finite State Machines（§4）** 与 **API Speculative Execution（§5）**，它们不是一个统一的“共享 KV Cache 算法”。编写 SGLang 的 LM Program 只是表达哪些生成/分支/并行调用存在；Runtime 才根据其依赖、Token 前缀与输出约束选择具体优化。
+
+这解释了为什么用户已经使用 [PagedAttention](../01-distributed-training/C012-vllm-pagedattention.md) 后仍可从 RadixAttention 受益：Paged KV 解决内存块碎片化与块表寻址，Radix KV 解决**跨请求共享公共 Token Prefix**和 Prefix 的生命周期。二者是两个正交的系统问题。
+
+### 用一个五请求的 Radix Tree 复算前缀复用与 LRU
+
+假设请求 A、B、C 共享长度为 100 的系统前缀，并分别有 20、30、10 个新的 Token；请求 D、E 的前缀不相同。没有跨请求 KV 复用时，A/B/C 的 Prefill 总输入长度是 $120+130+110=360$；有公共前缀一次计算和多请求复用，理论上需要为这三条请求构建的**唯一 Token 状态数**是 $100+20+30+10=160$，节约 200 个前缀 Token 的重复计算。这里没有宣称 GPU Prefill FLOPs 严格按 360:160 同比例降低，因为不同长度的 Attention/调度/Batch 有非线性执行成本。
+
+再假设 A 和 B 结束，但 C 的 KV Prefix 仍被引用：运行时不能为了给 D/E 腾出空间就立即驱逐共享前缀，否则会破坏 C 的请求状态。RadixAttention 的缓存策略要区分**活跃引用锁定**和**未使用节点的 LRU 淘汰**。读 [原论文 Figure 3](https://arxiv.org/pdf/2312.07104) 的连续九步缓存变化时，应关注：哪些节点被新请求插入、哪些节点仍被活动请求引用、哪些节点在容量不足时被驱逐。这张图是数据结构与算法语义，不是最终 6.4× 吞吐的测量曲线。
+
+如果跨请求缓存使用相同 Token ID，但模型版本、LoRA Adapter、Position Encoding 或多模态输入有所改变，KV 也不一定兼容。**结构上拥有同一个 Token 前缀**不自动保证可跨模型权重共享缓存，这一约束是防止所谓 KV Cache “命中却输出错误”的第一道工程防线。
+
+### 压缩 FSM 为什么又是独立的优化？
+
+对于强制输出 JSON 的场景，普通 FSM 每次只约束下一个 Token；如果连续多个确定文字片段具有唯一合法路径，可把多个确定状态压缩并在一次推理中处理更长的连续路径。即使根本没有共享 Prefix，Compressed FSM 仍可能加速约束生成；反之，纯自由文本对话没有这种确定路径，FSM 部分的收益可能接近零。
+
+因此对 SGLang 论文实验至少分离三个因子：公共 Prefix 比例、输出 Grammar 的确定程度、前端程序是否多轮有分支。作者报告最高 6.4× 属于组合工作负载的结果，不能把它单独当作 Radix Tree 的收益证明。
+
 NeurIPS 2024 论文报告在结构化语言模型程序、多轮 Chat、Agent、JSON、RAG 等应用中最高约 **6.4× 吞吐提高**。如果请求没有共享 Prefix，则 Prefix caching 的收益会降低；如果生成没有结构约束，则 FSM 优化不应带来同样效果。因此它是**前端程序语义、缓存管理和运行时调度组成的系统结果**。
 
 论文从“LLM 程序执行是多次相依调用”出发，再证明前端显式控制流能为运行时带来优化机会，最后展示缓存/约束解码。读到这里，应能分清：

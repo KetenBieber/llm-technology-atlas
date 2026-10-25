@@ -5,6 +5,14 @@
 
 ## 阅读入口
 
+### 原论文 Figure 1/2 证明了哪一种“必须流水化”的瓶颈？
+
+[PipeDream 原始 PDF 第 3 页 Figure 1](https://arxiv.org/pdf/1806.03377) 对 VGG16、ResNet50、Inception v3、AlexNet、S2VT，在 K80、Titan X、V100 和不同数据并行 Worker 数下，统计**通信占整个训练时间的比例**。一些网络/并行规模的通信耗时甚至超过一半；随 GPU 从 K80 变快到 V100，网络通信相对于 GPU 计算的占比可能变大。它证明的是“同步跨 Worker 的数据并行通信可成为瓶颈”，**并不证明所有模型在任何集群都适合流水线模型并行**。
+
+同页 Figure 2 的四台机器构成数据并行 Worker，右下时间线用 F/B/C 区分 Forward、Backward、Communication Stall。后续 PipeDream 通过按 Layer 切分模型、让不同输入 Micro-batch 同时分布在不同流水 Stage，减少某些同步等待；但必须为模型 Pipeline 提供 Staleness/Weight Stashing 的一致性语义。流水线降低空转的代价不是“通信消失”，而是**将等待与计算在不同请求和不同 Stage 上重叠**。
+
+最短的因果模型是：若单卡每批计算为 $T_c$、梯度同步需 $T_n$，无法重叠时一次同步更新需 $T_c+T_n$；若执行期能有效重叠比例 $r\in[0,1]$ 的通信，时间可抽象成 $T_c+T_n-r\min(T_c,T_n)$。这里不是 PipeDream 原论文性能模型，只用来说明**“同步摊在关键路径”与“流水化改变关键路径”之间的关系**。原文 Figure 1 的百分比不能直接代入这一式计算具体 Speedup，因为 PipeDream 同时改变了 Partition、Weight Version 和 Micro-batch 调度。
+
 从 [GPipe](C003-gpipe.md) 读到此处，已经知道 GPipe 以 micro-batch 填充流水线，但在整批 forward/backward 之后统一更新模型参数。它换来了清晰的同步优化语义，也制造了定期的 pipeline bubble。[Megatron-LM](C004-megatron-lm.md) 采用 flush 以保持严格同步更新；PipeDream 则尝试另一条取舍：**容许多个输入批次的不同模型版本同时处于流水线中**。
 
 ![自制解释图：PipeDream 的 Weight Stashing](../../../figures/explainers/C006/01-mechanism.svg)

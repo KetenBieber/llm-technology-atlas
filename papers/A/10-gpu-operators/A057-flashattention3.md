@@ -4,6 +4,8 @@
 > **类型**：A · GPU 系统 / 原始方法论文；Exact Attention + Hopper Asynchrony + FP8。  
 > **一句话定位**：FlashAttention-1 解决 HBM IO，FlashAttention-2 解决 block/warp work partition；到了 Hopper，新的瓶颈变成“不同硬件引擎仍被同步依赖串起来”。FlashAttention-3 把 TMA 数据搬运、WGMMA Tensor Core GEMM 和 softmax 非矩阵运算组织成异步 software pipeline，并进一步解决 FP8 layout 与数值误差问题。
 
+**原论文实验口径**：[FlashAttention-3 原文 arXiv:2407.08608 §4、Figure 4/5](https://arxiv.org/pdf/2407.08608) 主要在 Hopper H100 上验证。作者用 Producer–Consumer Warp Specialization 使 TMA 搬运与 WGMMA 重叠，用 Block-wise Matmul 与 Softmax 交错降低非矩阵乘阶段的空等，再采用 FP8 Block Quant 与 Incoherent Processing 控制误差。原文报告 FP16 达到最高约 740 TFLOP/s、FP8 接近 1.2 PFLOP/s；这些是对应 Kernel/Shape 的计算吞吐，不是运行一个完整解码服务能在每步稳定取得的 FLOP/s。Figure 性能曲线需同时看 Head Dimension、Sequence Length、Causal Mask、dtype 四个条件；FP8 的准确率还必须回到带/不带 Block Quantization 的 Error 对比，而不能只用 FP16 的速度曲线推断 FP8 精度。
+
 上一站：
 
 - [FlashAttention：IO-aware exact attention](A055-flashattention.md)

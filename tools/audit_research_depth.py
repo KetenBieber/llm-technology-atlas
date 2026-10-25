@@ -41,7 +41,7 @@ for item in registry:
     flags = []
     if len(s) < 2700:
         flags.append("正文篇幅较短，需要核实推导/实现完整性")
-    if not re.search(r"Figure\s*\d|Table\s*\d|Algorithm\s*\d|图\s*\d|表\s*\d", s, re.I):
+    if not re.search(r"(?:Fig(?:ure)?\.?\s*\d|Tab(?:le)?\.?\s*\d|Alg(?:orithm)?\.?\s*\d|图\s*\d|表\s*\d)", s, re.I):
         flags.append("未定位原论文 Figure/Table/Algorithm，需人工核对")
     if s.count("$$") < 4:
         flags.append("行间公式不足两组，需要核查推导是否可复原")

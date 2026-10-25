@@ -67,6 +67,25 @@ StreamingLLM 的重映射不是把整个 100 万长文本无损压缩到 4096，
 
 ## Figure 1 的四组对照恰好解释方法的两个目标
 
+### 从一个 8-Token 缓存手算四种保留方式
+
+假设当前已经读入 $t=20$ 枚 Token，Attention 预算最多只能缓存 $W=8$ 个位置。**全量 KV** 的长度为 20；**最近窗口**为 $\{13,\ldots,20\}$，开头位置 1 被清除；**StreamingLLM** 如果保留 $n_s=2$ 个 Sink 和最近 $n_w=6$ 个位置，则
+
+$$
+S_{20}=\{1,2\}\cup\{15,16,17,18,19,20\},
+\qquad |S_{20}|=8.
+$$
+
+这两个长度为 8 的缓存占用一样，区别是**Softmax 归一化所能读到的 Key 集合不同**。当某些 Head 在后续几十步持续给 Token 1 非零且稳定的 Attention Mass 时，StreamingLLM 能保留这个概率锚点，而简单滑窗无法做到。此结论并非“Token 1 保存了所有旧文本语义”；例如 Token 8 的具体内容已经被驱逐，除非别的仍可见 Token 编码了相关信息，它不能凭空被完整恢复。
+
+对单 Decoder 层、$H_{\rm kv}$ 个 KV Head、Head Dim 为 $d_h$、每个元素 $b$ Byte 的缓存，理论占用为
+
+$$
+M_{\rm KV,layer}=2H_{\rm kv}d_h b\,|S_t|.
+$$
+
+若 $H_{\rm kv}=8,d_h=128,b=2$，保留 8 个 Token 仅占该层 $32768$ Byte；全量保留 20 个则需 $81920$ Byte。这个例子把“有界缓存”和“语义检索仍可能丢失”分离为**两个独立判断维度**，不冒充论文任何一组真实实验设定。
+
 [ICLR 2024 正式论文 Figure 1](https://proceedings.iclr.cc/paper_files/paper/2024/hash/5e5fd18f863cbe6d8ae392a93fd271c9-Abstract-Conference.html) 分为 Dense Attention、Window Attention、Sliding Window with Re-computation 和 StreamingLLM 四种路径。必须同时看两列信息：**计算/缓存复杂度**与**长文本 PPL**。Dense Attention 保留所有位置但无法维持固定内存；普通 Window Attention 内存少但 PPL 失稳；重计算滑窗质量稳定但慢；StreamingLLM 才同时追求有界内存与稳定 PPL。
 
 为理解其边界，可把上下文人为设为“最前面一条必须回复的账号代码，其后重复无意义内容十万 Token”。缓存最前 Sink 并不会保存所有被驱逐的中间信息。*稳定预测下一个自然语言 Token* 与 *能回答任意很久以前的问题* 是两种不同指标；后者需额外测长程 Retrieval，不由 Figure 1 单独证明。

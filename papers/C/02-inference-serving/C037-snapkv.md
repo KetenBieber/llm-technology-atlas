@@ -77,6 +77,32 @@ SnapKV 的压缩动作发生在 Prompt Prefill 后、真正的生成前；它减
 
 ## 原文实验结论为何要看平台与序列设置？
 
+### 按原论文 Figure 1 的数据流重建一次 KV 压缩
+
+[SnapKV 原文 Figure 1（arXiv:2404.14469v2，PDF 第 2 页）](https://arxiv.org/pdf/2404.14469) 将 Prompt 分成两个区域：前面大段 **Prefix** 和最后的 **Observation Window**。橙色方块不是已生成答案，而是各个 Attention Head 在 Prefix 中被高分选中的位置；绿色区域表示保留下来的 Observation Window。新的 KV Cache 是这两类位置的**拼接**，并非只保留橙色部分。
+
+例如一个长为 12 的 Prompt，选择末尾 $w=3$ 个位置 §10,11,12§ 为 Observation Window，第 $h$ 个 Head 从前九个位置选出 §2,5,8§。于是该 Head 压缩后保留的原 Token 索引为
+
+$$
+I_h=\{2,5,8\}\cup\{10,11,12\}.
+$$
+
+相同模型的另一个 Head 可能挑出 §1,7,9§，不要求两个 Head 共用索引。这说明 SnapKV 的关键不是“按平均注意力权重从全模型选 TopK”，而是 Head-specific、从**Prompt 末尾 Query 预测未来重要 Key**。这一例子只用于理解集合语义，不是论文实验样本。
+
+### 为什么 Pooling 必须区分被评分的 Key 和用于观察的 Query？
+
+令前缀长度为 $L-w$，每个 Head 的 Observation Attention 张量为 $A_h\in\mathbb R^{w\times L}$，取左侧对应旧 Key 的子矩阵 $A_h[:,1:L-w]$，在观察窗口的 $w$ 个 Query 维上聚合，得到长度 $L-w$ 的 Key 重要性向量。随后按局部 Pool/Cluster 与预算 TopK 选位置；这不是在 $d_{\rm head}$ 的特征通道上直接做 TopK 权重剪枝。
+
+如果选择预算为 $k$，压缩后的缓存长约 $k+w$；和原始的 $L$ 比，纯 KV 位置数的理想缩减比为
+
+$$
+\rho_{\rm KV}\approx\frac{L}{k+w}.
+$$
+
+但**显存实际峰值**还包括模型权重、激活、Group 元信息和不同 Head 的索引安排。论文摘要的 8.2× Memory Efficiency 不可直接由上式等同求出。应额外统计压缩过程中 Prefill 是否已经分配过完整的 $L$ 长 KV；此类峰值与 Decoder 阶段稳态缓存长度也未必相同。
+
+Figure 1 是解释**选哪些 Token、在什么阶段选**的结构证据；与 16K Prompt 的 3.6× Generation Speed 和 8.2× Memory Efficiency 之间，还隔着实际的 Attention Kernel 与峰值缓存评测。最终效果必须回到正文实验表，而不能只看右侧橙/绿缓存示意。
+
 [NeurIPS 2024 正式论文](https://proceedings.neurips.cc/paper_files/paper/2024/hash/28ab418242603e0f7323e54185d19bde-Abstract-Conference.html) 报告在 **16K Prompt** 条件下相对基线约 **3.6× 生成速度**、**8.2× 内存效率**，在 16 项长序列数据集上保持可比效果；并有单张 A100 80GB + HuggingFace 实现运行更长 Prompt 的演示。这里“可运行更长 Context”并不保证模型的训练/位置外推能力同步改善。
 
 复现实验要固定 Observation Window 大小、每 Head 的 KV 容量、模型层数/头数和 Prompt 长度；比较等额缓存预算下的 Keep-Recent、[H2O](C036-h2o.md) 与 SnapKV。一定要同时测 long-context QA 或 Needle Retrieval，单看延迟不能发现关键证据被错误驱逐。

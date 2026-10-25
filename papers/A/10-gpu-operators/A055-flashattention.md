@@ -4,6 +4,8 @@
 > **类型**：A · 原始方法 / GPU 系统论文；Exact Attention + IO-aware Algorithm。  
 > **一句话定位**：FlashAttention 没有改变 Self-Attention 的数学定义，也没有把 dense attention 近似成 sparse / low-rank。它重新设计的是**计算顺序与存储层级**：把 $Q,K,V$ 分块搬入高速片上 SRAM，在 SRAM 中完成 $QK^\top$、mask、softmax、$PV$ 的局部计算，只把最终输出与少量 softmax 统计量写回 HBM，从而避免反复读写 $N\times N$ 的 score/probability matrix。Backward 甚至主动**重新计算**这些中间量，用更多 FLOPs 换更少 HBM traffic，最终反而更快。
 
+**原论文图表溯源**：[FlashAttention NeurIPS 2022 Figure 1（arXiv:2205.14135，PDF 第 2 页）](https://arxiv.org/pdf/2205.14135) 左侧画 GPU DRAM → HBM → SRAM 的容量/带宽层级，中间红色 Outer Loop 按 K/V Tile 迭代、蓝色 Inner Loop 计算 Q Tile，虚线框内的 $N\times N$ Score/Probability Matrix **没有完整落入 HBM**。右侧是 GPT-2 Attention 算子计时比较，而不是完整 GPT-2 训练/部署端到端吞吐。论文 Figure 1 Caption 使用最多 7.6× Attention Speedup 的测试语境；实际速度必须区分输入序列长度、GPU、算子融合与完整 Transformer 其它部分的占比。该 Figure 的两半分别证明**算法 IO 路径**与**特定算子计时**，不能混同。
+
 如果刚读完 [MInference](../04-efficient-attention/A054-minference.md)，FlashAttention 是必须补上的系统基础。
 
 MInference 的核心问题是：

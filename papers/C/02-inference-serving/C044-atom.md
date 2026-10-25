@@ -108,6 +108,23 @@ $$
 
 ## 技术路线闭环：该怎样选择量化？
 
+### 为什么 Atom 必须先研究 Batch，而不是只研究单个 Weight 的误差？
+
+[Atom 原始论文 Figure 3（arXiv:2310.19102，PDF 第 3 页）](https://arxiv.org/pdf/2310.19102) 给出 Llama-7B 在 Batch 8、16、32、64 等配置下的 Runtime Breakdown：颜色分别表示 Dense Layer、Self-Attention 和其他执行。随 Batch 增大，Dense Layer 在计算中仍占重要份额，但 Attention 的比重逐渐变化；该图用于说明**在线批服务的计算密集阶段值得原生 INT4 GEMM 加速**，不是单纯说明“量化后权重文件更小”。
+
+要看清这一变化，估算一个 Linear 的两种访存/计算量：权重 $W:[d,k]$、Activation $X:[B,d]$，矩阵乘的乘加规模约 $Bdk$，而每轮读取权重约 $dk$ 个元素。只看主导项，其算术强度近似
+
+$$
+\mathcal I\propto\frac{2Bdk}{b_Wdk/8}
+=\frac{16B}{b_W}\quad \text{FLOP/Byte},
+$$
+
+这里 $b_W$ 是单个权重的存储 bit 数，暂时忽略 Activation/KV 与缓存重用。这表明低 Batch 时往往由读 Weight 带宽支配，Batch 增大后逐渐提高矩阵计算利用率。将 $b_W$ 从 16 降到 4，会提高每字节可用运算数，但**只有 Kernel 真能以对应低比特乘加完成工作**，才可能得到算术吞吐优势；若每次先解成 FP16 GEMM，则未必享受原生 INT4 Tensor Core 能力。
+
+Atom 所说 W4A4 在此尤其关键：如果只压缩 Weight 而保留 FP16 Activation，很多 GPU 不能直接使用 INT4×INT4 的专门算子。因而它必须同时关注激活异常值、通道重排、Group Scale、低比特 GEMM 与在线并发调度，不能把算法部分与 Kernel 部分割裂。
+
+**Figure 3 的证据边界**：它证明作者所选硬件/Serving Workload 中的阶段耗时组成；原文最多 7.73× 对 FP16、2.53× 对 INT8 的**同一延迟约束下端到端吞吐**需要在论文系统表格中读出。用 Figure 3 本身推不出固定倍数，也不能据它断言每个 Prompt 和 Batch 都计算受限。
+
 如果优先降低权重存储和边缘部署复杂度，研究 [GPTQ](C041-gptq.md)/[AWQ](C042-awq.md) 的 Weight-Only；如果要降低 W8A8 激活异常问题，研究 [SmoothQuant](C040-smoothquant.md)；如果重点是**在线 Batch 下借助 INT4 GEMM 获取吞吐优势**，再研究 Atom 的细粒度混精度 Kernel。如果显存不足导致模型根本无法装载，则还要同时研究 [FlexGen](C043-flexgen.md) 的 CPU/SSD Offloading。
 
 这套选择不是单靠哪篇论文的最高倍数判断，必须先辨认：当前系统的瓶颈是权重访存、KV 占用、GEMM 算力、传输，还是 SLO 约束。

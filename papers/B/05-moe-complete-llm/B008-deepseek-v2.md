@@ -69,6 +69,20 @@ RoPE 插入位置相关矩阵后，吸收失效
 
 ## 1. Figure 1 先告诉我们：V2 想把“训练贵”和“推理贵”拆开解决
 
+### 从一组可复算的 Shape 先区分“权重容量”和“缓存容量”
+
+假设一台设备上处理单条输入历史 $S=4096$ Token，某 Decoder 采用 $L=32$ 层、每层 $H_{KV}=8$ 个 KV Head、Head Dim $d_h=128$、FP16 每元素 2 Byte。只考虑所有层的 KV Cache，理论容量为
+
+$$
+M_{\mathrm{KV}}=2\times L\times S\times H_{KV}\times d_h\times2
+=2\times32\times4096\times8\times128\times2
+=536{,}870{,}912\text{ Byte}\approx512\text{ MiB}.
+$$
+
+最前面的 2 是 Key 和 Value 两套缓存，中间 32 是层数，最后的 2 是每元素两字节，**与模型总参数量无直接一比一比例关系**。如果保持 $S,L,d_h$ 不变，将 KV Head 由 8 缩减到 1（MQA），KV 容量会理想地缩为约 $64$ MiB；若使用 MLA，其压缩 Latent 和位置 Key 的缓存公式又由具体压缩维度决定，不能再简单套 $H_{KV}=1$ 的 MQA 公式。这就是模型结构与缓存表示不同时，应先写 Shape 再谈压缩倍率的第一性原因。
+
+上述 512 MiB、64 MiB 是**教学用的等宽 KV 假设与手算**，不是 DeepSeek-V2 实际网络层数、KV Head/Latent 维度的配置，也不是本文 Figure 1 所报告的 93.3% 压缩数字。原文 Figure 1 的 Generation KV Cache 是特定架构、数据类型和 Serving 条件下的真实对照；单个手算模型仅用于辨认指标口径。
+
 ![DeepSeek-V2 原论文 Figure 1：效率比较](../../../figures/B002/fig1-efficiency.svg)
 
 *先看三行分别测什么：第一行是每训练 1T tokens 的 GPU hours；第二行是 generation KV Cache；第三行是最大 generation throughput。它们对应不同瓶颈，不能把三条收益都归因给同一个模块。*

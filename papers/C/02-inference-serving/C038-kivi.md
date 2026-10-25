@@ -30,6 +30,23 @@ $$
 
 ## KIVI 的“非对称”到底指什么？
 
+### Table 1 的四种排列给了比抽象分布图更强的证据
+
+[KIVI ICML 2024 原始论文 Table 1（arXiv:2402.02750，PDF 第 3 页）](https://arxiv.org/pdf/2402.02750) 在 **Llama-2-13B、Group Size 32、模拟量化后反量化** 的统一设定下，对 CoQA 和 TruthfulQA 检验 Key / Value 应该分别沿什么轴分组。表中的 C 代表 per-channel，T 代表 per-token；这里的“模拟量化”是在 Forward 中应用量化误差，并不等于已经跑了真正的 Packed INT2 GPU Kernel。
+
+| K / V 的量化方式 | CoQA | TruthfulQA |
+|---|---:|---:|
+16-bit（未量化） | 66.37 | 29.53 |
+| 4-bit，K-T / V-T | 66.48 | 29.51 |
+| 2-bit，K-T / V-T | 52.93 | 24.98 |
+| 2-bit，K-C / V-C | 2.88 | 0.74 |
+| 2-bit，K-T / V-C | 2.80 | 0.26 |
+| **2-bit，K-C / V-T** | **63.53** | **28.60** |
+
+这个表的结论不是“所有 2-bit KV 都没问题”，恰好相反：**同一 2-bit、同一模型、同一 Group Size，只调换 K/V 的分组轴就足以让结果从接近原精度变成严重失效**。关键数学差异在于 K 的 Channel Outlier 与 V 的 Token Outlier 的分布结构不一样；选择分组维度要尊重张量统计，而不是只选容易做 Runtime Append 的 Token-Wise。
+
+该表的结果直接支持**分组轴选择**；后面的“峰值显存 2.6× 更省、Batch 最高 4×、吞吐 2.35–3.47×”还要在实现了低 bit Packing、Residual Buffer 和 Attention Kernel 的真正系统实验中评估，不能从 Table 1 的任务准确率直接推断。
+
 原文研究发现：**Key 中的离群特征更明显沿通道分布，Value 的离群行为则更适合按 Token 处理**。据此提出不对称 Granularity：K 按 Channel 聚合组统计，V 按 Token 聚合组统计。这不是“Key 使用 2-bit、Value 使用 4-bit”的意思，论文提出的核心是二者**不同的组方向**。
 
 从一个 $K\in\mathbb R^{L\times d}$ 的教学例子看：

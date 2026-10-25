@@ -93,6 +93,31 @@ LLM.int8 选择**承认异常值不可忽略**，将它们分配到 FP16 通路�
 
 ## 结果、版本与边界
 
+### 官方 Figure 2 并不只是“异常值走 FP16”的一句话
+
+[LLM.int8() 原论文 Figure 2（arXiv:2208.07339v2，PDF 第 3 页）](https://arxiv.org/pdf/2208.07339) 把原始 FP16 激活 $X$、权重 $W$ 拆成两条运算路径：上支路对正常值先估计 Activation 的 Row Scale $C_x$、Weight 的 Column Scale $C_w$，量化到 INT8，执行 INT32 的矩阵乘累加，再按 Scale 的**外积**还原输出；下支路将发生大幅异常值的 Feature 单独拆成较小的 FP16 矩阵乘；最后把两条输出在 FP16 中合并。
+
+为什么必须沿 Row 与 Column 放 Scale？假设 $X\in\mathbb R^{T\times d}$，$W\in\mathbb R^{d\times o}$，则
+
+$$
+q_X\in\mathbb Z_8^{T\times d},\qquad
+q_W\in\mathbb Z_8^{d\times o},\qquad
+Z=q_Xq_W\in\mathbb Z_{32}^{T\times o}.
+$$
+
+设每 Token 的反量化尺度为 $s_X\in\mathbb R^T$，每输出列尺度为 $s_W\in\mathbb R^o$，那么
+
+$$
+\widehat Y_{\rm normal}
+=Z\odot(s_Xs_W^\top).
+$$
+
+这里的 $s_Xs_W^\top\in\mathbb R^{T\times o}$ 恰好与输出矩阵同形，因而可做逐元素 Epilogue；**Scale 不在整数求和维度里变化**，可以让标准 INT GEMM 直接累加。若改成任意的每输入通道 Scale，必须逐项带 Scale 累加，通常无法使用同一个 Kernel Fast Path。
+
+真正的异常支路也不能只看参数比例：虽然论文说正常路径涵盖超过 99.9% 的值，额外 FP16 的小矩阵建立、访存与结果相加仍可能产生固定开销。因此作者提供的“无精度损失”对应其特定模型任务评测，并不保证比 FP16 在所有小 Batch 上都更快。
+
+Figure 2 支持的是**方法数据流和算子精度**；是否可以在 175B 模型上保持精度，应查论文具体任务和规模对照，而不是用两路数据流图直接代替真实实验。
+
 [作者版本](https://arxiv.org/abs/2208.07339) 的标题是 *LLM.int8()*，NeurIPS 2022 正式会议条目也使用 *GPT3.int8()* 作为题名。作者报告把 OPT/BLOOM 等模型推到 175B 参数级，正常路径绝大多数元素使用 INT8 而异常部分保留 FP16，整体模型在原测试任务上基本不降精度；混精度处理不是零开销。需要分开报告任务指标、模型规模、储存降低和真正的 Token/s，不能从“175B 可以部署”直接推出更高并发服务能力。
 
 研究延伸：为什么 Scale 细粒度从数学上改善误差？为什么异常通道数量与模型规模相关？若异常分布随输入域变化，固定阈值如何退化？[SmoothQuant](C040-smoothquant.md) 给出另一个严谨可推导的解法。

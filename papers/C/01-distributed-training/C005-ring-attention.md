@@ -6,6 +6,16 @@
 
 ## 阅读导航：前面解决的不是这个瓶颈
 
+### 原论文 Figure 1 的“百万上下文”到底意味着什么？
+
+[Ring Attention ICLR 2024 PDF 第 2 页 Figure 1](https://arxiv.org/pdf/2310.01889) 的横轴是**模型大小（3B、7B、13B、30B）**，纵轴是对数坐标的**最大可训练上下文长度**，硬件前提为 **TPUv4-1024**。四种柱形对照 Vanilla Transformer、仅有 Memory Efficient Attention、Attention 与 FFN 都采用 Blockwise 的方案，以及 Ring Attention。橙色 Ring Attention 柱明显更高，体现的是在统一大规模 TPU 设备预算下，可承载的**序列长度容量**；它不是生成式推理的 Token/s 横轴，也不是单卡部署的 100 万 Token 成绩。
+
+论文正文还将“可扩大训练上下文”分解为两个必要条件：局部 Blockwise Attention 限制一张设备一次持有的 Q/K/V 与中间激活大小，Ring 在设备之间逐次传递 KV 块，使每个 Query 块最终看到**完整全局合法 Key 集合**。假设总长度 $S$、设备数 $P$、每设备本地块长 $S/P$，本地 KV 存储规模可由 $O(Sd)$ 下降到 $O(Sd/P)$，但 Attention 总逻辑点积数量在 Dense Exact Attention 下依旧是 $O(S^2d)$。因此**内存可扩展**不等于**计算复杂度从平方变线性**。
+
+对一个两卡玩具例子，设备 0 持有 Query 块 $Q_0$，设备 1 持有 $Q_1$，二者先分别计算 $Q_0K_0^\top$ 和 $Q_1K_1^\top$，随后交换 KV 再分别计算跨块 $Q_0K_1^\top$ 与 $Q_1K_0^\top$（因果 Mask 时只处理合法三角部分）。每卡在两轮之后都聚合了自己的 Query 对完整合法 Key 的贡献；若简单对两轮单独 Softmax 输出做算术平均，则会破坏全局 Softmax 归一化，这也是全文后续 Online Softmax 合并推导必须解决的问题。
+
+Figure 1 可以支持**系统容量改进**，却不能单独证明计算与通信完美重叠。论文关于 Overlap 的结论还必须核查每轮 Block Attention 计算时间能否覆盖 Ring KV 传输时间；当 Block 过小、链路较慢或设备负载不均衡时，Ring 通信依旧可能进入关键路径。
+
 [FlashAttention](../../A/10-gpu-operators/A055-flashattention.md) 首先避免了将完整 attention score/probability matrix 写入 HBM。[FlashAttention-2](../../A/10-gpu-operators/A056-flashattention2.md) 和 [FlashAttention-3](../../A/10-gpu-operators/A057-flashattention3.md) 则继续解决同一设备内的并行与异步执行。
 
 在 [Megatron-LM](C004-megatron-lm.md) 里，我们通过 TP/PP/DP 对矩阵维度、网络深度和数据样本进行切分；[4D Parallelism](C001-4d-parallelism.md) 已引入一个新的维度——**CP（Context Parallelism）**。

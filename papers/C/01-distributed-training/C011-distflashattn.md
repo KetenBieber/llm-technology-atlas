@@ -5,6 +5,31 @@
 
 ## 阅读导航：从 Ring 的正确性走到性能
 
+### 把原论文 Figure 1 的“等待一半 GPU”写成时间线和负载量
+
+[DistFlashAttn COLM 2024 原始论文 Figure 1（PDF 第 2 页）](https://arxiv.org/pdf/2310.03294) 按图注明确比较 **8 个 Worker** 的两种方案：(a) 朴素 Ring 使较早 Token 所属 Worker 的有效因果 Attention 量更少，(b) 作者的 Workload Balancing 把后续 Token 多出来的 Query/Key 块工作分给原本空闲的 Worker。图注明示普通 Ring 在设备数 $P$ 增大时空闲比例趋近 $1/2$，优化后当 $P$ 为偶数时空闲比例可近似为 $1/(2P)$，$P$ 为奇数时理论上可为 0。图的两个“Finish”时间分别用于对比调度完工的时隙，不是所有 GPU 实测运行时间的统一绝对值。
+
+这与前文 $S=8$、双 Worker 的 $W_0=10,W_1=26$ 示意一致：分给早期连续 Token 的 Worker 不能因为“也有四个 Query”就假装它和后期 Worker 的乘法工作量完全相同。在严格 Causal Attention 下，**可见 Key 的数量**才决定每个 Query 的有效计算工作。负载均衡需要重新分配有效 Token 块并维护 Owner/通信和 Softmax 统计，不能通过简单的“前半张卡算完直接休息”解决。
+
+原文 **Figure 2（PDF 第 3 页）** 用第 7 号 Worker 的任务展示 **Overlap of KV Communication and Attention Compute**：一边 Fetch 后续 KV Block，一边对当前可用 KV 执行 Attention。它说明时间重叠设计；如果 PCIe/网络通信耗时始终大于可并行的矩阵计算，这些传输仍可能留在关键路径。**Figure 3（PDF 第 5 页）** 则比较 HuggingFace Checkpointing 与 Rematerialization-aware Checkpointing 的重新计算路径；性能收益还需实际 Checkpointing 消融，不能只凭画出的箭头少就认定总耗时必然降低。
+
+### 原论文 §3 的三条设计与 Ring 基线究竟差在哪？
+
+[DistFlashAttn COLM 2024 原文](https://arxiv.org/pdf/2310.03294) 的三项贡献是 Token-level Workload Balancing、Overlapping KV Communication 与 Rematerialization-aware Gradient Checkpointing。第一项处理因果 Attention 的**非对称有效工作量**：由于位置越靠后的 Query 能读到的合法 Key 越多，若各设备持有同样长度的连续 Query Token、都执行完整的 Causal Attention，后半段设备的有效计算量会更多，前半段可能空转。不是每个拥有 $S/P$ 个 Query 的 Rank 都有相同的有效点积数。
+
+设 $S=8$、两个设备，设备 0 持有位置 1–4，设备 1 持有 5–8。每个 Query $i$ 可见的合法 Key 数在因果掩码下为 $i$，两台设备工作量比例是
+
+$$
+W_0=1+2+3+4=10,\qquad
+W_1=5+6+7+8=26.
+$$
+
+即使 Sequence 切分长度都是 4，真实有效计算也不是 1:1。若改成让每台设备同时负责早期和后期的 Query，则可以在保持正确因果 Mask 的同时更均匀地分摊工作。这是负载均衡的动机示例，不冒充原文实际的 Token 排列方案。
+
+第二项通过 **KV 接收与当前 Block 的 Attention Kernel 重叠**来隐藏通信，受限于 $T_{\rm compute}\ge T_{\rm communication}$ 的资源条件。第三项关注 Backward 的 Rematerialization：若训练用普通 Activation Checkpointing，在 Backward 重新计算一个 Transformer Block 时可能再次触发跨设备 KV 传输，增加网络成本；DistFlashAttn 的 Checkpointing 需要在保存多少中间状态与额外 KV 通信之间重新权衡。
+
+本文真正要验证的是原文关于不同 Context、GPU 数下的通信/计算时间消融，不是仅凭作者报告的最高 Speedup 认定三个改动都同等重要。特别是 Ring 和 Ulysses 采用了不同 Head/Sequence 分片与通信路径，必须在同一模型、Context、设备条件下比较端到端训练时长。
+
 先读 [Ring Attention](C005-ring-attention.md) 的按块 online softmax，再读 [DeepSpeed-Ulysses](C010-deepspeed-ulysses.md) 的 All-to-all 维度交换。三者都力图让**精确长上下文训练**能跨设备执行，但它们组织每个 rank 的 Query ownership 与 KV transport 的方式不同。
 
 ![自制解释图：DistFlashAttn 的三项系统补偿](../../../figures/explainers/C011/01-mechanism.svg)

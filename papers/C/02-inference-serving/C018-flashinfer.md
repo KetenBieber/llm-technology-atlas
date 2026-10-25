@@ -83,6 +83,20 @@ Graph Capture 固定的可以是 Kernel 启动形态与用于读取索引的元�
 
 ## 四、原论文实证边界
 
+### Figure 1 的左半边与右半边为什么必须分开理解？
+
+[FlashInfer arXiv:2501.01005 PDF 第 2 页 Figure 1](https://arxiv.org/pdf/2501.01005) 左半边是 KV Cache 统一格式：Page Table、Radix Tree、稀疏 Mask 等不同上层抽象映射至统一 Block-Sparse 表示；右半边则是 Kernel/JIT 编译与 Runtime Load-Balanced Scheduler。编译阶段输入包括 Attention Variant、Task、KV Layout 等静态规格；运行阶段持续读取请求长度等动态信息。不能把“JIT 编译后生成了一个 Kernel”误说成“这个 Kernel 自己不用任何请求元数据即可适应任意 Batch”。
+
+### 为什么动态长度会让固定 CTA 分配策略崩溃？
+
+考虑同一批两条 Decode 请求，分别需要读取 $L_1=128$ 与 $L_2=8192$ 个 KV Token，若每条恰好分配一个 CTA，长任务的扫描工作量是短任务的 64 倍，其余 CTA 很快空闲。将长请求分成每段约 1024 个 KV Token 的子工作，会形成 8 个可并行处理的块；再加短请求 1 个块，就有 9 个工作单元可安排到 GPU CTA 队列中。
+
+但是分块产生的输出不能相加后除以 8：每个子块独立 Softmax 有自己的 Maximum $m_b$ 与分母 $l_b$。必须按照前文的在线 Softmax 合并公式重新加权，才保留原始注意力数学定义。这说明 Load-Balancing 算法不是单纯的任务抢占；正确结果还依赖**可结合的 Attention Reduction Operator**。
+
+若下游使用 CUDA Graph Capture，在 Graph 中的 Launch Grid、Workspace 地址应足够稳定，而请求长度分配表可以在同一块预分配 Metadata Buffer 中更新。若需要的工作单元数超过现有容量，就应通过重新规划/分桶处理，而不是静默丢弃后半段 KV。
+
+**证据对齐**：Figure 1 说明编译、存储与调度的职责划分，正文 Scheduler Algorithm 验证如何按长度分配工作；论文的不同 Paged/Long-Context/Parallel Generation Benchmark 才检验真实 Kernel 与服务延迟。原文的 29–69% ITL 降低、28–30% Long Context 改善、13–17% Parallel Generation 改善分属不同测试设置，不能作为同一请求的串联加速因子。
+
 论文在所选 inference engine 与 compiler baseline 上报告约 **29–69% 的 Inter-token latency 降低**，某些 Long-context 测试约 **28–30% 延迟降低**，Parallel Generation 工作负载约 **13–17% 加速**。这三个区间是不同实验工况，不能直接相加或认为任何 kernel 都有相同改进。
 
 若研究 C++/CUDA 工程实现，应特别检查 Kernel 按 Q-length、KV-length、head 数如何选择 CTAs、是否复用 CUDA Graph、request 长度变化时 split-KV 的 balance。原文完整 Figure 及测试条件见上面的 MLSys 入口。

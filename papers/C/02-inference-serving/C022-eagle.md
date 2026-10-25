@@ -4,6 +4,12 @@
 
 ## 一、两个关于 Speculation 的第一性问题
 
+### 原论文 Figure 2 与 Figure 3 验证的是不同主张
+
+[EAGLE ICML 2024 原始论文（arXiv:2401.15077）Figure 2、3，PDF 第 2 页](https://arxiv.org/pdf/2401.15077) 中，Figure 2 的纵轴是 MT-Bench 非贪心生成（Temperature 1）下的 Speedup Ratio，横轴分别为 Vicuna 7B/13B/33B、LLaMA2-Chat 7B/13B/70B。图例区分 EAGLE、Speculative Sampling、DistillSpec 和 Vanilla；不能把其他只支持贪心的 Lookahead 的数据硬加入这组 Temperature=1 的对照。图中每个模型下的柱高是**整套 Draft + Target + 验证 Runtime** 的系统结果，不能直接证明特征预测误差比 Token 预测小多少。
+
+真正解释 Feature Uncertainty 的是旁边 **Figure 3**：对当前已生成 Token “I”，其后可能采样到 “always” 或 “am”，这两枚离散 Token 所对应的下一特征 $f_{\rm always},f_{\rm am}$ 不同。若只拿上一特征 $f_I$ 去回归下一特征，两个分支会在 MSE 损失下互相平均，造成不可消除的条件不确定性；让 Draft 同时读取已经采样的候选 Token，就能更准确地预测该分支的下一状态。Figure 3 是因果动机和示意，后续的 Shifted-Token 具体训练消融才支持其真实效果。全文必须把**机制有效性**与**端到端速度收益**分开，不能仅根据 Figure 2 的 Speedup 声称唯一提升因素是 Feature-level Autoregression。
+
 从 [Speculative Decoding](C020-speculative-decoding.md) 出发，算法正确性是：
 
 $$

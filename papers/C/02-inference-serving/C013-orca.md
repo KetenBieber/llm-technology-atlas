@@ -4,6 +4,20 @@
 
 ## 从 vLLM 回到“请求究竟是什么”
 
+### 从原始 Figure 1 看出为什么“只换调度器”还不够
+
+[Orca OSDI 2022 原始论文 §2 与 Figure 1](https://www.usenix.org/system/files/osdi22-yu.pdf) 将一个生成请求拆为 **Initiation Iteration**（处理整个 Prompt）及后续每次仅输入新 Token 的 **Increment Iterations**。如果传统 Batching 把整个请求生命周期绑定在一个 Batch 内，而 A 要输出 6 Token、B 要输出 2 Token，则 B 结束后仍可能占着批处理生命周期，后到达的 C 也必须等待 Batch 全部结束才能加入。
+
+Iteration-level Scheduling 的调度点位于**每一次模型迭代之后**：本轮结束即可移除已完成请求并让待处理请求加入下一轮。但这时仍有一个张量形状的问题：即使 A/B/C 在同一轮执行，它们的历史长度和 Attention KV 不同。对需要按请求历史维度处理的 Attention，强行 Padding 到所有请求最长长度会浪费算力和缓存；对没有请求历史维度依赖的 FFN/Linear 等算子，仍应合并 Batch 复用模型 Weight。
+
+这就是作者称为 **Selective Batching** 的第二项必要设计：有些 Operator 以请求为单位执行，其他 Operator 仍然跨请求并行。不是把所有计算拆成独立请求，更不是“Attention 不能并行”——Attention 可以在每个请求内部以其合法 Key 长度优化，只是不应该盲目复制同样尺寸的 Padding Batch。
+
+### 以三个请求手算浪费与收益边界
+
+若三个请求历史长度分别为 4、16、32，简单 Padding 到最长 32，Attention 需要处理的 Key Slot 是 $3\times32=96$；按各自真实长度只需 $4+16+32=52$，理想少了 44 个无效 Slot，约 **45.8%** 的 Key 位置。这个计数不等于完整 Attention Kernel 的 45.8% 实测加速——请求级 Launch、Tensor Core 形状、模型 FFN 和调度重叠仍会占用时间。
+
+作者在 OSDI 2022 的端到端服务实验报告对 FasterTransformer 特定配置最高 36.9× 吞吐优势；这一巨大倍率同时来自 Request Scheduling、Batch 利用率和执行系统差异，不能将它转写为 Selective Batching 这一个操作独立带来的提升。Figure 1 验证模型迭代语义，端到端实验才支持吞吐。
+
 [上一篇 vLLM / PagedAttention](../01-distributed-training/C012-vllm-pagedattention.md) 告诉我们，多个请求长度不同、不断增长的 KV Cache 无须物理连续存储。然而内存装得下，并不意味着 GPU 调度得合理。假设服务同时收到两个请求：A 需要继续生成 6 个 Token，B 只需要 2 个。如果把它们作为一个不可改变的 batch 一口气执行完，B 很早已经结束，却可能仍在等待 A 完成，之后到达的 C 也难以进入当前批次。
 
 传统深度学习 inference 常习惯 **request-level batching**：收集固定数量请求 → 执行 → 全部结束后返回。它适合一次 forward 就能得到结果的分类，却不自然适合生成。生成任务的完成时间不确定，而且每轮只追加很少的 Token。这是 Orca 进入论文的问题起点。

@@ -5,6 +5,24 @@
 
 ## 阅读导航：从训练内存管理来到推理内存管理
 
+### 从原论文 Figure 1 的内存浪费到 Block Table 索引
+
+[vLLM SOSP 2023 PDF Figure 1](https://arxiv.org/pdf/2309.06180) 展示不同请求输出长度无法提前知道，若提前为每个请求预留足够长的连续 KV 区间，实际只用到其中一部分，便会产生**保留但未使用的区域**；如果边生成边不断申请更大连续区，申请搬移与 External Fragmentation 又会造成浪费。
+
+PagedAttention 将逻辑 Token 索引映射到一系列固定容量的物理 KV Block。假设 Block Size 为 $B=4$，某请求逻辑长度为 $L=10$，它只需 $\lceil10/4\rceil=3$ 个物理块，总共预留 12 个 Token Slot，内部未使用位置为 2，浪费占这个请求分配容量的 $2/12\approx16.7\%$。在一般情况下，每请求**最后一个 Block 最多浪费 $B-1$ 个 Token Slot**，而不需要为所有尚未出现的输出 Token 预留位置。
+
+如果 Block Table 是 §[9,2,17]§，则逻辑 Token 编号 0–3 存于物理块 9，4–7 存于块 2，8–9 存于块 17。逻辑地址转换为
+
+$$
+b_{\rm physical}=\mathrm{table}[\lfloor i/B\rfloor],
+\qquad
+\mathrm{offset}=i\bmod B.
+$$
+
+于是物理块不必连续；Attention Kernel 仍按逻辑 Token 顺序扫描历史 Key/Value。**这个变换是内存地址映射，不是删减 Attention 可见的 Token**。还需处理多个 Request Shared Prefix 的引用计数与 Copy-on-Write：若两个请求共享旧块，其中一条发生续写，不应在物理共享区域直接覆盖另一条仍需要的旧 Token。
+
+Figure 1 的内存浪费说明为什么要分页；论文的 PagedAttention Kernel 章节解释怎么访问不连续 KV；最终吞吐在同等延迟下的 **2–4×** 是运行时系统（内存管理、批处理、共享复用）整体贡献，不能直接归因于一次地址映射整数除法。
+
 之前读过 [ZeRO](C002-zero.md) 与 [ZeRO-Infinity](C009-zero-infinity.md)，知道训练显存会被 parameters、gradients、optimizer states、activations 占满；在推理侧，gradients 和 Adam states 通常不存在。现在的动态状态变成**每个请求不断增长的 KV Cache**。
 
 [DeepSeek-V2 / MLA](../../B/05-moe-complete-llm/B008-deepseek-v2.md) 通过降低每 token 缓存的状态维度缩小 KV 总容量；PagedAttention 解决的是另一维问题：**KV 逻辑序列虽然连续，物理显存可否不连续？**

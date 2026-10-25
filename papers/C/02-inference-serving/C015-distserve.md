@@ -4,6 +4,24 @@
 
 ## 一、同一 GPU 上的两个阶段在争夺什么？
 
+### 从原论文 Figure 2 读出两种方向的相互干扰
+
+[DistServe OSDI 2024 arXiv:2401.09670 §2.3 Figure 2](https://arxiv.org/pdf/2401.09670) 分别测量在一批 Decode 任务中插入一个 Prefill、以及在 Prefill 中插入一批 Decode 的情形。前者的观察对象是 Decode TPOT 延迟恶化：一个长度较大的 Prefill 会占用整轮 GPU 执行时间，Decode 无法按其原本短步节奏及时输出 Token。后者则使 Prefill TTFT 因共享 GPU 竞争而上升；原文明确提示这两项指标之间存在 Trade-off。
+
+若优化目标只设“GPU Token/s 最大”，批处理可以偏向长 Prefill 来填满计算单元，却导致交互请求的 TPOT 很差；若优先保证每个 Decode Step，可能让新的长 Prompt TTFT 超标。因此 DistServe 改用同时满足两个阶段服务目标的 **Goodput**，不等于传统累计 Token Throughput。
+
+形式化地，设第 $i$ 条请求的 TTFT 为 $t_i^{\rm first}$，第 $j$ 个输出 Token 的时间差为 $t_{ij}^{\rm gap}$，两个服务阈值分别为 $\tau_f,\tau_p$，则用于理解的合规计数是
+
+$$
+G=\frac1{\Delta t}\sum_{i\in\text{completed during }\Delta t}
+\mathbf1\left[t_i^{\rm first}\le\tau_f\ \land\
+\operatorname{TPOT}_i\le\tau_p\right].
+$$
+
+这是为说明 Goodput 定义的教学表达，实际论文里的 TPOT 统计口径、Percentile/SLO 条件和到达率需据其 Evaluation 配置理解。它区分“完成很多请求”和“完成且满足交互延迟的请求”。
+
+分池之后仍有一个不可隐藏的下界：Prefill GPU 算出长度 $S$ 的 KV 后，必须把相应状态交给 Decode GPU。若迁移为 $M_{\rm KV}$ Byte、有效链路带宽 $B_{\rm eff}$，网络传输下界为 $M_{\rm KV}/B_{\rm eff}$。把两阶段放到不同服务器可能消除 GPU 资源干扰，却带来网络排队与传输；所以原论文同时做 Phase Placement 和资源/并行度优化，不是随便给两种 GPU 分组就得到更高 Goodput。
+
 从 [Sarathi-Serve](C014-sarathi-serve.md) 知道可以将一个长 Prefill 切分进多个 Iterations，限制 Decode 的等待。但 Prefill 偏计算，Decode 偏带宽，它们对硬件资源与并行策略的最佳选择仍可能不同。
 
 一个模型服务请求包含：

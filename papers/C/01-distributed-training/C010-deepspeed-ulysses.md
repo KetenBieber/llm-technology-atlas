@@ -5,6 +5,21 @@
 
 ## 阅读导航
 
+### 为什么原论文 Figure 1 的 Head 独立性足以支持两次 All-to-all？
+
+[Ulysses PDF 第 3 页 Figure 1](https://arxiv.org/pdf/2309.14509) 从 $X:[N,d]$ 经 $W_Q,W_K,W_V$ 生成 $Q,K,V:[N,d]$，将每个矩阵拆成 $h$ 个 Head，各 Head 只在属于自己的 $d_h=d/h$ 个特征通道上独立做 Attention。**Head 之间在 Softmax 期间没有依赖**；仅在各 Head 输出拼接并执行 $W_O$ 时才重新融合。这是从 Sequence Sharding 转换成 Head Sharding 而不修改 Attention 数学语义的基础。
+
+假设原始张量 $Q,K,V:[B,H,S,d_h]$，$P$ 张 GPU 按 Sequence 平分，Rank $r$ 持有 $[B,H,S/P,d_h]$。执行 All-to-all 后，每张 GPU 持有约 $H/P$ 个完整的 Head：
+
+$$
+[B,H,S/P,d_h]\;\xrightarrow{\rm A2A}\;
+[B,H/P,S,d_h].
+$$
+
+因为每个 Head 已拥有完整的 $S$ 长度 Query/Key/Value，可以独立运行完整 Attention，完成后再用第二次 All-to-all 把布局换回 $[B,H,S/P,d_h]$。**必须有足够 Head 数或经过适当分组**；如果 $H<P$ 且没有额外的并行维度，单纯 Head 切分不能给每张 GPU 均匀分配至少一个完整 Head。
+
+这两个交换并不会改变单个 Head 的 $QK^\top/\sqrt{d_h}$、Softmax 或 Value 加权逻辑；但全局网络需要移动多少数据、All-to-all 的 Collective Latency 和 GPU 的 NVLink/IB 拓扑是实际开销。Figure 1 只是证明可分离的 Head 计算结构，论文后续“固定每卡 Sequence 工作量时通信量不会随全局 S 等比例增长”的结论，需要连同设备数 $P$ 与 $S/P$ 固定这个 Scaling 假设一起读。
+
 [Ring Attention](C005-ring-attention.md) 固定本地 Query，跨设备环形传播 KV；Ulysses 利用**不同 Attention heads 能独立计算**的性质，将张量的**分片轴**从序列换成 head，计算后再换回来。
 
 ![自制解释图：Sequence/Head 维度交换](../../../figures/explainers/C010/01-mechanism.svg)

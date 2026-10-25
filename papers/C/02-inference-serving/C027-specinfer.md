@@ -6,6 +6,18 @@
 
 ## 为什么不是把所有候选序列组成一个普通 Batch？
 
+### 原论文 Figure 1 的三条时间线到底节省了什么？
+
+[SpecInfer 原论文 Figure 1（arXiv:2305.09781，PDF 第 3 页）](https://arxiv.org/pdf/2305.09781) 右侧分别画出 Incremental Decoding、Sequence-based Speculative Inference 与 Tree-based Speculative Inference 的时间线。第一种模式一次 Target Decode 只确认一个 Token；第二种用小模型 Spec 多个 Token，再让 Target 对单条候选序列做一次 SequenceVerify；第三种是让多个 Speculator 并行猜测，**以共享前缀的树**提交给一次 TreeVerify。图中多个橙色 Spec 方框可以并行，不等于这些候选全部可接受，真正进入下一轮已确认前缀的只是一条通过验证的合法路径。
+
+这里要同时区分两项收益：并行的 Speculator 可以增加**候选覆盖概率**，共享前缀的 Tree Attention 可以减少**重复的 Target 候选节点计算**。若把多条候选各自送一次 Target Forward，虽然候选更丰富，却没有 Figure 1 要解决的计算共享问题。原文后面的 Figure 2 则把构树、LLM 验证与 Worker 的真实模块连接起来，这两个图并非两次独立速度测试。
+
+### 扩展与合并：树的节点到底从哪里来？
+
+SpecInfer 的 **Merge-based Speculation** 聚合同一已确认前缀下的多条 Speculator 生成结果，若前两个 Token 相同就合并节点；**Expansion-based Speculation** 则沿现有树中不同节点继续扩展较可能的后继路径。举例两条候选 §a-b-c§、§a-b-d§ 与第三条 §a-e-f§，单独验证需要 9 个节点，Trie 实际只需 §a,b,c,d,e,f§ 共 6 个。增加一个 Speculator 是否值得，必须看它带来的新候选是不是都与旧结果重合；完全重复的序列提高不了可达路径数，还要额外消耗 Draft Forward。
+
+假设一条路径深度 3，Target 按真实前缀连续接受了两枚 Token，却在第三枚拒绝，此时本轮并不能因为树的另一侧有深度 4 的分支就把那条分支的后继一起提交。所有候选必须经过正确祖先 Mask 的 Target 分布，并按采样策略的正确验证程序处理。**Tree Mask 保证条件概率计算合法，Tree Verification 才决定概率如何提交**，这两部分分别需要核对原论文 §3 的算法。
+
 传统 [Speculative Decoding](C020-speculative-decoding.md) 在一个 Target Forward 里验证某条 Draft 序列。但如果有多条共享历史的分支，分别送 Target 会重复计算相同 Token。SpecInfer 不只是增加候选的数量，而是改变 **Target 的执行对象**：把多条候选重构成共享前缀的 Token Tree，利用一次 Tree-Based Parallel Decoding 计算各节点条件概率。
 
 ~~~{mermaid}

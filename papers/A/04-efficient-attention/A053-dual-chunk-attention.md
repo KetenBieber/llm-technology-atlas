@@ -5,6 +5,8 @@
 > **类型**：A · 原始方法论文；长上下文相对位置重映射 / Attention 组织方法。  
 > **一句话定位**：DCA 不修改模型权重，也不把所有 RoPE frequency 统一缩放。它把长序列切成 chunk，并针对“同一 chunk、相邻 chunk、更早 chunk”分别构造三套 query position，使**所有参与 attention 的相对位置尽量停留在原预训练范围内，同时又保住 chunk 边界附近的局部距离精度**。
 
+**原论文位置矩阵证据**：[DCA Figure 1（arXiv:2402.17463，PDF 第 3 页）](https://arxiv.org/pdf/2402.17463) 以预训练窗口为 6、当前序列长度为 12 的手算位置矩阵为例：横轴是 Key Position $P_k$，纵轴是 Query Position $P_q$，格点写的是 $P_q[i]-P_k[j]$，白色上三角表示被 Causal Mask 排除。图中预训练时只会看到跨度小于 6 的偏移，而对 12 长度直接应用 RoPE，会产生超出训练范围的相对位置。若用 Position Interpolation 整体除以扩展倍率 2，则新偏移虽回到范围内，局部偏移 1 同时变成 0.5，位置分辨率也被压缩。DCA 的方法动机正是避免**所有偏移一视同仁缩小**；论文 Figure 2 继续把 Intra-Chunk、Inter-Chunk 与 Successive-Chunk 的位置逻辑区分开。Figure 1 证明问题定义，不能由它推断 DCA 真实 100K Prompt 的任务正确率；那必须读后续 PPL/Passkey 与真实任务表。
+
 这篇最适合紧接 [YaRN](../03-transformer/A018-yarn.md)。
 
 上一站我们已经拆清：
