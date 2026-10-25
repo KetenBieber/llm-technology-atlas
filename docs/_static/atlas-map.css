@@ -26,3 +26,6 @@
 .atlas-detail a{margin-right:1rem;font-weight:650;}
 .atlas-map-intro{color:#48647a;font-size:.93rem;}
 @media(max-width:680px){.atlas-map-surface svg{height:440px;}.atlas-toolbar{gap:.5rem;padding:.7rem;}.atlas-toolbar input{max-width:none;width:100%;flex-basis:100%;}.atlas-meta{align-items:flex-start;}.atlas-detail{min-width:0;}}
+.atlas-fallback{padding:.85rem 1rem;border-top:1px solid #dce5ed;background:#fff;font-size:.89rem;line-height:1.8}
+.atlas-fallback a{margin-right:1rem}
+#atlas-map.atlas-ready .atlas-fallback{display:none}

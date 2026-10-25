@@ -1,6 +1,7 @@
 /* Author-maintained read-only research atlas. No visitors' edits, cookies, or local storage. */
 (() => {
   "use strict";
+  function mountAtlas() {
   const host = document.querySelector("#atlas-map");
   if (!host) return;
   const svg = host.querySelector("svg");
@@ -192,7 +193,16 @@
     .then(r=>{if(!r.ok) throw Error("HTTP "+r.status); return r.json();})
     .then(json=>{data=json; initCollapsed();bind();
       describe({title:data.views[view].title,description:data.views[view].intro});
-      draw();
+      draw();host.classList.add("atlas-ready");
     })
-    .catch(()=>{label.textContent="导图暂时无法加载，仍可使用下方学习路线与专题目录。";});
+    .catch(err=>{
+      label.textContent="交互导图未能加载，请使用下方静态导航进入文章。";
+      console.error("LLM Atlas map initialization:", err);
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mountAtlas, {once:true});
+  } else {
+    mountAtlas();
+  }
 })();

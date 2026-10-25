@@ -33,6 +33,15 @@
     <div class="atlas-status" data-map-status>正在读取已发表的论文分类…</div>
     <div class="atlas-detail" data-map-detail aria-live="polite">点击分类节点展开；点击论文节点打开原文解读。</div>
   </div>
+  <div class="atlas-fallback">
+    <strong>技术分类快速入口（不依赖脚本）</strong>
+    <a href="transformer/index.html">模型与注意力</a>
+    <a href="distributed-training/index.html">分布式训练</a>
+    <a href="long-context/index.html">长上下文</a>
+    <a href="inference-serving/index.html">推理、量化与部署</a>
+    <a href="models/index.html">完整模型</a>
+    <a href="post-training/index.html">对齐与后训练</a>
+  </div>
 </section>
 ```
 
