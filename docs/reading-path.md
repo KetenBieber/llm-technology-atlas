@@ -236,4 +236,29 @@ Lookahead 的 n-gram 来自同一个模型的 Jacobi 迭代轨迹，REST 的候�
 
 将单张 GPU 放不下模型的内存与传输约束，与在线 Batch 推理中低比特算力利用率的约束分开研究：FlexGen 偏向资源有限、可容忍高延迟的离线吞吐，Atom 面向满足延迟目标的低比特 GPU 服务。不同系统和基线的 headline speedup 不能直接排名。
 
+## 第三十五阶段：量化校准与异常权重的处理策略
+
+74. {doc}`ZeroQuant：硬件友好量化、LKD 与 Kernel 融合 <generated/papers/C/02-inference-serving/C045-zeroquant>`
+75. {doc}`RPTQ：按激活动态范围聚类重排 Channel <generated/papers/C/02-inference-serving/C046-rptq>`
+76. {doc}`OmniQuant：Learnable Weight Clipping 与等价变换 <generated/papers/C/02-inference-serving/C047-omniquant>`
+77. {doc}`SpQR：稀疏例外与低比特密集权重协同存储 <generated/papers/C/02-inference-serving/C048-spqr>`
+
+这一阶段以量化误差来自何处为主线：ZeroQuant 综合校准、逐层蒸馏和整数 Kernel；RPTQ 针对各 Channel 量级错配作无损排列；OmniQuant 对缩放与裁剪参数进行校准优化；SpQR 则对极少数难以低比特表示的权重设置高精度稀疏例外。每篇都要对照浮点等价、量化后误差和硬件实际吞吐这三类不同问题。
+
+## 第三十六阶段：极低比特下的向量与码本表达
+
+78. {doc}`QuIP#：Hadamard Incoherence 与 E8 格码本 <generated/papers/C/02-inference-serving/C049-quip-sharp>`
+79. {doc}`AQLM：多码本相加的极限压缩 <generated/papers/C/02-inference-serving/C050-aqlm>`
+
+QuIP# 通过随机正交变换降低单坐标集中性，再采用适合向量分布的格码本；AQLM 则通过多个码本加和与输入感知重建进一步利用超低比特。学习时必须将码本的 nominal bit 与模型总有效 bit、索引/Scale 元信息以及 Kernel 解码开销分开。
+
+## 第三十七阶段：量化微调与从头低比特预训练
+
+80. {doc}`QLoRA：NF4、Double Quantization 和 Paged Optimizer <generated/papers/C/02-inference-serving/C051-qlora>`
+81. {doc}`LoftQ：同时量化主干并初始化低秩修正 <generated/papers/C/02-inference-serving/C052-loftq>`
+82. {doc}`BitNet：在低比特约束下从头训练语言模型 <generated/papers/C/02-inference-serving/C053-bitnet>`
+83. {doc}`BitNet b1.58：三值权重和信息编码极限 <generated/papers/C/02-inference-serving/C054-bitnet-b158>`
+
+这里刻意将「固定低比特主干，只更新 Adapter」与「预训练时就实施量化约束」放在两条相邻但不同的路线：QLoRA 减少微调时的主干存储，LoftQ 尝试用低秩初始化修补量化误差；BitNet 系列在训练阶段直接改变权重所能采取的离散状态，从而不再依赖事后压缩任意 FP16 模型。
+
 读到 V3 / R1 时不需要把所有方法重新推一遍；直接使用文章中的站内链接回到 MLA、MoE 或 GRPO 专题，再返回模型主线即可。

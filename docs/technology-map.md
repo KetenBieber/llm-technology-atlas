@@ -60,6 +60,16 @@ flowchart TD
   AWQ --> ATOM["Atom：W4A4 在线服务"]
   VL --> FLEX["FlexGen：GPU/CPU/SSD 卸载"]
   FLEX --> ATOM
+  SMOOTH --> ZEROQUANT["ZeroQuant：LKD 与硬件友好 W8A8"]
+  ZEROQUANT --> RPTQ["RPTQ：Channel Range 重排"]
+  RPTQ --> OMNIQUANT["OmniQuant：LET 与 LWC"]
+  GPTQ --> SPQR["SpQR：少量高精度例外"]
+  SPQR --> QUIP["QuIP#：Hadamard 与 E8 Codebook"]
+  QUIP --> AQLM["AQLM：可学习加法码本"]
+  AWQ --> QLORA["QLoRA：NF4 + Adapter"]
+  QLORA --> LOFTQ["LoftQ：量化误差低秩初始化"]
+  QLORA --> BITNET["BitNet：二值预训练（方法路径对照）"]
+  BITNET --> BIT158["BitNet b1.58：三值权重"]
   T --> MQA["MQA"]
   MQA --> GQA["GQA"]
 
@@ -126,6 +136,12 @@ flowchart LR
 
 | 想解决的问题 | 推荐文章 |
 |---|---|
+| 为什么量化策略、低成本蒸馏和 Integer Kernel 必须一起设计？ | {doc}`ZeroQuant <generated/papers/C/02-inference-serving/C045-zeroquant>` |
+| Channel 重排和校准学习分别怎样减少 Activation 与低 bit 误差？ | {doc}`RPTQ <generated/papers/C/02-inference-serving/C046-rptq>` → {doc}`OmniQuant <generated/papers/C/02-inference-serving/C047-omniquant>` |
+| 为什么少数权重例外存 FP16 能比全部权重提高位宽更划算？ | {doc}`SpQR <generated/papers/C/02-inference-serving/C048-spqr>` |
+| Hadamard 正交混合、E8 码本与加法多码本有什么差别？ | {doc}`QuIP# <generated/papers/C/02-inference-serving/C049-quip-sharp>` → {doc}`AQLM <generated/papers/C/02-inference-serving/C050-aqlm>` |
+| 低显存微调冻结量化主干，能否让 Adapter 先补偿量化误差？ | {doc}`QLoRA <generated/papers/C/02-inference-serving/C051-qlora>` → {doc}`LoftQ <generated/papers/C/02-inference-serving/C052-loftq>` |
+| 从头训练 1-bit/三值模型与对 FP16 模型做 PTQ 有何根本不同？ | {doc}`BitNet <generated/papers/C/02-inference-serving/C053-bitnet>` → {doc}`BitNet b1.58 <generated/papers/C/02-inference-serving/C054-bitnet-b158>` |
 | 长对话只保留最近 KV 为什么会失稳？ | {doc}`StreamingLLM <generated/papers/C/02-inference-serving/C035-streamingllm>` |
 | 保留哪些旧 Token？在线 Heavy Hitter 与 Prompt 预观察有何差别？ | {doc}`H2O <generated/papers/C/02-inference-serving/C036-h2o>` → {doc}`SnapKV <generated/papers/C/02-inference-serving/C037-snapkv>` |
 | 不删除位置如何把 KV 降到 2-bit？ | {doc}`KIVI <generated/papers/C/02-inference-serving/C038-kivi>` |

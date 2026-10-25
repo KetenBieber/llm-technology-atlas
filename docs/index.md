@@ -59,6 +59,7 @@
 - {doc}`推测解码技术分支 <generated/papers/C/02-inference-serving/C025-hydra>`：顺序头与循环草稿 → {doc}`SpecInfer <generated/papers/C/02-inference-serving/C027-specinfer>` → {doc}`Sequoia <generated/papers/C/02-inference-serving/C028-sequoia>`；另有 {doc}`Lookahead <generated/papers/C/02-inference-serving/C029-lookahead-decoding>` 的无独立草稿路径。
 - {doc}`长上下文 KV 优化 <generated/papers/C/02-inference-serving/C035-streamingllm>`：从 Attention Sink、H2O、SnapKV 进入 {doc}`KIVI 2-bit KV <generated/papers/C/02-inference-serving/C038-kivi>`。
 - {doc}`模型量化与低显存部署 <generated/papers/C/02-inference-serving/C039-llm-int8>`：从异常值分流到 {doc}`SmoothQuant <generated/papers/C/02-inference-serving/C040-smoothquant>`、GPTQ、AWQ、FlexGen 和 {doc}`Atom <generated/papers/C/02-inference-serving/C044-atom>`。
+- {doc}`低比特后训练与码本 <generated/papers/C/02-inference-serving/C045-zeroquant>`：ZeroQuant → RPTQ → OmniQuant → SpQR → QuIP# → AQLM；{doc}`QLoRA <generated/papers/C/02-inference-serving/C051-qlora>` 与 {doc}`BitNet b1.58 <generated/papers/C/02-inference-serving/C054-bitnet-b158>` 则分别连接低显存微调、从头低比特训练。
 - {doc}`Scaling Laws <scaling/index>`：从 Kaplan 到 Chinchilla，理解模型/数据/compute 的训练规划。
 - {doc}`完整模型主线 <models/index>`：从 DeepSeek V2/V3/R1 对照到 Llama 3 与 Qwen2.5。
 - {doc}`推理后训练 <post-training/index>`：从 PPO/GRPO 进入 reasoning RL。

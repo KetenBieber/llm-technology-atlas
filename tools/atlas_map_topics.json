@@ -238,6 +238,40 @@
               "papers": [
                 "C044"
               ]
+            },
+            {
+              "id": "ptqcalibration",
+              "title": "后训练校准与 Scale 优化",
+              "papers": [
+                "C045",
+                "C046",
+                "C047"
+              ]
+            },
+            {
+              "id": "vector",
+              "title": "稀疏例外、正交变换与向量码本",
+              "papers": [
+                "C048",
+                "C049",
+                "C050"
+              ]
+            },
+            {
+              "id": "lora",
+              "title": "量化主干的低秩微调",
+              "papers": [
+                "C051",
+                "C052"
+              ]
+            },
+            {
+              "id": "bitpretrain",
+              "title": "从头训练 1-bit / 1.58-bit 权重",
+              "papers": [
+                "C053",
+                "C054"
+              ]
             }
           ]
         },
@@ -421,6 +455,40 @@
               "papers": [
                 "C044"
               ]
+            },
+            {
+              "id": "calibration",
+              "title": "低比特激活量化与重建",
+              "papers": [
+                "C045",
+                "C046",
+                "C047"
+              ]
+            },
+            {
+              "id": "ultralow",
+              "title": "2–3 bit 权重量化误差和码本",
+              "papers": [
+                "C048",
+                "C049",
+                "C050"
+              ]
+            },
+            {
+              "id": "finetune",
+              "title": "有限显存下训练量化模型",
+              "papers": [
+                "C051",
+                "C052"
+              ]
+            },
+            {
+              "id": "ternary",
+              "title": "二值/三值网络从头训练",
+              "papers": [
+                "C053",
+                "C054"
+              ]
             }
           ]
         },
@@ -521,7 +589,7 @@
           ]
         },
         {
-          "id": "architecture",
+          "id": "sequence-design",
           "title": "序列建模和模型体系设计",
           "description": "更好的依赖表达、可部署的开源模型家族",
           "children": [

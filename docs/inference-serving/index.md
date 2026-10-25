@@ -10,6 +10,7 @@
 - **近似大小模型协作**：BiLD 以回退和回滚权衡质量与延迟，不能与严格无损采样混称。
 - **长上下文 KV 策略**：StreamingLLM、H2O、SnapKV、KIVI —— 依次讨论初始 Attention Sink 保留、动态重度命中驱逐、生成前关键位置选择和非对称低比特缓存。
 - **量化与受限资源部署**：LLM.int8、SmoothQuant、GPTQ、AWQ、FlexGen、Atom —— 细化异常值、W8A8、W4A16、低比特 GEMM 与 CPU/SSD 迁移之间的技术边界。
+- **极低比特校准、码本与训练**：ZeroQuant、RPTQ、OmniQuant、SpQR、QuIP#、AQLM、QLoRA、LoftQ、BitNet、BitNet b1.58 —— 从后训练量化的误差、硬件代价走向带码本的向量量化、低秩适配与量化感知预训练。
 
 推理系统不要用同一个“更快”概括四类指标：**TTFT、TPOT/TBT、带 SLO 的 Goodput、Token/Sec** 分别测量不同对象。系统能支持更长 Context 也不表示模型一定能理解该 Context。
 
@@ -49,4 +50,14 @@
 ../generated/papers/C/02-inference-serving/C042-awq
 ../generated/papers/C/02-inference-serving/C043-flexgen
 ../generated/papers/C/02-inference-serving/C044-atom
+../generated/papers/C/02-inference-serving/C045-zeroquant
+../generated/papers/C/02-inference-serving/C046-rptq
+../generated/papers/C/02-inference-serving/C047-omniquant
+../generated/papers/C/02-inference-serving/C048-spqr
+../generated/papers/C/02-inference-serving/C049-quip-sharp
+../generated/papers/C/02-inference-serving/C050-aqlm
+../generated/papers/C/02-inference-serving/C051-qlora
+../generated/papers/C/02-inference-serving/C052-loftq
+../generated/papers/C/02-inference-serving/C053-bitnet
+../generated/papers/C/02-inference-serving/C054-bitnet-b158
 ~~~
