@@ -94,6 +94,67 @@ $$
 
 这类稳定更新要求每个通道维护额外 Log-Max 状态 $p_t$；因此说“RWKV 只有一个隐藏向量”并不准确。原始论文 Appendix D/I 分别给出时间顺序推理与当前 Token 优待机制，对应的状态需要完整复现，不能只保留 $A_t$ 忘掉 $B_t$ 和 $p_t$。
 
+### 真正稳定的递推：读出、写回要使用不同的指数最大值
+
+论文给出的 WKV 表达式里，当前 Token 有 $e^{u+k_t}$ 的额外权重，而写入历史的系数是 $e^{k_t}$。因此只保存一个未经缩放的分子/分母会溢出；简单地“所有项除以当前 Key 最大值”也容易在历史权重已经极大时丢失状态。
+
+用 $p_t$ 记录**进入第 $t$ 步之前历史权重的公共 Log-Scale**，$\tilde A_t,\tilde B_t$ 是按 $e^{-p_t}$ 缩放后的历史分子分母。为了本步**输出**，应使用
+
+$$
+\begin{aligned}
+q_t&=\max(p_t,u+k_t),\\
+a_t^{\rm read}&=e^{p_t-q_t}\tilde A_t+e^{u+k_t-q_t}v_t,\\
+b_t^{\rm read}&=e^{p_t-q_t}\tilde B_t+e^{u+k_t-q_t},\\
+\operatorname{wkv}_t&=a_t^{\rm read}/b_t^{\rm read}.
+\end{aligned}
+$$
+
+然后，独立计算**下一个时间步的历史状态**（设 $\log\gamma=-w<0$）：
+
+$$
+\begin{aligned}
+p_{t+1}&=\max(p_t+\log\gamma,k_t),\\
+\tilde A_{t+1}
+&=e^{p_t+\log\gamma-p_{t+1}}\tilde A_t
++e^{k_t-p_{t+1}}v_t,\\
+\tilde B_{t+1}
+&=e^{p_t+\log\gamma-p_{t+1}}\tilde B_t
++e^{k_t-p_{t+1}}.
+\end{aligned}
+$$
+
+这里两次 Max 的用途不同：$q_t$ 是**本轮读出**的数值稳定标尺，会包含 Time-First Bonus；$p_{t+1}$ 是**下一轮历史缓存**的标尺，**不应包含 Bonus $u$**。这一细节会直接改变模型行为，不能只是把指数移到 Log Domain 后就略过。
+
+例如一维 $k_t=120$ 时，FP32 直接计算 $e^{120}$ 会溢出，但稳定方案将它换成 $e^{120-120}=1$；这不是截断大 Key，而是在分子、分母中**同步消除共同尺度**。以下只实现 WKV 记忆核，不包含 RWKV Block 的 Token Shift、Receptance 与 Channel Mixing：
+
+~~~python
+import math
+
+def stable_wkv(values, keys, gamma=0.5, bonus=0.0):
+    log_decay = math.log(gamma)
+    a, b, p = 0.0, 0.0, float("-inf") # 历史的缩放分子/分母/Log-Scale
+    results = []
+    for v, k in zip(values, keys):
+        q = max(p, bonus + k)          # 本轮读出尺度
+        num = math.exp(p - q)*a + math.exp(bonus+k-q)*v
+        den = math.exp(p - q)*b + math.exp(bonus+k-q)
+        results.append(num / den)
+
+        pnew = max(p + log_decay, k)   # 历史写入尺度
+        a = math.exp(p+log_decay-pnew)*a + math.exp(k-pnew)*v
+        b = math.exp(p+log_decay-pnew)*b + math.exp(k-pnew)
+        p = pnew
+    return results
+
+small = stable_wkv([2, 10, 4], [0, 0, 0])
+large_key = stable_wkv([2, 10, 4], [0, 120, 0])
+assert all(abs(a-b)<1e-12 for a,b in zip(small, [2, 6, 6]))
+assert all(math.isfinite(z) for z in large_key)
+print("普通示例", small, "巨大 Key 示例", large_key)
+~~~
+
+教学代码的起始状态 $p=-\infty$ 要和 $a=b=0$ **同时**使用；首次更新后变成有限 Log-Scale。某些低精度实现对 Exp Underflow、Mask Padding、Initial State、Chunk Boundary 另有保护，不能认为这个 FP64 标量例子已经覆盖实际混合精度的 CUDA Kernel。它检验的是**同一指数加权 WKV 的精确重参数化**，并未证明模型的真实推理速度。
+
 ## Token Shift 为什么不是 Attention，也不是把整个历史一股脑平均？
 
 上面讨论的 $\mathrm{wkv}_t$ 已可递推，但 $k_t,v_t$ 的生成还需要让网络看到当前 Token 与前一步的局部差异。原文 §3.1.1 Eq.(11)–(15) 在 Time-Mixing 与 Channel-Mixing 中使用

@@ -162,6 +162,63 @@ flowchart TD
 
 *自制矩阵记忆示意，非论文 Figure；$n_t$ 由过去 $n_{t-1}$ 与本次 $i_tk_t$ 共同递推，图中简化了该状态箭头。*
 
+### 关联记忆为什么不等于字典：碰撞、抵消和归一化阈值的三个结果
+
+上面的正交 Key 例子理想得像一个真正的 Map。但 mLSTM 的 $C_t$ 实际保存的是**多个外积的加权和**，而非逐条可删除的 Key–Value Records。为了理解原论文 Eq.(18)–(26)，把三个互相关联但数学不同的情况分开：
+
+**第一，同 Key 发生冲突时，新 Value 并不保证自动覆盖旧 Value。** 设 $d_k=d_v=2$，$f=i=o=1$，两次都写 $k=[1,0]^\top$，两次 Value 依次 $v_1=[3,0]^\top,\ v_2=[9,0]^\top$。那么
+
+$$
+C_2=(v_1+v_2)k^\top=
+\begin{bmatrix}12&0\\0&0\end{bmatrix},\quad
+n_2=2k,\quad
+\tilde h_2(q=k)=\frac{[12,0]^\top}{\max(|2|,1)}
+=\boxed{[6,0]^\top}.
+$$
+
+因此读出的结果是 3 与 9 的平均，而**不是最新的 9**。若要重写更强，模型必须通过输入相关的 $i_t,f_t$ 或 Key 表征学出相应控制；“矩阵存储”等于“哈希表查找”是不成立的。
+
+**第二，Key 内积可以为负，归一化不能保证凸组合。** 设 $k_1=[1,0]^\top,\ k_2=[-1,0]^\top$，对应 $v_1=[3,0]^\top,v_2=[0,5]^\top$，同样所有门为 1。则 $n_2=k_1+k_2=0$。对 $q=[1,0]^\top$，
+
+$$
+C_2q=v_1-v_2=[3,-5]^\top,\quad
+\max(|n_2^\top q|,1)=1,\quad
+\boxed{\tilde h_2=[3,-5]^\top}.
+$$
+
+输出不再是历史 Value 的非负加权平均；一个 Component 甚至可为负。分母 $1$ 的下限防止的是**除以接近零的数而爆炸**，并不能给整个 $C_tq$ 的范数提供固定上界。
+
+**第三，这个 Normalizer 与 Softmax 分母根本不是一个统计量。** Softmax Attention 的分母是 $\sum_j e^{q^\top k_j}>0$；mLSTM 的 $n_t^\top q_t=\sum_jw_jk_j^\top q_t$ 可以负、可以恰好抵消。因此不能直接把一个 Softmax Attention 的稳定化证明搬过来套用。归一化状态 $n_t$ 甚至可能比矩阵状态更容易丢失某些相反方向 Key 的权重信息。
+
+下面的 NumPy 示例仅检查外积、Shape、矩阵读出及这两个边界，刻意把门设成 1 并省略真实网络的 Key 缩放，不是 xLSTM 的模型源码：
+
+~~~python
+import numpy as np
+
+def mlstm_read(records, query):
+    d_v = records[0][1].size
+    d_k = records[0][0].size
+    C = np.zeros((d_v, d_k))
+    n = np.zeros(d_k)
+    for key, value in records:
+        C += np.outer(value, key)
+        n += key
+    return (C @ query) / max(abs(n @ query), 1.0)
+
+q = np.array([1., 0.])
+k = np.array([1., 0.])
+same_key = [(k, np.array([3., 0.])),
+            (k, np.array([9., 0.]))]
+opposite = [(k, np.array([3., 0.])),
+            (-k, np.array([0., 5.]))]
+assert np.allclose(mlstm_read(same_key, q), [6, 0])
+assert np.allclose(mlstm_read(opposite, q), [3, -5])
+print("同 Key 冲突", mlstm_read(same_key, q))
+print("相反 Key 抵消", mlstm_read(opposite, q))
+~~~
+
+**状态预算也是一个实际研究约束。** $C_t$ 的状态数是 $d_kd_v$，$n_t$ 需要 $d_k$，另有指数门控稳定化状态和可能的 Conv Buffer。它们不随上下文长度 $T$ 增长，却会随 State Width 二次或双线性增长。比较 RetNet、mLSTM、RWKV 或 Mamba 时，不仅要列模型 Weight 参数量，还需对齐 **Decode 可变状态元素数、Dtype、Head 分组和精度**，否则“固定状态更省显存”没有同条件意义。
+
 ## 为什么 mLSTM 是可并行的，而 sLSTM 不是？
 
 关键不是记忆从标量变成矩阵，而是 **mLSTM 的 Input/Forget Gate、$q_t,k_t,v_t$ 只依赖当前输入 $x_t$**，不使用 sLSTM 那样的 $h_{t-1}$ 回馈投影。于是，在给定整个序列的投影结果后，递推可以展开为

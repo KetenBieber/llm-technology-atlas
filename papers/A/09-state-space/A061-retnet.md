@@ -160,6 +160,63 @@ flowchart LR
 
 *自制结构示意，不是论文 Figure 4；连接线解释同一 Retention 在 Chunk 内与 Chunk 间的两条贡献路径。*
 
+### 用数值检验跨 Chunk 状态是否真的等价，而不是只看 Figure 4 的箭头
+
+取 $d_k=2,d_v=1,\gamma=1/2$、四个 Key：
+
+$$
+k_1=[1,0],\quad k_2=[0,1],\quad
+k_3=[1,1],\quad k_4=[1,-1],
+$$
+
+Value 为 $v=[2,4,1,3]$，Query 全取 $q=[1,2]$。从零状态顺序递推，四个时刻的状态列向量依次是
+
+$$
+S_1=\begin{bmatrix}2\\0\end{bmatrix},\quad
+S_2=\begin{bmatrix}1\\4\end{bmatrix},\quad
+S_3=\begin{bmatrix}1.5\\3\end{bmatrix},\quad
+S_4=\begin{bmatrix}3.75\\-1.5\end{bmatrix}.
+$$
+
+因此 $o_4=qS_4=3.75-3=0.75$。把前两个 Token 看作第一个 Chunk，它的输出边界为 $S_{\rm in}=S_2=[1,4]^\top$。第二 Chunk 的最后一个输出按“过去 Chunk + 本 Chunk”拆成
+
+$$
+\begin{aligned}
+o_4&=
+q\underbrace{\gamma^2S_{\rm in}}_{\text{过去两步累计遗忘}}
++q\underbrace{\big(\gamma k_3^\top v_3+k_4^\top v_4\big)}_{\text{本 Chunk 的写入}}\\
+&=\tfrac14(1+8)+\tfrac12(3)+(3-6)
+=2.25+1.5-3=\boxed{0.75}.
+\end{aligned}
+$$
+
+如果某个实现忘记跨 Chunk 应当衰减**两步**，错误地只乘 $\gamma$，得到 $q(0.5S_2)=4.5$、总输出变成 3，这就和整段 Parallel Retention 不再一致。这个错误很隐蔽：Shape 完全匹配、程序也能运行，但跨 Chunk 的长程信息权重变了。
+
+~~~python
+import numpy as np
+
+gamma = .5
+K = np.array([[1., 0.], [0., 1.], [1., 1.], [1., -1.]])
+V = np.array([2., 4., 1., 3.])
+Q = np.tile(np.array([1., 2.]), (4, 1))
+state = np.zeros(2)
+recurrent = []
+for k, v, q in zip(K, V, Q):
+    state = gamma * state + k * v
+    recurrent.append(q @ state)
+
+D = np.tril(gamma ** np.abs(np.subtract.outer(np.arange(4), np.arange(4))))
+parallel = (Q @ K.T * D) @ V
+cross_old = gamma**2 * np.array([1., 4.])
+local = gamma * K[2] * V[2] + K[3] * V[3]
+chunk_last = Q[3] @ (cross_old + local)
+assert np.allclose(parallel, recurrent)
+assert np.isclose(chunk_last, .75)
+print("recurrent", recurrent, "parallel", parallel)
+~~~
+
+*自制 NumPy 复算，未运行任何完整 RetNet 模型。为突出 Retention Kernel 的数学恒等，代码没有包含多尺度 Head、复数相位、GroupNorm、Swish Gate。实际复现需将这些层恢复到论文 Figure 3 / Eq.(8) 指定的位置；把 GroupNorm 加在隐藏状态递推内部不会保持上述线性等价。*
+
 ## Multi-Scale 为什么不是给所有 Head 共享一个衰减率？
 
 对单个 Head，$D_{tj}=\gamma^{t-j}$；$\gamma$ 越靠近 1，保留远历史的能力越强，越小则越偏向局部。只取一把 $\gamma$ 相当于所有 Head 都有相似的时间长度偏好。原论文 §2.2 Eq.(8) 使用不同 Head 的 $\gamma_h$，默认构造为 $1-2^{-5-\mathrm{arange}(h)}$，并配合 Swish Gate：

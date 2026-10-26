@@ -190,6 +190,99 @@ flowchart LR
 
 为什么能兼顾算力？小矩阵乘虽然在每个 Chunk 内名义上会重复一部分运算，但 GPU 对大块 MatMul 的峰值利用率常比沿 Token 串行推进标量操作更好；非对角块则凭低秩状态避免全局二次展开。论文报告 SSD 核心层相较已优化的 Mamba Selective Scan **2–8×**，属于对应模型维度、序列与硬件的实验结果，不是纯大 O 推导。
 
+### 四个 Token、两个 Chunk：为什么块间根本无需保存历史 $Q\times Q$ 矩阵？
+
+只使用一个 Head、一个状态坐标（$N=P=1$），令 $B_t=C_t=1$，输入 $x=[2,4,6,8]$，初始 $h_{-1}=0$。三次真正起作用的保留系数为 $a_1=1/2,\ a_2=1/4,\ a_3=1/2$；$a_0$ 不影响零初态的第一步。直接递推：
+
+$$
+h_0=2,\qquad h_1=\tfrac12(2)+4=5,\qquad
+h_2=\tfrac14(5)+6=7.25,\qquad
+h_3=\tfrac12(7.25)+8=11.625.
+$$
+
+按前文公式展开的整个矩阵是
+
+$$
+M=\begin{bmatrix}
+1&0&0&0\\
+1/2&1&0&0\\
+1/8&1/4&1&0\\
+1/16&1/8&1/2&1
+\end{bmatrix}.
+$$
+
+验证最后一个输出：
+
+$$
+(Mx)_3=(1/16)\cdot2+(1/8)\cdot4+(1/2)\cdot6+8
+=0.125+0.5+3+8=\boxed{11.625}.
+$$
+
+现在按两个 Token 为一块，把矩阵写成
+
+$$
+M=\begin{bmatrix}M^{00}&0\\M^{10}&M^{11}\end{bmatrix},
+\quad
+M^{00}=\begin{bmatrix}1&0\\1/2&1\end{bmatrix},\qquad
+M^{11}=\begin{bmatrix}1&0\\1/2&1\end{bmatrix}.
+$$
+
+最关键的是下方跨 Chunk 的块：
+
+$$
+\boxed{
+M^{10}=
+\begin{bmatrix}1/8&1/4\\1/16&1/8\end{bmatrix}
+=
+\underbrace{\begin{bmatrix}1/4\\1/8\end{bmatrix}}_{\substack{\text{上一 Chunk 边界状态}\\\text{到当前两个输出的传播}}}
+\underbrace{\begin{bmatrix}1/2&1\end{bmatrix}}_{\text{前一个 Chunk 的输入写入}}
+}.
+$$
+
+矩阵 $M^{10}$ 秩为 1：跨块的所有历史效应先压缩为**一个边界状态**，再传播到当前块的各位置。第一个 Chunk 的边界状态是 $h_1=5$；在下一个 Chunk 内，
+
+$$
+\begin{aligned}
+h_2&=\underbrace{(1/4)h_1}_{\text{旧 Chunk}}+\underbrace{6}_{\text{当前 Chunk}}=7.25,\\
+h_3&=\underbrace{(1/2)(1/4)h_1}_{\text{旧 Chunk}}
++\underbrace{(1/2)6+8}_{\text{当前 Chunk}}=11.625.
+\end{aligned}
+$$
+
+这才是 SSD Chunk 计算的实质：**对角块可进行局部并行 Attention-like MatMul，离对角块的作用通过低秩边界状态传递，而不用形成完整全局 $T\times T$ 注意力矩阵**。对于论文更一般的 $H_t:[N,P]$，边界状态秩不再只有 1；其跨块压缩量由状态宽度 $N,P$ 决定。这与 [RetNet 的 Chunkwise Retention](A061-retnet.md) 共享数学思想，但 SSD 从更一般的 Semiseparable Matrix 家族推出算法，不代表两者的所有门控、归一化或 Block 都相同。
+
+![按两个 Token 切 Chunk 的四阶因果矩阵：对角块采用局部矩阵计算，左下角跨块矩阵可分解为秩一外积，远历史通过边界状态传入下一块](../../../figures/explainers/mamba2-ssd-4x4-chunk.svg)
+
+*自制解释图，非原论文 Figure；蓝绿对角块是当前 Chunk 的独立因果计算，橙色左下块是历史 Chunk 经低秩状态传递的贡献。与本节 $4\times4$ 数值矩阵一一对应，不是性能实测曲线。*
+
+### 一段足够小的数值验算代码
+
+~~~python
+import numpy as np
+
+x = np.array([2., 4., 6., 8.])
+a = np.array([1., .5, .25, .5])
+h, via_scan = 0., []
+for k, v in enumerate(x):
+    h = a[k] * h + v
+    via_scan.append(h)
+
+M = np.zeros((4, 4))
+for i in range(4):
+    for j in range(i + 1):
+        M[i, j] = np.prod(a[j + 1:i + 1])
+via_matmul = M @ x
+
+cross = M[2:4, :2]
+outer = np.outer([.25, .125], [.5, 1.])
+assert np.allclose(cross, outer)
+assert np.linalg.matrix_rank(cross) == 1
+assert np.allclose(via_scan, via_matmul)
+print(via_scan, via_matmul)
+~~~
+
+此为**自制教学计算**，不使用 GPU、不训练模型，检验的是 SSM 与 Structured Matrix 的代数等价及下三角跨块的低秩分解。它不测试论文的 Triton/CUDA Kernel，也不验证作者报告的 2–8 倍性能。完整 Mamba-2 还有多 Head、多个特征通道、卷积和归一化，不能把这段标量代码冒称端到端模型实现。
+
 ## 6. $H_t$ 的真实 Shape 是什么？为什么这能连接到 Multi-Head Attention？
 
 取一个 Head 的 Token Feature 为 $x_t\in\mathbb R^P$，State Expansion 为 $N$，输入/输出门控 $B_t,C_t\in\mathbb R^N$。用一个真正保存每个 Feature Channel 历史贡献的状态矩阵：

@@ -104,6 +104,72 @@ $$
 
 其中 $\bar A_t,\bar B_t$ 需要注意按 Feature Channel 和 State Index 广播。**把 $A$ 也写成每 Token 由复杂网络输出的大型密集矩阵不是原文的 S6 实现**；作者正是利用结构化共享参数 $A$，让高维状态的成本可控。
 
+### 理论公式与官方 Reference 实现到底是否逐项相同？
+
+这里有一个会直接影响复现结果的区别。论文 §2 Eq.(4) 给出的 **ZOH 精确离散化**是
+
+$$
+\bar A_t=e^{\Delta_t A},\qquad
+\bar B_t=\int_0^{\Delta_t}e^{A\tau}B_t\,d\tau.
+$$
+
+对 $A=-1,B_t=1$，它给出 $\bar B_t=1-e^{-\Delta_t}$，所以才严格推出前文 Theorem 1 的凸组合 Gate。**但作者的 [selective_scan_ref 代码](https://github.com/state-spaces/mamba/blob/main/mamba_ssm/ops/selective_scan_interface.py) 实际采用了另一种离散输入系数计算**：
+
+~~~python
+import numpy as np
+
+# 只比较单通道单状态的一个 Token；不是训练 Mamba 模型
+delta, A, B, u, h_prev = np.log(2), -1.0, 1.0, 2.0, 0.0
+deltaA = np.exp(delta * A)
+deltaB_u = delta * B * u               # 官方 Reference 的输入项近似
+h_reference = deltaA * h_prev + deltaB_u
+
+zoh_B = np.expm1(delta * A) / A * B    # expm1 避免微小 Δ 时相减失精
+h_zoh = deltaA * h_prev + zoh_B * u
+assert np.isclose(h_zoh, 1.)
+assert np.isclose(h_reference, 2*np.log(2))
+print("ZOH", h_zoh, "reference", h_reference)
+~~~
+
+这不是可随意忽略的“小数点实现差”。它的两个式子在有限 $\Delta$ 下**通常不严格相同**：
+
+$$
+\underbrace{h_t^{\rm ZOH}
+=e^{-\Delta_t}h_{t-1}+(1-e^{-\Delta_t})u_t}_{\text{Theorem 1 使用的精确 ZOH 模型}}
+\quad\text{vs}\quad
+\underbrace{h_t^{\rm ref}
+=e^{-\Delta_t}h_{t-1}+\Delta_tu_t}_{\text{Reference Scan 中的输入项近似}}.
+$$
+
+取 $h_{t-1}=0,u_t=2,\Delta_t=\ln2$，前者 $h_t=1$，后者是 $2\ln2\approx1.38629$。两者的一阶泰勒项一致，因为 $1-e^{-\Delta}=\Delta+O(\Delta^2)$，但后者在较大步长时并非同一个严格的 Gate 插值。因此**论文的门控联系应解释为所述 ZOH 理想模型的数学性质**，不能直接承诺作者的所有 CUDA/Reference 实现都逐元素满足 $h_t=(1-g_t)h_{t-1}+g_tu_t$。
+
+这一差异也说明，审查序列模型必须同时看论文方程与官方实现：共享 $A$、输入相关的 $B_t,C_t,\Delta_t$ 是架构选择；怎样数值离散 $\bar B_t$ 则属于具体的算子实现。不能用较理想的公式证明某个近似实现具有它并未严格保持的性质。
+
+### 一个能照着复写的最小形状一致性实验
+
+令 $B_{\rm batch}=1,L=3,D=2,N=2$，为便于手算固定两通道的状态矩阵
+
+$$
+A=\begin{bmatrix}-1&-2\\-3&-4\end{bmatrix}\in\mathbb R^{D\times N},
+\quad \Delta_{t,d}>0,
+\quad B_{t,n},C_{t,n}\in\mathbb R.
+$$
+
+**这里的 $A$ 不是一个 $2\times2$ 密集的状态转移矩阵**，而是形状为 $[D,N]$ 的逐通道对角谱：$A_{d,n}$ 各自作用在 $h_{d,n}$ 上。真正展开后，每个 Token 对应状态 $h_t:[1,2,2]$，而非普通 Dense Matrix Multipy $A@h$。
+
+按照上面的 Reference 离散约定，正确的广播形式是
+
+$$
+\begin{aligned}
+\bar A_{t,d,n}&=\exp(\Delta_{t,d}A_{d,n}),\\
+b_{t,d,n}&=\Delta_{t,d}B_{t,n}x_{t,d},\\
+h_{t,d,n}&=\bar A_{t,d,n}h_{t-1,d,n}+b_{t,d,n},\\
+y_{t,d}&=\sum_{n=1}^N C_{t,n}h_{t,d,n}.
+\end{aligned}
+$$
+
+这四行精确说明了 Algorithm 2 为什么需要 $[B,L,D,N]$ 的**逻辑**中间系数，却不应该为每一步都把这个四维张量物化到 HBM。预测网络产生的是 $[B,L,N]$ 的 $B,C$ 与 $[B,L,D]$ 的 $\Delta$，随后在 Kernel 内逐 Feature/State 广播。
+
 ## 4. 为什么增加输入选择后，S4 的全局卷积捷径立刻消失？
 
 设简化一维系统
