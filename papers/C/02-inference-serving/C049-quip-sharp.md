@@ -1,6 +1,6 @@
 # QuIP#：Hadamard 为什么能帮助极低比特量化，E8 格码本又解决什么问题？
 
-> **原始论文**：[QuIP#: Even Better LLM Quantization with Hadamard Incoherence and Lattice Codebooks](https://proceedings.mlr.press/v235/tseng24a.html)，ICML 2024。
+> **原始论文**：Tseng 等，[QuIP#: Even Better LLM Quantization with Hadamard Incoherence and Lattice Codebooks](https://proceedings.mlr.press/v235/tseng24a.html)，ICML 2024。[原论文 Algorithm 1/2、§4.1、Table 1（arXiv PDF）](https://arxiv.org/pdf/2402.04396)。
 
 
 前置：[GPTQ 的 Layer 重建代价](C041-gptq.md) / [SpQR 的异常权重隔离](C048-spqr.md)。后续：[AQLM 的多码本残差相加](C050-aqlm.md)。
@@ -55,6 +55,50 @@ $$
 
 这比“先打散 Outlier，再查一个 Codebook”多了一项很重要的约束：**量化误差代价受输入分布影响，不只靠未加权的欧氏距离评估**。
 
+### 为什么 BlockLDLQ 需要上一块的舍入误差？
+
+对输出行排列的权重 $W\in\mathbb R^{m\times n}$，设校准样本按列堆叠为 $X\in\mathbb R^{n\times N}$。量化后层输出的平方误差不是简单的 $\|W-\widehat W\|_F^2$，而是
+
+$$
+\|(W-\widehat W)X\|_F^2
+=\operatorname{tr}\!\left((W-\widehat W)H(W-\widehat W)^\top\right),\quad H=XX^\top.
+$$
+
+权重误差来自哪个**输入方向**，会改变最终代价。取 $H=\mathrm{diag}(100,1)$，两个相同长度的教学误差 $e_1=[0.1,0]$ 与 $e_2=[0,0.1]$，其欧氏平方都为 $0.01$，却分别产生 $e_1He_1^\top=1$ 和 $e_2He_2^\top=0.01$。因此“码本内欧氏最近的向量”未必是对实际 Layer Output 最好的选择。
+
+原论文 [§4.1](https://arxiv.org/pdf/2402.04396) 沿用 LDLQ 的反馈思想，把权重的**一批相邻输入列**作为一个 $g$ 维块。对对称正定的代理 Hessian 做 Block-LDL 分解
+
+$$
+H=L^\top D L,\qquad U=L^\top-I,
+$$
+
+其中 $L$ 的对角 $g\times g$ 子块是单位阵，$D$ 为 Block-Diagonal。记已经处理完的所有列块为 $W_{<k},\widehat W_{<k}$，当前块为 $W_k:[m,g]$，$A_k$ 是 $U$ 对应的已处理列到本块的反馈子矩阵，则
+
+$$
+\boxed{\widehat W_k=Q_{\mathcal C}\!\left(W_k+
+(W_{<k}-\widehat W_{<k})A_k\right).}
+$$
+
+$Q_{\mathcal C}$ 是**逐个 $g$ 维码字**投向码本 $\mathcal C$ 的向量量化器；不能把它换回普通逐元素 Round 而仍称为 BlockLDLQ。右边乘法 Shape 为 $[m,\text{已处理列数}]\,[\text{已处理列数},g]=[m,g]$。当 $H$ 没有跨块相关性、$A_k=0$ 时，公式退化为独立块量化；有相关性时，上一块的舍入残差会改变下一块实际被量化的目标。**这就是 BlockLDLQ 比单独选择码本索引多做的一步。**
+
+上面的数学反馈不是作者“保证每条输出都最优”的声明。原文 Theorem 4.1 的误差界还要求 Hessian 的 Incoherence 与向量量化误差协方差上界，不能把定理写成无条件的 PPL 最优。训练/预处理阶段需处理数值病态和 Block Size 整除条件，推理时不再重复求 Hessian 或 LDL 分解。
+
+### Algorithm 2：量化后的权重为什么仍需两次 Hadamard？
+
+把 QuIP# 的坐标改变当作单纯对 Weight 做预处理是不完整的。原始 [Algorithm 1/2（PDF 第 2 页）](https://arxiv.org/pdf/2402.04396) 分别是离线压缩与**实际 Linear 推理**。其 Algorithm 2 用符号向量 $S_V,S_U$ 实现左右随机化 Hadamard：
+
+~~~text
+压缩前（离线）：变换 W/H → BlockLDLQ 生成低比特码字索引及符号信息
+推理时：
+  y = Had(S_V ⊙ x)                    # 输入到量化坐标系
+  y = decompress_multiply(W_hat, C, y) # 查 E8P 码字、乘法
+  y = Had(S_U ⊙ y)                    # 还原输出坐标系
+~~~
+
+*自制逐算子解释，执行顺序取自原论文 Algorithm 2；$x$ 在此按列向量表示，不能与前文为方便说明所用的行向量 $xW$ 直接混用。*
+
+若省掉最后一步，输出的数值坐标仍被随机旋转；若省掉第一步，量化矩阵接收的输入坐标错误。**两次变换是为了保持整层函数语义，不是免费的精度增强**，它们会产生额外计算。研究者应同时考察压缩 Weight 读取减少的 HBM 负载与两次 Hadamard 的算术/实现成本。
+
 ## 为什么从逐元素 Round 走向 8 维格码本？
 
 如果变换后的向量近似各向同性、形状像球，那么独立标量量化相当于用笛卡尔网格的小正方体格点覆盖分布，浪费球状概率密度结构。**向量量化**把一组 $d$ 个数作为整体，选择码本向量：
@@ -93,7 +137,7 @@ flowchart TD
 
 8 维向量如果以 2 bit/weight 编码，需要 16-bit 的索引，共有 $2^{16}=65{,}536$ 种可能码字。若朴素保存每种码字的 8 个 FP16 分量，存储就要 $65{,}536\times8\times2\approx1$ MB；还要考虑 GPU Cache 与 Bank Conflict 的重复缓存，访问成本可能不划算。
 
-作者的 E8P 将码本拆成**256 个基础向量查找 + 符号翻转 + 小幅平移**的结构：16-bit 编码可以分解为 8 bit Base Entry、7 bit Sign 和 1 bit Shift/Parity 相关信息。于是原本巨大的逻辑码本可由约 1KiB 的基本表加简单运算重建。这里的 1KiB 是原论文 E8P 结构化 Base Table 的量级，而非包括所有 Weight、缩放、模型元信息的总存储。
+作者的 E8P 将码本拆成**256 个基础向量查找 + 符号翻转 + 小幅平移**的结构：16-bit 编码可以分解为 8 bit Base Entry、7 bit Sign 和 1 bit Shift/Parity 相关信息。原论文 §4.2 进一步明确 256 个基础条目由 **227 个规定范数范围内的候选 + 29 个 Padding 条目**构成；查表尺寸为 $256\times8$，可用约 1KiB 的紧凑表表示。这里的 1KiB 是 E8P **Base Table** 的量级，并不包括模型 Weight 索引、缩放、旋转信息或完整模型元数据。
 
 [QuIP# 正式论文与 Algorithm 1/2](https://proceedings.mlr.press/v235/tseng24a.html) 把**可表达性**和**可以装进 GPU L1、解码效率高**同时当作设计约束。$E_8$ 是 8D 球堆积方面的最优结构，不意味着它在真实 Transformer 上的所有 Weighted Reconstruction Objective 都数学全局最优。
 
@@ -108,6 +152,8 @@ $$
 ## Figure 3 真正在对比什么？
 
 论文 [Figure 3](https://proceedings.mlr.press/v235/tseng24a.html) 用高斯源数据展示不同维度与结构码本的**元素级 MSE**。看横轴与码本 bit 后，应回答两件事：球形分布为什么更契合格向量量化？为何高维空间的码本覆盖效率更好？但该图不是完整 LLM PPL/Token/s 图，不能直接把高斯向量的 MSE 排名当成 LLaMA 下游性能排名。
+
+还有一项更直接且有控制变量的证据：[原文 Table 1（PDF 第 5 页）](https://arxiv.org/pdf/2402.04396) 固定为 **2-bit QuIP#、不做 Fine-Tuning、WikiText2、Context 4096**，仅比较使用 Hadamard 或 Fourier 做 Incoherence Processing。在 LLaMA-2 7B / 13B / 70B 上，Hadamard 的 PPL 分别是 **8.22 / 6.06 / 4.16**，Fourier 是 **8.30 / 6.08 / 4.17**。这支持作者在该配置下选 RHT 的经验结果，但**不是“有 RHT”与“无任何 Incoherence”**的消融，也不能把这组差值直接归因到 E8P 或 Fine-Tuning。
 
 [QuIP# 正式论文 Figure 1（PDF 第 1 页）](https://arxiv.org/pdf/2402.04396) 还有另一层证据：横轴是**模型的压缩后总 Bits**，纵轴是 WikiText2 PPL，标注不同 bit 的 QuIP#、旧 QuIP 以及 AQLM 等对照。它说明实际 Model Size 与量化 PPL 的关系，不是在固定一个模型下单独证明 E8P 优于其他码本；不同 Model Size 的点可能还改变了参数规模。**Figure 2（PDF 第 2 页）** 只给 Hadamard → Lattice Codebook → Fine-Tuning 的方法流程，不可拿它代替 Runtime 或精度实验。
 
