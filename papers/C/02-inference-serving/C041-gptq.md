@@ -1,6 +1,6 @@
 # GPTQ：为什么近似二阶误差补偿能支持 3–4 bit 权重？
 
-> **原始论文**：[GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers](https://openreview.net/forum?id=tcbBPnfwxS)，ICLR 2023（会议正式版本亦使用 OPTQ 题名）。 [官方/作者 PDF](https://spcl.ethz.ch/Publications/.pdf/2023_iclr_gptq.pdf)。
+> **原始论文**：Frantar 等，[GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers](https://openreview.net/forum?id=tcbBPnfwxS)，ICLR 2023。[arXiv v2／带 ICLR 2023 首页的论文 PDF](https://arxiv.org/pdf/2210.17323)；以下的 Figure、Algorithm 与公式均以该版本为准。
 
 
 技术前置：[SmoothQuant 的 W8A8](C040-smoothquant.md)、[LLM.int8 的权重/激活分路](C039-llm-int8.md)。对照：[AWQ 的无梯度显著通道保护](C042-awq.md)。
@@ -44,7 +44,7 @@ flowchart TD
  Q --> O[低比特权重 + Scale]
 ~~~
 
-*自制机制图，非原论文 Figure。原论文 Figure 1 比较不同模型规模与量化方案的精度，§3 解释为什么需要快的批量更新而不是原 OBQ 的逐权重更新。*
+*自制机制图，非原论文 Figure。原论文 Figure 1 比较不同模型规模与量化方案的精度；Figure 2 和 Algorithm 1 才画出／写出真正的分块量化执行路径。*
 
 ## 把“利用 Hessian 补偿”真正推导成更新量
 
@@ -87,7 +87,44 @@ $$
 
 这说明为何“量化第 1 个 Weight 时调整其他 Weight”比各自独立 Round 更好。但若 $H$ 近奇异，不做数值 Damping 会导致逆矩阵噪声巨大；若校准数据缺少某些输入方向，也可能把不正确的相关性带入量化误差更新。
 
-[GPTQ 原文 ICLR 2023](https://openreview.net/forum?id=tcbBPnfwxS) 的 `3.1–3.2 主要解释成块更新、任意列序和 Cholesky 数值稳定的实现取舍；因此推导只说明**一次补偿为什么有效**，不代表本文已完全复现作者的分块量化 Algorithm。读原文速度表时应把“一次性离线 3-bit 量化 175B 所需 GPU 小时”与“部署后每 Token 延迟”分成两个测量。
+[GPTQ §4](https://arxiv.org/pdf/2210.17323) 进一步解决**任意固定列序、延迟分块更新、Cholesky 稳定化**三个问题：上述二次型推导说明一次补偿为什么有效，却尚未解释大模型量化为何能在几小时内完成。下节把数学更新与 Algorithm 1 的执行路径接起来。
+
+## 从一次补偿到 Algorithm 1：为什么一行一行量化太慢？
+
+为直接对应原文 Algorithm 1，这里换用输出通道为**行**的惯例：$W\in\mathbb R^{d_{out}\times d_{in}}$，校准激活 $X\in\mathbb R^{d_{in}\times N}$，因此 $WX$ 的 Shape 为 $[d_{out},N]$，正则化后的 Hessian 是
+
+$$
+H=2XX^\top+\lambda I\in\mathbb R^{d_{in}\times d_{in}}.
+$$
+
+本文开头使用的是 $Y=XW$、输入通道在**列**的记号；两者通过转置对应，不能直接把一个布局中的 $X^\top X$ 与另一个布局中的 $XX^\top$ 混用。因子 2 不改变理想最优补偿的方向，但实现要统一自己的 $H$ 定义和 Damping。
+
+假设当前待处理的第 $j$ 列为 $W_{:,j}\in\mathbb R^{d_{out}}$，对各输出行同时执行同一个列顺序。作者的关键观察是：OBQ 原先逐输出行寻找最优量化位置，带来大量重复求逆更新；**固定所有行的列顺序**只需要维护一套与输入统计相关的 Hessian 信息。这是原文 §4 Step 1 的经验性效率取舍，不是声称固定顺序对所有矩阵都是精度最优。
+
+更进一步，把 $d_{in}$ 列按 $B$ 列分块。块内仍依次做量化和局部误差校正，块外远端列的更新先累计，待本块结束后一次性矩阵乘法施加。这不会凭空减少所有算术量，却把大量低算术强度的细粒度访存，合并成 GPU 更擅长执行的矩阵运算。原文 §4 Step 2 的一个具体设置是 $B=128$，这是论文实现选择，不是算法要求所有层必须取 128。
+
+~~~text
+输入：浮点权重 W:[d_out,d_in]，校准 X:[d_in,N]，位宽和分组量化器
+建立 H = 2 XX^T + damping，并用 Cholesky 预计算稳定的逆曲率信息
+for 每一列块 [i,i+B):
+    for 块内列 j 从左到右:
+        q_j = quantize(W[:,j])                 # 使用当前已补偿的权重
+        e_j = (W[:,j]-q_j) / U[j,j]            # U 为原 Algorithm 1 的三角形式
+        W[:,j:i+B] -= outer(e_j,U[j,j:i+B])    # 只立即改动本块
+        保存 q_j 与 e_j
+    W[:,i+B:] -= E_block @ U[i:i+B,i+B:]       # 一次更新剩余列
+输出：Q、各组量化元信息
+~~~
+
+*教学伪代码，按论文 Algorithm 1 的行/列布局及分块顺序改写，未在用户机器上执行；其中 $U$ 是论文写作 $\operatorname{Cholesky}(H^{-1})^\top$ 的上三角因子，不是原始 $H^{-1}$。*
+
+请对照 [原论文 Figure 2 与 Algorithm 1（PDF 第 4–5 页）](https://arxiv.org/pdf/2210.17323)：Figure 2 中白色列为当前处理列、粗框是本块、蓝色为块结束后统一更新的未量化区域；Algorithm 1 的两个循环分别对应上述两级更新。它们支持的是**实现步骤与访存组织**，不是量化后准确率本身。准确率要回 Figure 1：左侧 OPT 家族是 **4-bit**、右侧 BLOOM 家族是 **3-bit**，横轴为参数规模（十亿），纵轴为 WikiText2 PPL（越低越好），三条曲线比较 FP16、RTN 和 GPTQ；不同家族与位宽不能合成一项统一的“提升百分比”。
+
+### Cholesky 不是一个只为了跑得快的可选装饰
+
+作者 §4 Step 3 指出，反复用矩阵逆的消元式更新，会因有限精度误差使计算出的“逆 Hessian”不再正定，进而沿错误方向大幅修改尚未量化的 Weight。给 $H$ 加 Damping，并预先构造稳定的 Cholesky 因子，可避免在循环中反复进行不稳定的小矩阵求逆。这不等于数学上量化误差始终为零，也不保证很小或偏置严重的校准集一定适用。
+
+原论文的三项改进可总结为：**统一列序减少重复工作 → Lazy Batch 增大算术强度 → Cholesky 避免反复更新逆矩阵积累数值误差**。只抄一个 $H^{-1}$ 补偿公式而漏掉后三项，就无法解释 GPTQ 为什么能用于千亿参数权重。
 
 ## 为什么 Cholesky/重排/Group Size 不能当成实现小事？
 
@@ -99,6 +136,6 @@ $$
 
 以参数量 $P$ 的 Decoder 为例，FP16 权重理想存储约 $2P$ 字节；4-bit 权重理想存储为 $P/2$ 字节，理论权重压缩 4 倍，但端到端显存还包括 KV/激活与量化元信息。GPU 在 FP16 激活乘 4-bit 压缩权重时可能需要先反量化到更高精度；实际速度取决于 Weight-Only GEMM/GEMV Kernel，而不是某篇论文的 PPL 表格。
 
-[ICLR 2023](https://openreview.net/forum?id=tcbBPnfwxS) 论文与作者版本 [GPTQ](https://arxiv.org/abs/2210.17323) 的命名存在 OPTQ/GPTQ 差异，应按同一原始工作理解。作者报告将约 175B 的权重在约四 GPU 小时内量化至 3–4 bit，结合专用 Kernel 在所测设备上实现端到端加速；不同硬件和 Weight Layout 的速度不能作为现代所有平台的默认承诺。
+[ICLR 2023 正式发表的论文与 arXiv v2](https://arxiv.org/pdf/2210.17323) 标题均为 **GPTQ**，而非“会议正式版改叫 OPTQ”；旧稿在此处混淆了名字。作者报告将约 175B 的权重在约四 GPU 小时内量化至 3–4 bit，结合专用 Kernel 在所测设备上实现端到端加速；不同硬件和 Weight Layout 的速度不能作为现代所有平台的默认承诺。
 
 **反例意识**：若任务强依赖某些罕见输入方向，但 Calibration $X$ 几乎没有这些样本，$H$ 的估计就可能低估关键误差。对照 [AWQ](C042-awq.md) 时，要特别注意两者都用 Activation 信息，但 AWQ 以简单显著性/缩放规避量化敏感，不执行同样的二阶逐列误差补偿。

@@ -17,13 +17,7 @@
 
 真正的问题要复杂得多。
 
-因为一个已经训练好的 RoPE 模型，不只学了：
-
-$$
-\text{token content}.
-$$
-
-它还适应了训练区间内一整套：
+因为一个已经训练好的 RoPE 模型，不只学了 Token 内容，还适应了训练区间内一整套：
 
 $$
 \text{relative distance}
@@ -45,19 +39,9 @@ L
 L'=sL,
 $$
 
-你必须同时处理：
+首先，新的相对距离可能让旋转相位进入未见过的范围。直觉上可以把所有位置缩小 $s$ 倍，放回训练区间；但这样又会把高频、低频 RoPE 分量一视同仁地降频，削弱模型原先学到的局部位置分辨能力。即使解决了频率问题，Softmax 面对更多候选 Key 时的分布仍可能改变。
 
-1. 新位置是否跑到训练 phase distribution 之外；
-2. 如果把所有位置压回去，会不会破坏局部高频位置分辨率；
-3. 不同 RoPE 维度本来就有不同 wavelength，为什么要一刀切；
-4. context 中 key 数量增加以后，softmax attention 的统计分布会不会发生变化；
-5. fine-tuning length 与 inference length 是否必须相等；
-6. inference-time dynamic scaling 与 training-time interpolation 是不是同一件事；
-7. 位置编码扩展是否等于“模型真正会利用长上下文”。
-
-YaRN 的价值就在于：
-
-> **它把这些原本混在一起的长上下文问题拆成了多个机制。**
+YaRN 正是沿这条因果链前进：**先避免未经训练的直接外推，再保护局部高频结构，最后修正 Attention 的幅值变化**。至于更长的推理长度、动态缩放的 KV Cache 一致性，以及模型能否真正利用长距离信息，则属于必须另外验证的工程和能力边界。
 
 ---
 
@@ -69,28 +53,7 @@ YaRN 的价值就在于：
 - [Qwen2.5](../../B/05-moe-complete-llm/B012-qwen2.5.md)：YaRN 是其 128K / 1M context pipeline 的一部分
 - [Llama 3](../../B/05-moe-complete-llm/B011-llama3.md)：用于对照“直接继续预训练扩 context”和“位置外推技术”
 
-本文重点回答：
-
-1. RoPE 为什么明明编码相对位置，却还是会在长 context 上 OOD？
-2. 为什么 Position Interpolation 比直接 extrapolation 稳定？
-3. PI 为什么又会损失高频位置信息？
-4. NTK-aware scaling 为什么通过改 base 而不是统一除频率？
-5. RoPE 的 wavelength 到底怎么解释？
-6. 为什么短 wavelength 维度应该尽量不动？
-7. 为什么长 wavelength 维度反而最需要 interpolation？
-8. $r=L/\lambda$ 为什么可以衡量一个维度在训练窗口中转了几圈？
-9. NTK-by-parts 的 $\gamma(r)$ ramp 如何工作？
-10. YaRN 比 NTK-by-parts 多了什么？
-11. Attention temperature $t$ 为什么可以通过同时缩放 Q/K 实现？
-12. 为什么作者建议：
-    :::{math}
-    \sqrt{1/t}=0.1\ln s+1?
-    :::
-13. Dynamic YaRN 与普通 YaRN 有什么区别？
-14. Dynamic scaling 为什么会和 KV Cache 实现发生冲突？
-15. 64K fine-tuning 为什么可以在论文里外推到 128K？
-16. passkey retrieval、perplexity、训练 loss 分别能证明什么？
-17. 为什么 Qwen2.5 的 1M context 不能写成“因为用了 YaRN”？
+接下来的推导按实际设计顺序展开：先从 RoPE 的旋转内积出发，理解 Position Interpolation、NTK-aware 和 NTK-by-parts 如何一步步解决不同尺度的问题；再解释 YaRN 为什么还引入 Attention Scaling，以及 $\sqrt{1/t}=0.1\ln s+1$ 这种经验标度应如何阅读。最后结合论文训练曲线、困惑度、Passkey Retrieval 与 Dynamic YaRN，区分**位置编码可计算**、**继续训练有效**和**模型能够长距离检索与推理**这三个不同结论。
 
 ---
 

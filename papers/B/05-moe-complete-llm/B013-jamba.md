@@ -106,6 +106,40 @@ $$
 
 这也说明“Total 52B、Active 12B”之所以有意义，是由于 Expert Weight 常驻于总体模型存储，而每个 Token 通常只穿过每个 MoE Layer 的两个 Expert。它并不暗示一个 52B 的 Full-Attention Dense 网络被严格等价压成 12B。
 
+## 从原始文本到下一词概率：把混合结构接成真正的语言模型
+
+前面的 Mixer/FFN 只是隐藏层；想复现完整模型，必须知道文本如何进入、位置顺序从哪里来、32 层结果如何变成训练目标。原始报告 [§2 与 §4](https://arxiv.org/html/2403.19887) 提供了容易被结构图略过的关键信息：原版 Jamba 使用**64K 词表的 BPE Tokenizer**，数字按单个数字切分，并移除了 Llama/Mistral Tokenizer 中用于特殊空格处理的部分约定；采用 GQA Attention、SwiGLU FFN 和 MoE 负载均衡。这里的 Tokenizer 是模型输入协议的一部分，换用另一个模型的词表与 ID 映射并不能直接复用同一套 Embedding / LM Head。
+
+对于 Batch 为 $B$、输入长度为 $T$ 的 Token ID $I\in\{0,\dots,V-1\}^{B\times T}$，可以把完整的自回归计算抽象为
+
+$$
+\begin{aligned}
+X^{(0)}&=\operatorname{Embed}(I)\in\mathbb R^{B\times T\times d},\\
+X^{(\ell+1)}&=\operatorname{JambaLayer}_{\ell}(X^{(\ell)}),\quad \ell=0,\dots,31,\\
+Z&=\operatorname{LMHead}(\operatorname{FinalNorm}(X^{(32)}))\in\mathbb R^{B\times T\times V},\\
+\mathcal L_{\rm NTP}&=-\sum_{b,t}\log\operatorname{softmax}(Z_{b,t,:})_{I_{b,t+1}}.
+\end{aligned}
+$$
+
+这是**解释数据流的常规自回归简化式，不是原论文逐行公布的源码**；Loss 求和仅覆盖具有下一个 Token 标签的有效位置，真实实现还要排除 Padding/无监督位置并规定 Reduction。它说明 Attention、Mamba 与 MoE 并不分别输出三个 Token 分布，而是连续更新同一条 $[B,T,d]$ Residual Stream，最终由一个词表预测头产生下一词 Logits。
+
+这里有个容易忽视的设计选择：**Jamba-v0.1 不使用显式位置编码，包括 Attention 层的 RoPE**（原文 §2、§6.5），但这不是说网络忽略输入顺序。以最简单的一维递推为例，设 $h_t=0.5h_{t-1}+x_t,h_0=0$，则输入 $(x_1,x_2)=(1,0)$ 得到 $h_2=0.5$，反过来输入 $(0,1)$ 得到 $h_2=1$。即便没有加上位置向量，**递推状态本身已经对 Token 的先后顺序敏感**。Jamba 的 Mamba 层先处理顺序敏感的特征，再提供给后面的 Attention；此外，Attention 的 Causal Mask 也限制了可见的历史范围。因此“某些配置下可以不用显式 RoPE”有机制上的合理解释，但**不能从这个玩具递推证明所有长距离位置关系都能学好**。真正证据仍是后文 Table 8 的受控消融。
+
+原始报告 [§4](https://arxiv.org/html/2403.19887) 还指出，发布模型使用 H100 GPU 和包含 FSDP、Tensor Parallelism、Sequence Parallelism、Expert Parallelism 的内部训练系统，训练文本来自网页、书籍和代码，经过质量过滤与去重，数据更新截至 2024 年 3 月。**原报告没有公开可独立复刻的完整数据清单、精确 Token 数、全部采样配比和完整优化器训练配置**；不能把作者的研究消融预算（例如 Table 4 的 250B Tokens）当成正式 52B 模型的预训练 Token Budget。Jamba-v0.1 发布的是未经指令微调/对齐的 Base Checkpoint，本文不能替它虚构一个 SFT→RLHF 阶段。
+
+~~~{mermaid}
+flowchart LR
+ TXT["原始文本"] --> TOK["64K BPE Tokenizer"]
+ TOK --> EMB["Embedding: B×T×d"]
+ EMB --> STACK["4 个 Jamba Block / 32 层"]
+ STACK --> MIX["每层 Mamba 或 GQA Attention"]
+ MIX --> FFN["每层 Dense FFN 或 Top-2 MoE"]
+ FFN --> LM["最终 Norm → LM Head: B×T×V"]
+ LM --> LOSS["下一词交叉熵"]
+~~~
+
+*自制完整数据流图，非原论文 Figure；Mixer 与 FFN 在每一层内先后执行，箭头不是指整模型先做完 32 层 Mixer 才统一执行 FFN。*
+
 ### 一条 256K 记忆预算的必要补充
 
 如果 32 层中只有 4 层 Attention，那么只按 Attention 的 KV Header 数量计算会得到 $4/32=1/8$ 的缩小比例。但是 GPU 的总模型内存至少还包括：
